@@ -1,0 +1,10 @@
+{
+    "id": "scene_pockets",
+    "text": "Lint. A bent paperclip. A receipt for a 'Spicy Tuna Roll' dated three years ago. Nothing useful.",
+    "choices": [
+        {
+            "text": "Return to the room.",
+            "next_scene": "scene_wakeup"
+        }
+    ]
+}

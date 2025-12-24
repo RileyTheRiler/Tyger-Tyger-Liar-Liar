@@ -1,0 +1,10 @@
+{
+    "id": "scene_mirror_gaze",
+    "text": "You look into the glass. A stranger stares back. Or... no one does. You can't quite focus on the features. It's like looking at a thumbprint smudge. Panic rises in your throat.",
+    "choices": [
+        {
+            "text": "Back away.",
+            "next_scene": "scene_wakeup"
+        }
+    ]
+}

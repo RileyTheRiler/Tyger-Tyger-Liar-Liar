@@ -1,0 +1,86 @@
+{
+    "start_node": "diner_intro",
+    "nodes": [
+        {
+            "id": "diner_intro",
+            "speaker": "Waitress",
+            "text": "Coffee's hot. You look like you haven't slept in a week.",
+            "passive_checks": [
+                {
+                    "skill": "Perception",
+                    "dc": 3,
+                    "interjection": "[Perception] She’s trembling. Something’s wrong."
+                },
+                {
+                    "skill": "Paranormal Sensitivity",
+                    "dc": 4,
+                    "interjection": "[Paranormal Sensitivity] Something’s clinging to her. You can’t see it, but it’s there."
+                }
+            ],
+            "choices": [
+                {
+                    "text": "“I haven't. Bad dreams.”",
+                    "next": "dream_branch",
+                    "effects": {
+                        "sanity": -2
+                    }
+                },
+                {
+                    "text": "“Just bring the coffee.”",
+                    "next": "dismiss_branch",
+                    "effects": {
+                        "reality": -1
+                    }
+                },
+                {
+                    "text": "[Empathy ≥ 3] “You sound worried.”",
+                    "skill_gate": {
+                        "skill": "Empathy",
+                        "level": 3
+                    },
+                    "next": "branch_empathy"
+                },
+                {
+                    "text": "[Leave]",
+                    "next": "EXIT_DIALOGUE"
+                }
+            ]
+        },
+        {
+            "id": "dream_branch",
+            "speaker": "Waitress",
+            "text": "Dreams are bad in this town, honey. They stick to you.",
+            "choices": [
+                {
+                    "text": "“I noticed.”",
+                    "next": "diner_intro"
+                }
+            ]
+        },
+        {
+            "id": "dismiss_branch",
+            "speaker": "Waitress",
+            "text": "Right. Black, then.",
+            "choices": [
+                {
+                    "text": "...",
+                    "next": "EXIT_DIALOGUE"
+                }
+            ]
+        },
+        {
+            "id": "branch_empathy",
+            "speaker": "Waitress",
+            "text": "It's... it's my brother. He went into the woods north path and didn't come back.",
+            "choices": [
+                {
+                    "text": "“I'll look for him.”",
+                    "next": "EXIT_DIALOGUE",
+                    "effects": {
+                        "theory_unlock": "missing_brother_case"
+                    }
+                }
+            ]
+        }
+    ]
+}

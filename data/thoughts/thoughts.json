@@ -1,0 +1,17 @@
+[
+    {
+        "id": "thought_amnesia_face",
+        "name": "I Don't Remember My Face",
+        "description": "You reached for the memory of your own visage, but found only a smooth, terrifying blankness. Who are you?",
+        "temporary_effects": {
+            "Logic": -2
+        },
+        "permanent_effects": {
+            "Logic": 1,
+            "Volition": 1,
+            "Sanity_Max": -5
+        },
+        "internalization_time_seconds": 15,
+        "completion_text": "The fog lifts slightly. You are not a ghost. You are a man who has forgotten he is a man. That is a start."
+    }
+]

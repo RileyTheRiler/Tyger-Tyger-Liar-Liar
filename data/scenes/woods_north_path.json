@@ -1,0 +1,50 @@
+{
+    "id": "woods_north_path",
+    "name": "North Woods Path",
+    "text": "The trees tighten here. Mud sucks at your boots. It’s darker than it should be.",
+    "connected_scenes": [
+        "woods_clearing",
+        "woods_west"
+    ],
+    "conditions": {
+        "time": [
+            "06:00",
+            "20:00"
+        ],
+        "weather": [
+            "clear",
+            "overcast"
+        ],
+        "requires_theory": [
+            "trust_no_one"
+        ]
+    },
+    "ambient_effects": {
+        "sanity_drain_per_min": 0.2,
+        "paranoia_multiplier": 1.5
+    },
+    "memory_trigger": {
+        "skill": "Subconscious",
+        "dc": 10,
+        "text": "You’ve been here before. The smell. Burned cedar and static. A scream you can’t place."
+    },
+    "choices": [
+        {
+            "text": "Push deeper into the woods.",
+            "next_scene": "woods_clearing"
+        },
+        {
+            "text": "Turn back West.",
+            "next_scene": "woods_west"
+        },
+        {
+            "text": "[Survival] Check for tracks.",
+            "req_check": {
+                "skill": "Survival",
+                "difficulty": 10
+            },
+            "on_success": "woods_tracks_found",
+            "on_failure": "woods_tracks_lost"
+        }
+    ]
+}

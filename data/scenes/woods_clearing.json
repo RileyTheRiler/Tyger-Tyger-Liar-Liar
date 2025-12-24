@@ -1,0 +1,70 @@
+{
+    "id": "woods_clearing",
+    "name": "Woods Clearing",
+    "text": "A small, circular clearing deep in the forest. The grass here is yellowed and dry, despite the recent rain. In the center stands a weathered stone pillar, half-covered in moss. To the north, a narrow path winds back towards the trailhead.",
+    "connected_scenes": [
+        "trailhead",
+        "woods_north_path"
+    ],
+    "objects": {
+        "pillar": {
+            "description": "It's an ancient stone pillar, about four feet tall. It feels unnervingly warm to the touch.",
+            "passive_checks": [
+                {
+                    "skill": "Perception",
+                    "difficulty": 8,
+                    "success_text": "You notice faint, rhythmic etchings near the base, resembling claw marks."
+                },
+                {
+                    "skill": "Logic",
+                    "difficulty": 12,
+                    "success_text": "The placement of the pillar suggests it wasn't built here; it was moved, possibly centuries ago."
+                }
+            ],
+            "interactions": {
+                "use": "You place your hand on the pillar. A faint hum vibrates through your palm, and for a moment, the yellowed grass seems to pulse with a dull grey light."
+            }
+        },
+        "grass": {
+            "description": "Brittle and colorless. It crunches like glass under your boots.",
+            "passive_checks": [
+                {
+                    "skill": "Subconscious",
+                    "difficulty": 10,
+                    "success_text": "The way the grass bends... it's like something heavy was dragged through here recently. Or many things."
+                }
+            ]
+        }
+    },
+    "ambient_effects": {
+        "sanity_drain_per_min": 0.1,
+        "paranoia_multiplier": 1.2
+    },
+    "memory_trigger": {
+        "skill": "Subconscious",
+        "dc": 14,
+        "text": "You remember sitting in a place like this once. But the sun was bright, and someone was laughing. The memory is cut short by a flash of red."
+    },
+    "choices": [
+        {
+            "text": "Inspect the pillar more closely.",
+            "next_scene": "woods_clearing",
+            "effects": {
+                "sanity": -2
+            }
+        },
+        {
+            "text": "Walk back to the trailhead.",
+            "next_scene": "trailhead"
+        },
+        {
+            "text": "[Empathy (Hard)] Close your eyes and feel the atmosphere.",
+            "req_check": {
+                "skill": "Empathy",
+                "difficulty": 12
+            },
+            "on_success": "scene_clearing_peace",
+            "on_failure": "scene_clearing_dread"
+        }
+    ]
+}

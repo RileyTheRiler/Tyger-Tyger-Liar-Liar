@@ -1,0 +1,27 @@
+{
+    "id": "diner",
+    "text": "You push open the door to the diner. The bell chimes, but the sound feels wrong—too sharp, too loud. A waitress looks up from behind the counter, her eyes tired and hollow.",
+    "background_media": {
+        "type": "image",
+        "src": "diner_interior.png"
+    },
+    "objects": {
+        "counter": {
+            "description": "Worn formica, cracked in places. Coffee rings overlap like a Venn diagram of despair."
+        },
+        "bell": {
+            "description": "A small brass bell above the door. It's still vibrating."
+        }
+    },
+    "choices": [
+        {
+            "text": "Approach the waitress.",
+            "type": "dialogue",
+            "dialogue_id": "diner"
+        },
+        {
+            "text": "Leave the diner.",
+            "next_scene": "bedroom"
+        }
+    ]
+}

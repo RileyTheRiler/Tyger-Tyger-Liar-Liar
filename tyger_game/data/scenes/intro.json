@@ -1,0 +1,13 @@
+{
+    "id": "intro",
+    "title": "Hotel Room - Morning",
+    "description": "You wake up on a stain-mottled mattress, the springs digging into your back. The ceiling fan spins lazily, chopping the humid air. Light filters through grimy blinds. \n\nThere is a [mirror] on the wall, cracked down the middle. A pile of [clothes] lies on the floor. To the [north] is the door to the hallway.",
+    "exits": {
+        "north": "hallway"
+    },
+    "interactables": {
+        "mirror": "You look terrible. One eye is bloodshot. You don't remember your name.",
+        "clothes": "A chaotic heap of fabrics. A tie, a sock, a disco shirt.",
+        "bed": "It smells of sweat and cheap liquor."
+    }
+}

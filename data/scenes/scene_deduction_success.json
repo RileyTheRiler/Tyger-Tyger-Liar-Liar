@@ -1,0 +1,10 @@
+{
+    "id": "scene_deduction_success",
+    "text": "Ozone. That implies high-voltage electronics. Dust implies long-term disuse. You are in a server room, or perhaps a laboratory, that has been abandoned.",
+    "choices": [
+        {
+            "text": "Interesting.",
+            "next_scene": "scene_wakeup"
+        }
+    ]
+}

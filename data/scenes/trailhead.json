@@ -1,0 +1,46 @@
+{
+    "id": "trailhead",
+    "name": "The Trailhead",
+    "text": "The forest edge is marked by a rusted iron gate hanging off one hinge. A faded map stand stands nearby, its plexiglass cracked. To the south, the dirt road leads back to civilization. To the north, the path disappears into the thick woods.",
+    "connected_scenes": [
+        "woods_clearing",
+        "woods_north_path"
+    ],
+    "objects": {
+        "gate": {
+            "description": "Rusted and jagged. It looks like it was forced open from the inside long ago.",
+            "interactions": {
+                "use": "The gate groans loudly as you brush against it, the sound echoes through the trees like a dying breath."
+            }
+        },
+        "map": {
+            "description": "The map is almost entirely faded. Only a few words are legible: 'THE HEART' and 'DO NOT ENTER'.",
+            "passive_checks": [
+                {
+                    "skill": "Perception",
+                    "difficulty": 6,
+                    "success_text": "There's a fresh smear of mud on the plexiglass, specifically over the words 'DO NOT ENTER'."
+                }
+            ]
+        }
+    },
+    "ambient_effects": {
+        "sanity_drain_per_min": 0.05,
+        "paranoia_multiplier": 1.0
+    },
+    "choices": [
+        {
+            "text": "Enter the woods.",
+            "next_scene": "woods_clearing"
+        },
+        {
+            "text": "[Logic (Easy)] Examine the map for clues about the layout.",
+            "req_check": {
+                "skill": "Logic",
+                "difficulty": 7
+            },
+            "on_success": "trailhead_map_insight",
+            "on_failure": "trailhead_map_confusion"
+        }
+    ]
+}

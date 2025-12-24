@@ -1,0 +1,79 @@
+[
+    {
+        "id": "test_inventory",
+        "text": "DEBUG ROOM. You see a Flashlight.",
+        "choices": [
+            {
+                "text": "Pick up Flashlight",
+                "effects": {
+                    "add_item": {
+                        "id": "flashlight",
+                        "name": "Flashlight",
+                        "type": "tool",
+                        "description": "A sturdy light.",
+                        "effects": {
+                            "skill_modifiers": {
+                                "Perception": 100
+                            }
+                        }
+                    }
+                },
+                "next_scene": "test_check"
+            }
+        ]
+    },
+    {
+        "id": "test_check",
+        "text": "You have the flashlight.",
+        "choices": [
+            {
+                "text": "Collect Evidence (Muddy Boot)",
+                "effects": {
+                    "add_evidence": {
+                        "id": "muddy_boot",
+                        "description": "A muddy boot print.",
+                        "type": "physical",
+                        "tags": [
+                            "mud",
+                            "footwear"
+                        ]
+                    }
+                },
+                "next_scene": "test_check"
+            },
+            {
+                "text": "Test Perception Check (DC 200)",
+                "skill_check": {
+                    "skill": "Perception",
+                    "difficulty": 200,
+                    "on_success": {
+                        "next_scene": "test_success"
+                    },
+                    "on_fail": {
+                        "next_scene": "test_fail"
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "id": "test_success",
+        "text": "Success! The modifier worked.",
+        "choices": [
+            {
+                "text": "End",
+                "next_scene": null
+            }
+        ]
+    },
+    {
+        "id": "test_fail",
+        "text": "Fail! The modifier failed.",
+        "choices": [
+            {
+                "text": "Retry",
+                "next_scene": "test_check"
+            }
+        ]
+    }
+]

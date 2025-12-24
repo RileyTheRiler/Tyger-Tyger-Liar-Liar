@@ -1,0 +1,13 @@
+{
+    "id": "scene_deduction_failure",
+    "text": "It smells like... burning? Or maybe just old socks. Your brain refuses to connect the dots. The headache intensifies.",
+    "choices": [
+        {
+            "text": "Ouch.",
+            "next_scene": "scene_wakeup",
+            "effects": {
+                "sanity": -2
+            }
+        }
+    ]
+}

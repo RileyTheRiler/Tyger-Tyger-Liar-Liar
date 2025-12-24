@@ -1,0 +1,140 @@
+[
+  {
+    "id": "bedroom",
+    "text": "You wake up in a cold sweat. The bedroom is dark, illuminated only by the faint glow of the streetlamp outside filtering through the blinds. A heavy sense of dread hangs in the air.",
+    "background_media": {
+      "type": "image",
+      "src": "bedroom_dark.png"
+    },
+    "objects": {
+      "door": {
+        "description": "It is solid wood. Closed."
+      },
+      "streetlamp": {
+        "description": "It flickers rhythmically. Buzzing like a dying insect."
+      },
+      "blinds": {
+        "description": "Dusty and bent.",
+        "interactions": {
+          "use": "You rattle the blinds. Nothing happens outside."
+        }
+      }
+    },
+    "choices": [
+      {
+        "text": "Get out of bed and check the door.",
+        "next_scene": "hallway",
+        "effects": {
+          "sanity": -5
+        }
+      },
+      {
+        "text": "Try to go back to sleep.",
+        "next_scene": "bedroom_nightmare",
+        "skill_check": {
+          "skill": "Composure",
+          "difficulty": 12,
+          "on_success": {
+            "next_scene": "morning_sun",
+            "effects": {
+              "sanity": 10
+            }
+          },
+          "on_fail": {
+            "next_scene": "bedroom_nightmare",
+            "effects": {
+              "sanity": -10,
+              "reality": -5
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "hallway",
+    "text": "The hallway is long and stretches further than you remember. The wallpaper seems to shift in your peripheral vision.",
+    "background_media": {
+      "type": "audio",
+      "src": "eerie_drone.mp3"
+    },
+    "objects": {
+      "wallpaper": {
+        "description": "It has a repeating floral pattern that looks like screaming faces if you squint."
+      }
+    },
+    "choices": [
+      {
+        "text": "Walk towards the kitchen.",
+        "next_scene": "kitchen",
+        "effects": {
+          "unlock_thought": "The House is Growing"
+        }
+      },
+      {
+        "text": "Go to the mirror in the corner.",
+        "next_scene": "mirror_hall"
+      },
+      {
+        "text": "Return to the bedroom.",
+        "next_scene": "bedroom"
+      }
+    ]
+  },
+  {
+    "id": "mirror_hall",
+    "text": "You stand before a large gilded mirror. The floor is cold against your bare feet. The window reflects a sky that isn't yours. A shadow moves inside the glass.",
+    "effects": {
+      "reality": -30
+    },
+    "ambient_effects": {
+      "sanity_drain_per_min": 0.5
+    },
+    "choices": [
+      {
+        "text": "Touch the glass.",
+        "next_scene": "mirror_hall",
+        "effects": {
+          "reality": -25
+        }
+      },
+      {
+        "text": "Look away.",
+        "next_scene": "hallway",
+        "effects": {
+          "sanity": -5
+        }
+      }
+    ]
+  },
+  {
+    "id": "kitchen",
+    "text": "The kitchen smells of stale coffee and something metallic. The light is harsh.",
+    "choices": [
+      {
+        "text": "Go back to the hallway.",
+        "next_scene": "hallway"
+      }
+    ]
+  },
+  {
+    "id": "bedroom_nightmare",
+    "text": "You close your eyes, but the darkness behind your lids is alive. Whispers claw at your mind. You cannot sleep.",
+    "choices": [
+      {
+        "text": "Wake up screaming.",
+        "next_scene": "bedroom"
+      }
+    ]
+  },
+  {
+    "id": "morning_sun",
+    "text": "You manage to calm your racing heart and drift off. When you wake, the room is filled with bright morning light. The dread is gone, for now.",
+    "choices": [
+      {
+        "text": "Get up.",
+        "next_scene": "hallway"
+      }
+    ]
+  }
+]
