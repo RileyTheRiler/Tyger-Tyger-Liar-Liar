@@ -205,5 +205,100 @@ THEORY_DATA = {
         "internalize_time_hours": 14,
         "active_case": False,
         "critical_for_endgame": True
+    },
+    # === VERTICAL SLICE THEORIES ===
+    "347_resonance": {
+        "name": "The 347 Resonance",
+        "category": "Conspiracy",
+        "description": "347 isn't just a population count. It's a frequency. A threshold. A number that means something to whatever watches from the aurora.",
+        "status": "locked",
+        "hidden_effects": True,
+        "effects": {
+            "Pattern Recognition": 3,
+            "Occult Knowledge": 2,
+            "Composure": -2
+        },
+        "conflicts_with": [],
+        "auto_locks": [],
+        "degradation_rate": 12,
+        "internalize_time_hours": 10,
+        "active_case": True,
+        "critical_for_endgame": True
+    },
+    "aurora_rules": {
+        "name": "The Aurora Has Rules",
+        "category": "Belief",
+        "description": "The lights follow patterns. Don't whistle. Don't wave. Don't count them. The old warnings aren't superstition—they're survival.",
+        "status": "locked",
+        "hidden_effects": True,
+        "effects": {
+            "Paranormal Sensitivity": 2,
+            "Survival": 2,
+            "Skepticism": -2,
+            "Logic": -1
+        },
+        "conflicts_with": ["there_is_a_rational_explanation"],
+        "auto_locks": [],
+        "degradation_rate": 10,
+        "internalize_time_hours": 8,
+        "active_case": True,
+        "critical_for_endgame": True
+    },
+    "government_coverup": {
+        "name": "Government Cover-Up",
+        "category": "Conspiracy",
+        "description": "The DEW line wasn't just watching for bombers. They knew about the lights. They've known for decades. And they're still here.",
+        "status": "locked",
+        "hidden_effects": True,
+        "effects": {
+            "Research": 2,
+            "Technology": 2,
+            "Skepticism": 1,
+            "Authority": -2
+        },
+        "conflicts_with": [],
+        "auto_locks": [],
+        "degradation_rate": 15,
+        "internalize_time_hours": 6,
+        "active_case": True,
+        "critical_for_endgame": False
+    },
+    "something_watches": {
+        "name": "Something Watches",
+        "category": "Haunted",
+        "description": "You can feel it. Eyes from everywhere and nowhere. The attention of something vast and patient.",
+        "status": "locked",
+        "hidden_effects": True,
+        "effects": {
+            "Paranormal Sensitivity": 3,
+            "Perception": 2,
+            "Composure": -3,
+            "Sanity Drain": 1
+        },
+        "conflicts_with": [],
+        "auto_locks": [],
+        "degradation_rate": 20,
+        "internalize_time_hours": 4,
+        "active_case": False,
+        "critical_for_endgame": True
+    },
+    "ive_been_here_before": {
+        "name": "I've Been Here Before",
+        "category": "Haunted",
+        "description": "This isn't your first time in Kaltvik. You've walked these streets. You've seen these faces. You just can't remember when.",
+        "status": "locked",
+        "hidden_effects": True,
+        "effects": {
+            "Pattern Recognition": 2,
+            "Instinct": 2,
+            "Composure": -2,
+            "Logic": -1
+        },
+        "conflicts_with": [],
+        "auto_locks": [],
+        "degradation_rate": 25,
+        "internalize_time_hours": 6,
+        "active_case": False,
+        "critical_for_endgame": True
     }
 }
