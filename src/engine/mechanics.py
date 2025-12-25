@@ -2,7 +2,7 @@ import random
 import json
 import os
 from typing import Dict, List, Optional, Tuple
-from dice import roll_2d6, get_roll_description
+from engine.dice import roll_2d6, get_roll_description
 
 class Attribute:
     def __init__(self, name: str, base_value: int = 1, cap: int = 6):

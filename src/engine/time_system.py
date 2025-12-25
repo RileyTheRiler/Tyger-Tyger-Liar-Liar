@@ -14,6 +14,12 @@ class TimeSystem:
         self.scheduled_events: List[Dict[str, Any]] = []
         
         self.weather = "clear"
+        self.day_cycle_events = {
+             0: "Midnight. The static is loudest now.",
+             6: "Dawn breaks, grey and cold.",
+             12: "Noon. shadows are suspiciously long.",
+             18: "Dusk. The aurora begins to wake.",
+        }
 
     def set_weather(self, weather_type: str):
         self.weather = weather_type
@@ -30,6 +36,9 @@ class TimeSystem:
         # Check triggers
         self.check_triggers(old_time, self.current_time)
         
+        # Check day cycle updates
+        self._check_day_cycle(old_time, self.current_time)
+
         # Notify listeners
         for listener in self.listeners:
             listener(minutes)
@@ -65,6 +74,16 @@ class TimeSystem:
             # print(f"[DEBUG] Event triggered: {event['desc']}")
             if event["callback"]:
                 event["callback"]()
+
+    def _check_day_cycle(self, old_time: datetime, new_time: datetime):
+        # Simple check for hour crossings
+        if old_time.hour != new_time.hour:
+            # If we crossed an hour boundary
+            hour = new_time.hour
+            if hour in self.day_cycle_events:
+                # We could broadcast this, but for now we'll just store it as "last_time_event"
+                # The game loop can poll or we can add a specific listener for narrative events
+                pass
 
     def get_time_string(self) -> str:
         # Format: "Oct 14, 08:00 AM" or similar
