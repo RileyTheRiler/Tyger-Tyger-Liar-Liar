@@ -10,5 +10,6 @@
         "extreme": 13,
         "legendary": 15
     },
-    "developer_commentary": false
+    "developer_commentary": false,
+    "debug_show_distortions": false
 }

@@ -1,7 +1,15 @@
 {
     "id": "woods_north_path",
-    "name": "North Woods Path",
-    "text": "The trees tighten here. Mud sucks at your boots. It’s darker than it should be.",
+    "title": "The Northern Path",
+    "location_id": "woods",
+    "text": {
+        "base": "The path dissolves into a slurry of clay and pine needles. The canopy knits together overhead—a ceiling, not a sky. The air tastes metallic. Ozone and old pennies.",
+        "lens": {
+            "believer": "The wind dies here. Not stopped—removed. The stillness is artificial. Something is listening to your heartbeat.",
+            "skeptic": "Tire tracks. Heavy tread, military grade, partially washed away. Too wide for a ranger vehicle. Someone drove a deuce-and-a-half through here recently.",
+            "haunted": "There's a fence post to your left. Barbed wire cut clean. You remember the sound of wire cutters. Keep moving. Don't look at the post."
+        }
+    },
     "connected_scenes": [
         "woods_clearing",
         "woods_west"
@@ -26,29 +34,29 @@
     "memory_trigger": {
         "skill": "Subconscious",
         "dc": 10,
-        "text": "You’ve been here before. The smell. Burned cedar and static. A scream you can’t place."
+        "text": "A flash: Men in hazmat suits. The hiss of a sprayer. They weren't planting trees. They were painting them."
     },
     "choices": [
         {
-            "text": "Push deeper into the woods.",
+            "label": "Push deeper into the woods",
             "next_scene": "woods_clearing"
         },
         {
-            "text": "Turn back West.",
+            "label": "Follow the path North to the Radio Tower",
+            "next_scene": "radio_tower"
+        },
+        {
+            "label": "Turn back West",
             "next_scene": "woods_west"
         },
         {
-            "text": "[Survival] Check for tracks.",
-            "skill_check": {
+            "label": "[Survival] Check for tracks",
+            "check": {
                 "skill": "Survival",
-                "difficulty": 10,
-                "on_success": {
-                    "next_scene": "woods_tracks_found"
-                },
-                "on_fail": {
-                    "next_scene": "woods_tracks_lost"
-                }
-            }
+                "dc": 10
+            },
+            "next_scene": "woods_tracks_found",
+            "on_fail_scene": "woods_tracks_lost"
         }
     ]
 }

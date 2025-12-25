@@ -1,35 +1,22 @@
 {
     "id": "frozen_victim",
-    "name": "The Frozen Victim",
+    "title": "The Frozen Victim",
+    "location_id": "woods_deep",
+    "time_cost": 10,
     "text": {
-        "base": "A body lies in the center of the clearing, partially encased in a strange, translucent frost.",
-        "thermal": "The body is encased in frost, but a deep heat signature is pulsing from the chest cavity. Core temp: 102.4°F.",
+        "base": "The body lies in the center of the clearing, not encased in ice, but *blooming* with it. Translucent, recursive structures look like ferns made of glass, growing out of the skin. There is no smell of decay. Only the smell of ozone and wet wool.",
         "lens": {
-            "skeptic": "It's a tragic casualty of the cold. A hiker who lost their way.",
-            "believer": "This is a Vessel. The frost is but a shell for the energy trapped within.",
-            "haunted": "The cold doesn't just bite here; it whispers. You can hear the static coming from the ice."
+            "skeptic": "Paradoxical undressing hypothesis rejected; clothes are intact. Frostbite patterns are inconsistent with environmental exposure. The crystallization follows the lymphatic system. It looks... cultivated.",
+            "believer": "Not a victim. A chrysalis. The heat isn't life; it's the energy of transformation. Don't touch the glass. It will grow on you too.",
+            "haunted": "You recognize the coat. You recognize the way the hand is curled. It's him. It's always him. And he's still warm."
         },
         "inserts": [
             {
-                "id": "fever_check",
-                "text": "Your medical training screams at you: human bodies don't generate this much heat while frozen solid. It's impossible.",
+                "id": "thermal_scan",
+                "text": "Your thermal scanner whines. ERROR. Target saturation. Core temp: 102.4°F and rising. It's a fever in a dead thing. A biological impossibility.",
                 "condition": {
-                    "skill_gte": {
-                        "Medicine": 4
-                    },
-                    "thermal_mode": true
-                },
-                "insert_at": "AFTER_BASE"
-            },
-            {
-                "id": "logic_ice",
-                "text": "The ice is too regular. These are fractal patterns, not random freezing.",
-                "condition": {
-                    "skill_gte": {
-                        "Logic": 3
-                    }
-                },
-                "insert_at": "AFTER_BASE"
+                    "item_equipped": "thermal_scanner"
+                }
             }
         ]
     },
@@ -38,21 +25,54 @@
     ],
     "objects": {
         "victim": {
-            "description": "The victim is frozen solid, yet feels... wrong.",
-            "temperature": 102.4
-        },
-        "ice_shards": {
-            "description": "Geometric shards of ice that seem to defy natural growth.",
-            "temperature": 15.0
+            "description": "The face is peaceful. Too peaceful. The frost has formed a perfect, crystalline mask over the features.",
+            "interactions": {
+                "touch": "The crystal vibrates against your glove. A high-pitched frequency that you feel in your teeth."
+            }
         }
     },
+    "board_updates": [
+        {
+            "node_type": "evidence",
+            "action": "add",
+            "id": "evid_frozen_fever",
+            "label": "Impossible Heat",
+            "description": "The frozen body has a core temperature of 102.4°F."
+        }
+    ],
     "choices": [
         {
-            "text": "Examine the victim closely.",
-            "next_scene": "frozen_victim_exam"
+            "label": "[Medicine (Hard)] Perform a field autopsy.",
+            "check": {
+                "skill": "Medicine",
+                "dc": 8
+            },
+            "on_success": {
+                "text": "You make an incision. No blood. Just clear, viscous fluid that freezes instantly upon contact with the air. The internal organs are gone. Replaced by a geode of blue ice.",
+                "effects": [
+                    {
+                        "type": "sanity",
+                        "value": -3
+                    },
+                    {
+                        "type": "flag",
+                        "target": "clue_crystal_organs",
+                        "value": true
+                    }
+                ]
+            },
+            "on_fail": {
+                "text": "Your hand shakes. You nick the frozen skin. The sound it makes is like a bell ringing. You pull back, nauseous.",
+                "effects": [
+                    {
+                        "type": "sanity",
+                        "value": -1
+                    }
+                ]
+            }
         },
         {
-            "text": "Retreat to the path.",
+            "label": "Back away slowly.",
             "next_scene": "woods_north_path"
         }
     ]

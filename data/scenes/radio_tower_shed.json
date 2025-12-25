@@ -1,0 +1,52 @@
+{
+    "id": "radio_tower_shed",
+    "title": "The Maintenance Shed",
+    "location_id": "radio_tower",
+    "time_cost": 5,
+    "text": {
+        "base": "The shed smells of rust and stale tobacco. A workbench along the far wall is covered in debris. A metal locker stands open, empty except for a faded calendar from 1998.",
+        "lens": {
+            "believer": "The calendar dates are circled in a pattern. Not shifts. Sacrifices. The phases of the moon align with the disappearances.",
+            "skeptic": "Squatter activity confirmed. But the dust patterns are wrong. Someone wiped the surfaces *clean* recently. Too clean.",
+            "haunted": "There's a name scratched into the locker paint. 'R. VANCE'. That's your mother's maiden name. She didn't work for the phone company."
+        }
+    },
+    "connected_scenes": [
+        "radio_tower"
+    ],
+    "objects": {
+        "workbench": {
+            "description": "Covered in radio components.",
+            "interactions": {
+                "search": "You sift through the junk. Under a pile of copper wire, you find a logbook."
+            }
+        },
+        "logbook": {
+            "description": "A dusty maintenance log. Property of [REDACTED].",
+            "interactions": {
+                "read": "Entry 412: 'Test Subject 04: Liquefied. Containment holds. Yield: 400%. The song is stabilizing.'"
+            }
+        }
+    },
+    "choices": [
+        {
+            "label": "Read the logbook on the workbench",
+            "next_scene": "radio_tower_logbook",
+            "effects": [
+                {
+                    "type": "flag",
+                    "target": "read_tower_log",
+                    "value": true
+                },
+                {
+                    "type": "sanity",
+                    "value": -5
+                }
+            ]
+        },
+        {
+            "label": "Exit the shed",
+            "next_scene": "radio_tower"
+        }
+    ]
+}

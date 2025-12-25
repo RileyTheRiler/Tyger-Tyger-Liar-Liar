@@ -1,25 +1,33 @@
 # Attribute Constants
 ATTRIBUTES = [
-    "REASON",
-    "INTUITION",
-    "CONSTITUTION",
-    "PRESENCE"
+    "RATIONALITY",
+    "SENSITIVITY",
+    "PRESENCE",
+    "FIELDCRAFT"
 ]
 
 # Skill Constants
 SKILLS = {
-    "REASON": [
-        "Logic", "Encyclopedia", "Rhetoric", "Drama", "Conceptualization", "Visual Calculus"
+    "RATIONALITY": [
+        "Deduction", "Encyclopedia", "Forensics", "Protocol", "Skepticism", "Tech-Gnosis"
     ],
-    "INTUITION": [
-        "Volition", "Inland Empire", "Empathy", "Authority", "Esprit de Corps", "Suggestion"
-    ],
-    "CONSTITUTION": [
-        "Endurance", "Pain Threshold", "Physical Instrument", "Electrochemistry", "Shivers"
+    "SENSITIVITY": [
+        "Instinct", "Empathy", "Paranormal Sense", "Pattern Recognition", "Suggestion", "Willpower"
     ],
     "PRESENCE": [
-        "Hand/Eye Coordination", "Perception", "Reaction Speed", "Savoir Faire", "Interfacing", "Composure"
+        "Authority", "Subterfuge", "Negotiation", "Esprit de Corps", "Interrogation", "Cool"
+    ],
+    "FIELDCRAFT": [
+        "Ballistics", "Pursuit", "Survival", "Perception", "Force", "Equilibrium"
     ]
+}
+
+# Alignment Constants
+ALIGNMENTS = {
+    "FUNDAMENTALIST": "Fundamentalist",   # Believer + Order
+    "TRUTH_SEEKER": "Truth-Seeker",       # Believer + Chaos
+    "DEBUNKER": "Debunker",               # Skeptic + Order
+    "OPPORTUNIST": "Opportunist"          # Skeptic + Chaos
 }
 
 # Game Constants

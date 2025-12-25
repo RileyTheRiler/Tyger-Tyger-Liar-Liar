@@ -52,11 +52,23 @@ const TerminalEntry = ({ entry }) => {
 
 // Simple formatter for bold/color (can be expanded)
 const formatLine = (text) => {
-    // Replace **text** with bold
-    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    if (!text) return "";
 
-    // Replace [COLOR]text[/COLOR] with color spans if backend sends them
-    // Or handle specific keywords
+    // 1. Handle Skill Checks: [PATTERN RECOGNITION] -> <span class="skill-check">...</span>
+    // Regex matching [WORDS] at the start or distinctively
+    let formatted = text.replace(
+        /\[([A-Z\s]+)\]/g,
+        '<span class="skill-check">[$1]</span>'
+    );
+
+    // 2. Handle Markdown bold **text**
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    // 3. Handle specific system text if needed (e.g. EVIDENCE ADDED)
+    formatted = formatted.replace(
+        /(EVIDENCE ADDED|ITEM GAINED)/g,
+        '<span class="system-text">$1</span>'
+    );
 
     return formatted;
 };

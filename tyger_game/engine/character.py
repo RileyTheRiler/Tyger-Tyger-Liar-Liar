@@ -17,9 +17,21 @@ class Character:
         self.sanity: int = MAX_SANITY
         self.reality: int = MAX_REALITY
         
+        # Epistemic Alignment
+        # Tracks the raw score for each axis pole
+        self.alignment_scores: Dict[str, int] = {
+            "believer": 0,
+            "skeptic": 0,
+            "order": 0,
+            "chaos": 0
+        }
+        self.active_alignment: Optional[str] = None # e.g. "Fundamentalist"
+
         # Experience / Internalization
         self.xp: int = 0
-        self.thoughts: list = []
+        # Paradigms (Conspiracy/Philosophy Thoughts)
+        # Format: {"id": "simulation_hypothesis", "status": "internalizing", "progress": 0, "completed": False}
+        self.paradigms: list = [] 
         self.inventory: list = []
 
     def _init_skills(self):

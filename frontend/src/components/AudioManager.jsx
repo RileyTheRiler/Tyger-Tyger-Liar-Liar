@@ -29,6 +29,16 @@ const AudioManager = ({ music, sfxQueue }) => {
             currentMusicSrc.current = musicPath;
             console.log(`[Audio] Playing music: ${music}`);
         }
+
+        return () => {
+            // Cleanup: pause if unmounting or changing source
+            // We don't strictly need to pause if we are just switching tracks (the next effect run handles it),
+            // but it's good safety. However, since the next effect run will change the src, 
+            // pausing here might cause a brief silence if not handled perfectly. 
+            // But for now, let's keep it simple.
+            // musicRef.current.pause(); 
+            // currentMusicSrc.current = null;
+        };
     }, [music]);
 
     // Handle SFX

@@ -1,50 +1,72 @@
 {
     "id": "trailhead",
-    "name": "The Trailhead",
-    "text": "The forest edge is marked by a rusted iron gate hanging off one hinge. A faded map stand stands nearby, its plexiglass cracked. To the south, the dirt road leads back to civilization. To the north, the path disappears into the thick woods.",
+    "title": "The Trailhead",
+    "location_id": "woods_edge",
+    "time_cost": 5,
+    "text": {
+        "base": "The iron gate hangs off one hinge, twisted outward—as if something large forced its way *out*, not in. To the south, the safety of the paved road. To the north, the trees swallow the light, ancient and patient.",
+        "lens": {
+            "believer": "The gate wasn't broken by force; it was dissolved. The iron is pitted with corrosion patterns that look like fingerprints. The woods breathe, a slow, heavy rhythm that matches your own pulse.",
+            "skeptic": "Impact deformity on the gate indicates localized force application exceeding 40,000 PSI. Likely heavy machinery or a vehicle collision, though the lack of paint transfer is anomalous. The forest density is high; visibility is less than 20 meters.",
+            "haunted": "You know this gate. You used to dare each other to touch it. It's colder now than it was then. Crossing this threshold was the first mistake. Coming back is the second."
+        }
+    },
     "connected_scenes": [
         "woods_clearing",
         "woods_north_path"
     ],
     "objects": {
         "gate": {
-            "description": "Rusted and jagged. It looks like it was forced open from the inside long ago.",
+            "description": "Jagged iron teeth. The metal is cold enough to burn your skin.",
             "interactions": {
-                "use": "The gate groans loudly as you brush against it, the sound echoes through the trees like a dying breath."
+                "touch": "You press your gloved hand to the metal. It hums, a low-frequency vibration that rattles your teeth."
             }
         },
         "map": {
-            "description": "The map is almost entirely faded. Only a few words are legible: 'THE HEART' and 'DO NOT ENTER'.",
-            "passive_checks": [
-                {
-                    "skill": "Perception",
-                    "difficulty": 6,
-                    "success_text": "There's a fresh smear of mud on the plexiglass, specifically over the words 'DO NOT ENTER'."
-                }
-            ]
+            "description": "The plexiglass case is shattered. The map underneath has been selectively burned. 'KALTVIK' is circled in what looks like black grease marker."
         }
     },
-    "ambient_effects": {
-        "sanity_drain_per_min": 0.05,
-        "paranoia_multiplier": 1.0
-    },
+    "board_updates": [
+        {
+            "node_type": "clue",
+            "action": "add",
+            "id": "clue_trailhead_gate",
+            "label": "Twisted Gate",
+            "description": "The iron gate at the trailhead was forced open from the inside."
+        }
+    ],
     "choices": [
         {
-            "text": "Enter the woods.",
+            "label": "Cross the threshold into the woods",
             "next_scene": "woods_clearing"
         },
         {
-            "text": "[Logic (Easy)] Examine the map for clues about the layout.",
-            "skill_check": {
-                "skill": "Logic",
-                "difficulty": 7,
-                "on_success": {
-                    "next_scene": "trailhead_map_insight"
-                },
-                "on_fail": {
-                    "next_scene": "trailhead_map_confusion"
-                }
+            "label": "Examine the damaged map",
+            "check": {
+                "skill": "Perception",
+                "dc": 6
+            },
+            "on_success": {
+                "text": "Under a shard of plexiglass, you find a sticker: 'PROPERTY OF [REDACTED] GEOLOGICAL SURVEY'. The date is from next year.",
+                "effects": [
+                    {
+                        "type": "sanity",
+                        "value": -1
+                    },
+                    {
+                        "type": "flag",
+                        "target": "clue_future_date",
+                        "value": true
+                    }
+                ]
+            },
+            "on_fail": {
+                "text": "It's just vandalism. Teenagers and lighters."
             }
+        },
+        {
+            "label": "Return to town",
+            "next_scene": "town_square"
         }
     ]
 }

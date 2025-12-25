@@ -83,67 +83,74 @@ function App() {
     }, 1000)
   }
 
-  if (showTitle) {
-    return <TitleScreen onStart={handleStartGame} onExit={handleTitleExit} />
-  }
-
-  if (booting) {
-    return <BootSequence onComplete={() => setBooting(false)} />
+  const getCurrentMusic = () => {
+    if (showTitle) return "main_theme.mp3"
+    return uiState?.music
   }
 
   return (
-    <Layout uiState={uiState}>
-      <div className="main-feed">
-        <div className="header-deco">
-          <GlitchText text="TYGER_TYGER_LIAR_LIAR" className="title-glitch" />
-          <div className="system-status">
-            SYS.ONLINE
-            <span className="ctrl-divider">|</span>
-            <button className="ctrl-btn" onClick={() => setShowBoard(true)}>
-              [VIEW_MINDMAP]
-            </button>
-            <span className="ctrl-divider">|</span>
-            <button className="ctrl-btn" onClick={handleShutdown}>
-              [EXIT_SYSTEM]
-            </button>
-          </div>
-        </div>
-
-        <Terminal history={history} />
-
-        {uiState?.choices && uiState.choices.length > 0 && (
-          <ChoiceGrid
-            choices={uiState.choices}
-            handleChoice={handleSend}
-            loading={loading}
-          />
-        )}
-
-        <InputConsole
-          input={input}
-          setInput={setInput}
-          handleSend={handleSend}
-          loading={loading}
-        />
-      </div>
-
-      <div className="sidebar-feed">
-        <StatusHUD uiState={uiState} />
-      </div>
-
-      {showBoard && (
-        <MindMap
-          boardData={uiState?.board_data}
-          onClose={() => setShowBoard(false)}
-        />
-      )}
-
-      {/* Audio System */}
+    <>
       <AudioManager
-        music={uiState?.music}
+        music={getCurrentMusic()}
         sfxQueue={uiState?.sfx_queue}
       />
-    </Layout>
+
+      {showTitle && (
+        <TitleScreen onStart={handleStartGame} onExit={handleTitleExit} />
+      )}
+
+      {!showTitle && booting && (
+        <BootSequence onComplete={() => setBooting(false)} />
+      )}
+
+      {!showTitle && !booting && (
+        <Layout
+          uiState={uiState}
+          sidebar={<StatusHUD uiState={uiState} />}
+        >
+          <div className="main-feed">
+            <div className="header-deco">
+              <GlitchText text="TYGER_TYGER_LIAR_LIAR" className="title-glitch" />
+              <div className="system-status">
+                SYS.ONLINE
+                <span className="ctrl-divider">|</span>
+                <button className="ctrl-btn" onClick={() => setShowBoard(true)}>
+                  [VIEW_MINDMAP]
+                </button>
+                <span className="ctrl-divider">|</span>
+                <button className="ctrl-btn" onClick={handleShutdown}>
+                  [EXIT_SYSTEM]
+                </button>
+              </div>
+            </div>
+
+            <Terminal history={history} />
+
+            {uiState?.choices && uiState.choices.length > 0 && (
+              <ChoiceGrid
+                choices={uiState.choices}
+                handleChoice={handleSend}
+                loading={loading}
+              />
+            )}
+
+            <InputConsole
+              input={input}
+              setInput={setInput}
+              handleSend={handleSend}
+              loading={loading}
+            />
+          </div>
+
+          {showBoard && (
+            <MindMap
+              boardData={uiState?.board_data}
+              onClose={() => setShowBoard(false)}
+            />
+          )}
+        </Layout>
+      )}
+    </>
   )
 }
 

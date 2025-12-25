@@ -1,0 +1,33 @@
+{
+    "id": "radio_tower_fall",
+    "title": "The Descent",
+    "location_id": "radio_tower",
+    "time_cost": 30,
+    "text": {
+        "base": "The rung snaps with a pistol-crack sound. Gravity takes you. You hit the ground hard, the breath driven from your lungs in a white-hot flash of pain.",
+        "lens": {
+            "believer": "The earth didn't catch you; it grabbed you. Pulled you down.",
+            "skeptic": "Right ankle. Likely Grade 2 sprain. Impact velocity was... survivable.",
+            "haunted": "This is what you deserve. Falling always felt more natural than climbing."
+        }
+    },
+    "connected_scenes": [
+        "radio_tower"
+    ],
+    "effects": [
+        {
+            "type": "injury",
+            "value": "sprained_ankle"
+        },
+        {
+            "type": "sanity",
+            "value": -5
+        }
+    ],
+    "choices": [
+        {
+            "label": "Limp back to the fence",
+            "next_scene": "radio_tower"
+        }
+    ]
+}

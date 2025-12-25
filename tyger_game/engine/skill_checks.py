@@ -26,7 +26,40 @@ def perform_skill_check(character: Character, skill_name: str, difficulty: int, 
     
     return result
 
-def format_check_result(result: CheckResult) -> str:
+    return result
+
+SKILL_VOICES = {
+    # Rationality
+    "Deduction": "The Cold Logic",
+    "Encyclopedia": "The Archive",
+    "Forensics": "The Mortician",
+    "Protocol": "The Bureaucracy",
+    "Skepticism": "The Doubt",
+    "Tech-Gnosis": "The Machine spirit",
+    # Sensitivity
+    "Instinct": "The Lizard Brain",
+    "Empathy": "The Human Heart",
+    "Paranormal Sense": "The Third Eye",
+    "Pattern Recognition": "The Red String",
+    "Suggestion": "The Silver Tongue",
+    "Willpower": "The Shield",
+    # Presence
+    "Authority": "The Badge",
+    "Subterfuge": "The Mask",
+    "Negotiation": "The Olive Branch",
+    "Esprit de Corps": "The Partner",
+    "Interrogation": "The Spotlight",
+    "Cool": "The Ice",
+    # Fieldcraft
+    "Ballistics": "The Trajectory",
+    "Pursuit": "The Hunter",
+    "Survival": "The Survivor",
+    "Perception": "The Open Eye",
+    "Force": "The Hammer",
+    "Equilibrium": "The Fulcrum"
+}
+
+def format_check_result(result: CheckResult, skill_name: str) -> str:
     """Returns a readable string for the check result."""
     d = result.details
     outcome = "SUCCESS" if result.success else "FAILURE"
@@ -34,4 +67,6 @@ def format_check_result(result: CheckResult) -> str:
     if d['critical_success']: crit = " (CRITICAL!)"
     if d['critical_failure']: crit = " (CATASTROPHE!)"
     
-    return f"[{outcome}{crit}] Rolled {d['base_roll']} + {d['skill_level']} (Skill) = {d['total']} vs DC {d['difficulty']}"
+    voice = SKILL_VOICES.get(skill_name, "The Skill")
+    
+    return f"[{voice}] {outcome}{crit} | Rolled {d['base_roll']} + {d['skill_level']} = {d['total']} vs DC {d['difficulty']}"

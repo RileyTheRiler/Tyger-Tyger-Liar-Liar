@@ -1,0 +1,108 @@
+{
+    "root": {
+        "speaker": "Maude",
+        "text": "She doesn't look up from her book. 'Check-in isn't until two.'",
+        "passive_checks": [
+            {
+                "skill": "Empathy",
+                "difficulty": 4,
+                "text": "She's not reading. Her eyes haven't moved in ten seconds."
+            },
+            {
+                "skill": "Authority",
+                "difficulty": 4,
+                "text": "This is a power move. She knows you're there."
+            }
+        ],
+        "choices": [
+            {
+                "text": "\"I'm not here for a room. I'm here for the investigation.\"",
+                "next_node": "investigation_branch",
+                "tag": "Official"
+            },
+            {
+                "text": "[Place your badge on the counter without a word.]",
+                "next_node": "badge_branch",
+                "tag": "Presence"
+            },
+            {
+                "text": "\"Good book?\" [Leak charm]",
+                "next_node": "charm_branch",
+                "tag": "Manipulation"
+            }
+        ]
+    },
+    "investigation_branch": {
+        "speaker": "Maude",
+        "text": "She turns a page. 'We don't have any crime here, Detective. Just weather.'",
+        "choices": [
+            {
+                "text": "\"Someone died, Maude. That's not weather.\"",
+                "next_node": "death_branch"
+            },
+            {
+                "text": "\"I'll need the guest registry.\"",
+                "next_node": "registry_branch"
+            }
+        ]
+    },
+    "badge_branch": {
+        "speaker": "Maude",
+        "text": "She glances at the metal. Then at you. She closes the book. 'Room 203 key is on the hook. Previous guest checked out early. In a box.'",
+        "choices": [
+            {
+                "text": "\"Suicide?\"",
+                "next_node": "suicide_branch"
+            },
+            {
+                "text": "Take the key.",
+                "next_node": "end_dialogue"
+            }
+        ]
+    },
+    "charm_branch": {
+        "speaker": "Maude",
+        "text": "She stares at you. Dead eyed. 'It's a romance. I like the parts where they lie to each other.'",
+        "choices": [
+            {
+                "text": "\"I'm good at lying too.\"",
+                "next_node": "badge_branch"
+            }
+        ]
+    },
+    "death_branch": {
+        "speaker": "Maude",
+        "text": "'People die everywhere. It's the one thing everyone is good at.'",
+        "choices": [
+            {
+                "text": "End Conversation",
+                "next_node": "end_dialogue"
+            }
+        ]
+    },
+    "registry_branch": {
+        "speaker": "Maude",
+        "text": "'Computer's down. Solar flares, they say.' She taps the blank monitor. 'You want 203. It's the only one prepared.'",
+        "choices": [
+            {
+                "text": "Take the key.",
+                "next_node": "end_dialogue"
+            }
+        ]
+    },
+    "suicide_branch": {
+        "speaker": "Maude",
+        "text": "'Accident. Fell off the pier. Heavy waves.' She doesn't believe it either. You can hear it in the pause.",
+        "choices": [
+            {
+                "text": "Take the key.",
+                "next_node": "end_dialogue"
+            }
+        ]
+    },
+    "end_dialogue": {
+        "speaker": "Maude",
+        "text": "'Don't smoke in the room.'",
+        "choices": []
+    }
+}

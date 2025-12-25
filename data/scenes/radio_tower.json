@@ -1,0 +1,70 @@
+{
+    "id": "radio_tower",
+    "title": "The Silent Sentinel",
+    "location_id": "radio_tower",
+    "time_cost": 15,
+    "text": {
+        "base": "The path ends at a rusty chain-link fence. Beyond it, the tower juts out of the snow like a skeletal finger pointing at an indifferent sky. The flakes here aren't falling; they're hovering, suspended in a weak gravitational field. The wind creates a low, discordant drone—not a whistle, but a choir. A thousand voices trying to whisper the same word at once.",
+        "lens": {
+            "believer": "It's not transmitting. The array is pointed *down*, into the earth. It's a localized containment field. And it's failing.",
+            "skeptic": "Atmospheric pressure anomaly detected. 1040 millibars and rising. That drone is aeroelastic flutter, but the frequency is interfering with your inner ear. You feel nauseous.",
+            "haunted": "It looks like the tower near the old creek, where you used to hide. The sound of the shed door banging... it sounds exactly like a gavel. Or a coffin lid, closing over and over."
+        },
+        "inserts": [
+            {
+                "condition": {
+                    "skill_gte": {
+                        "Perception": 6
+                    }
+                },
+                "text": "A red light at the very top of the tower blinks in an erratic pattern. It's Morse code, but the spacing is wrong. It's sobbing.",
+                "insert_at": "AFTER_BASE"
+            }
+        ]
+    },
+    "connected_scenes": [
+        "woods_north_path"
+    ],
+    "objects": {
+        "shed_door": {
+            "description": "Metal, rusted through. BANG. Squeak. BANG. It moves with a hypnotic rhythm.",
+            "interactions": {
+                "close": "You try to force the door shut, but the hinge is twisted. It fights you, like a broken limb refusing to set."
+            }
+        },
+        "tower_base": {
+            "description": "Cold iron coated in ice. Suppose you could try to climb it, if you had a death wish."
+        }
+    },
+    "conditions": {
+        "weather": [
+            "clear",
+            "snowing",
+            "storm"
+        ]
+    },
+    "choices": [
+        {
+            "label": "Enter the maintenance shed",
+            "next_scene": "radio_tower_shed",
+            "check": {
+                "skill": "Perception",
+                "dc": 10
+            },
+            "on_fail_text": "You step inside, but the wind slams the door shut behind you for a moment. Panic flares before you kick it open."
+        },
+        {
+            "label": "[Athletics (Hard)] Climb the tower ladder",
+            "next_scene": "radio_tower_climb",
+            "check": {
+                "skill": "Athletics",
+                "dc": 12
+            },
+            "on_fail_scene": "radio_tower_fall"
+        },
+        {
+            "label": "Return to the woods",
+            "next_scene": "woods_north_path"
+        }
+    ]
+}
