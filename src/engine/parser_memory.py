@@ -7,7 +7,7 @@ for dynamic scene branching based on player exploration and dialogue.
 
 import re
 from collections import deque
-from typing import List, Set, Optional
+from typing import List, Set, Optional, Dict, Any
 
 
 class ParserMemory:
@@ -64,13 +64,13 @@ class ParserMemory:
     
     def has_pattern(self, regex_pattern: str) -> bool:
         """
-        Check if any command matches a regex pattern.
+        Check if Any command matches a regex pattern.
         
         Args:
             regex_pattern: Regular expression pattern
             
         Returns:
-            True if any command matches the pattern
+            True if Any command matches the pattern
         """
         # Check cache
         if regex_pattern in self.pattern_cache:
@@ -103,13 +103,13 @@ class ParserMemory:
     
     def has_mentioned_any(self, keywords: List[str]) -> bool:
         """
-        Check if any keyword has been mentioned.
+        Check if Any keyword has been mentioned.
         
         Args:
             keywords: List of keywords
             
         Returns:
-            True if any keyword mentioned
+            True if Any keyword mentioned
         """
         return any(self.has_mentioned(kw) for kw in keywords)
     
@@ -155,7 +155,7 @@ class ParserMemory:
         """
         return concept_id in self.discovered_concepts
     
-    def check_trigger_phrases(self, triggers: List[Dict[str, any]]) -> List[Dict[str, any]]:
+    def check_trigger_phrases(self, triggers: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Check which trigger phrases have been activated.
         
@@ -174,12 +174,12 @@ class ParserMemory:
                 if isinstance(keywords, str):
                     keywords = [keywords]
                 
-                mode = trigger.get("mode", "all")  # 'all' or 'any'
+                mode = trigger.get("mode", "all")  # 'all' or 'Any'
                 
                 if mode == "all":
                     if self.has_mentioned_all(keywords):
                         activated.append(trigger)
-                else:  # any
+                else:  # Any
                     if self.has_mentioned_any(keywords):
                         activated.append(trigger)
             
