@@ -4,11 +4,12 @@ import random
 from typing import Dict, List, Optional, Any, Tuple
 
 class DialogueManager:
-    def __init__(self, skill_system, board, player_state, npc_system=None):
+    def __init__(self, skill_system, board, player_state, npc_system=None, case_system=None):
         self.skill_system = skill_system
         self.board = board
         self.player_state = player_state
         self.npc_system = npc_system  # Week 12: For relationship gates
+        self.case_system = case_system # Week 28: Evidence integration
         
         self.current_dialogue_id = None
         self.current_npc_id = None  # Track which NPC we're talking to
@@ -154,9 +155,27 @@ class DialogueManager:
             active_theories = [t for t in self.board.theories.values() if t.status == "active"]
             for theory in active_theories:
                 # Check if theory is relevant to this dialogue
+                # Simplest check: does the node content relate?
+                # Or just random chance for active theories to chime in?
+                # Using skill system's theory commentary logic might be better but here we just check ID
                 if self.current_dialogue_id and theory.id in self.current_dialogue_id:
-                    interjections.append(f"[{theory.name.upper()}] This conversation relates to your theory...")
-                
+                     interjections.append(f"[{theory.name.upper()}] This conversation relates to your theory...")
+
+        # Week 28: Theory Confirmation/Contradiction Overlay
+        if "theory_relevance" in node:
+             relevance = node["theory_relevance"]
+             theory_id = relevance.get("theory_id")
+             impact = relevance.get("impact") # confirm/contradict
+
+             if theory_id and self.board.is_theory_active(theory_id):
+                 skill_check = relevance.get("skill_check", "Logic")
+                 res = self.skill_system.roll_check(skill_check, 10)
+                 if res["success"]:
+                     if impact == "confirm":
+                         interjections.append(f"[{skill_check.upper()}] THEORY CONFIRMED: This aligns perfectly with '{theory_id}'.")
+                     elif impact == "contradict":
+                         interjections.append(f"[{skill_check.upper()}] CONTRADICTION: This conflicts with '{theory_id}'.")
+
         return interjections
 
     def resolve_automatic_check(self, check_data: dict):
@@ -315,6 +334,25 @@ class DialogueManager:
             tid = effects["theory_unlock"]
             self.board.discover_theory(tid)
             print(f" [Theory Discovered: {tid}]")
+
+        if "add_evidence" in effects:
+            # Requires game context or callback to add evidence
+            ev_id = effects["add_evidence"]
+            if self.case_system:
+                if self.case_system.discover_evidence(ev_id):
+                    ev = self.case_system.get_evidence(ev_id)
+                    name = ev.name if ev else ev_id
+                    print(f" [EVIDENCE DISCOVERED: {name}]")
+
+        if "theory_evidence" in effects:
+            # e.g., {"theory_id": "killer_is_jim", "evidence_id": "jim_confession"}
+            data = effects["theory_evidence"]
+            if self.board and "theory_id" in data and "evidence_id" in data:
+                result = self.board.add_evidence_to_theory(data["theory_id"], data["evidence_id"])
+                if result.get("success"):
+                     print(f" [THEORY UPDATE: {result.get('message')}]")
+                else:
+                     print(f" [THEORY ERROR: {result.get('message')}]")
 
     def process_input(self, raw_input: str) -> Tuple[bool, str]:
         """
