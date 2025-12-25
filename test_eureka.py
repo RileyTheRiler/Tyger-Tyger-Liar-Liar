@@ -4,10 +4,10 @@ Test script for Corkboard Eureka patterns.
 
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from board import Board
-from inventory_system import InventoryManager, Evidence
+from src.inventory_system import InventoryManager, Evidence
 from corkboard_minigame import CorkboardMinigame
 
 def test_eureka():
