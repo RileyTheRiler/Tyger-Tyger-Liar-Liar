@@ -56,6 +56,7 @@ from engine.psychological_system import PsychologicalState
 from engine.fear_system import FearManager
 from engine.unreliable_narrator import HallucinationEngine
 from npc_system import NPCSystem
+from fracture_system import FractureSystem
 
 
 class Game:
@@ -72,7 +73,7 @@ class Game:
         self.player_state = {
             "sanity": 100.0,
             "reality": 100.0,
-            "archetype": Archetype.NEUTRAL,
+            "archetype": Archetype.NEUTRAL.value,
             "resonance_count": 347,
             "thermal_mode": False,
             "inventory": [],
@@ -208,7 +209,9 @@ class Game:
         hallucinations_path = resource_path(os.path.join('data', 'hallucinations'))
         self.hallucination_engine.load_hallucination_templates(hallucinations_path)
         
-        self.active_argument = None # Phase 4 internal debates
+        # Initialize Fracture System
+        self.fracture_system = FractureSystem(self.get_game_state())
+
         self.active_argument = None # Phase 4 internal debates
         self.current_autopsy = None # Phase 5 autopsies
         
@@ -1106,6 +1109,39 @@ class Game:
             self.print(f"Day: {date_data['day_name']}")
             return "refresh"
         
+        # Save/Load/Export Commands
+        if clean == 'save':
+            self.handle_save_menu()
+            return "refresh"
+
+        if clean == 'load':
+            self.handle_load_menu()
+            return "refresh"
+
+        if clean == 'export':
+            self.handle_export_menu()
+            return "refresh"
+
+        if clean.startswith('save '):
+            slot_id = clean.replace('save ', '').strip()
+            self.save_game(slot_id)
+            return "refresh"
+
+        if clean.startswith('load '):
+            slot_id = clean.replace('load ', '').strip()
+            self.load_game(slot_id)
+            return "refresh"
+
+        if clean.startswith('export '):
+            target = clean.replace('export ', '').strip()
+            if target == 'dossier':
+                self.export_dossier()
+            elif target == 'log':
+                self.export_log()
+            else:
+                self.print("Usage: export [dossier|log]")
+            return "refresh"
+
         # Wait Command
         if clean.startswith('wait'): # Changed from input() to args
             parts = clean.split()
@@ -1142,14 +1178,14 @@ class Game:
                 return "refresh"
             
             # Debug: Export Save
-            if clean.startswith('export'):
+            if clean.startswith('debugexport'):
                 parts = clean.split()
                 if len(parts) >= 3:
                     slot = parts[1]
                     path = parts[2]
                     self.save_system.export_save(slot, path)
                 else:
-                    self.print("Usage: export <slot_id> <output_path>")
+                    self.print("Usage: debugexport <slot_id> <output_path>")
                 return "refresh"
             
             # Debug: Set Sanity/Reality
@@ -1631,6 +1667,139 @@ class Game:
                     self.player_state["thoughts"].append(value)
                     print(f"[THOUGHT UNLOCKED: {value}]")
     
+    def handle_save_menu(self):
+        """Interactive save menu."""
+        self.print("\n=== SAVE GAME ===")
+        saves = self.save_system.list_saves()
+
+        # Display existing slots
+        if saves:
+             print_numbered_list("Existing Saves", [f"{s['slot_id']} ({s['datetime']}) - {s['summary']}" for s in saves])
+
+        self.print("\n(Use command: 'save <slot_name>')")
+
+    def handle_load_menu(self):
+        """Interactive load menu."""
+        self.print("\n=== LOAD GAME ===")
+        saves = self.save_system.list_saves()
+
+        if not saves:
+            self.print("No save files found.")
+            return
+
+        print_numbered_list("Available Saves", [f"{s['slot_id']} ({s['datetime']}) - {s['summary']}" for s in saves])
+        self.print("\n(Use command: 'load <slot_name>')")
+
+    def handle_export_menu(self):
+        """Interactive export menu."""
+        self.print("\n=== EXPORT DATA ===")
+        self.print("1. Export Dossier (HTML)")
+        self.print("2. Export Event Log (Text)")
+        self.print("\n(Use command: 'export dossier' or 'export log')")
+
+    def export_dossier(self):
+        """Generates an HTML dossier of the current investigation."""
+        timestamp = self.time_system.current_time.strftime("%Y-%m-%d_%H%M")
+        filename = f"dossier_{timestamp}.html"
+
+        # Gather Data
+        player = self.player_state
+        board = self.board
+
+        html_content = f"""
+        <html>
+        <head>
+            <title>Investigative Dossier - {timestamp}</title>
+            <style>
+                body {{ font-family: 'Courier New', monospace; background: #f4f4f4; color: #333; padding: 20px; }}
+                h1 {{ border-bottom: 2px solid #333; }}
+                .section {{ background: white; border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; }}
+                .warning {{ color: red; font-weight: bold; }}
+                .confidential {{ color: #888; font-size: 0.8em; }}
+            </style>
+        </head>
+        <body>
+            <h1>INVESTIGATIVE DOSSIER</h1>
+            <p class="confidential">CONFIDENTIAL // EYES ONLY // {timestamp}</p>
+
+            <div class="section">
+                <h2>INVESTIGATOR STATUS</h2>
+                <p><strong>Sanity:</strong> {player.get('sanity', 0):.1f}%</p>
+                <p><strong>Reality Stability:</strong> {player.get('reality', 0):.1f}%</p>
+                <p><strong>Archetype:</strong> {player.get('archetype', 'Unknown')}</p>
+                <p><strong>Attention Level:</strong> {self.attention_system.attention_level}%</p>
+            </div>
+
+            <div class="section">
+                <h2>BOARD STATUS</h2>
+                <p><strong>Active Theories:</strong> {len([t for t in board.theories.values() if t.status == 'active'])}</p>
+                <ul>
+        """
+
+        for t in board.theories.values():
+            if t.status in ['active', 'internalizing', 'proven']:
+                html_content += f"<li><strong>{t.name}</strong> ({t.status.upper()}): {t.description}</li>"
+
+        html_content += """
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>INVENTORY</h2>
+                <ul>
+        """
+
+        for item in self.inventory_system.carried_items:
+            html_content += f"<li>{item.name}</li>"
+
+        html_content += """
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>RECENT HISTORY</h2>
+                <pre>
+        """
+
+        logs = self.event_log.get_logs(limit=20)
+        for log in logs:
+            html_content += f"{log['timestamp']} - {log['type']}: {str(log)}\n"
+
+        html_content += """
+                </pre>
+            </div>
+        </body>
+        </html>
+        """
+
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(html_content)
+            self.print(f"\n[DOSSIER EXPORTED: {filename}]")
+        except Exception as e:
+            self.print(f"\n[ERROR EXPORTING DOSSIER: {e}]")
+
+    def export_log(self):
+        """Exports the event log to a text file."""
+        timestamp = self.time_system.current_time.strftime("%Y-%m-%d_%H%M")
+        filename = f"log_{timestamp}.txt"
+
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(f"EVENT LOG EXPORT - {timestamp}\n")
+                f.write("="*40 + "\n\n")
+
+                for log in self.event_log.get_logs():
+                    f.write(f"[{log['timestamp']}] {log['type'].upper()}\n")
+                    for k, v in log.items():
+                        if k not in ['timestamp', 'type']:
+                            f.write(f"  {k}: {v}\n")
+                    f.write("-" * 20 + "\n")
+
+            self.print(f"\n[LOG EXPORTED: {filename}]")
+        except Exception as e:
+            self.print(f"\n[ERROR EXPORTING LOG: {e}]")
+
     def save_game(self, slot_id: str, auto=False):
         """Save the current game state."""
         try:
@@ -1650,6 +1819,15 @@ class Game:
                 "scene_state": {
                     "current_scene_id": self.scene_manager.current_scene_id,
                     "visited_scenes": list(self.scene_manager.visited_scenes) if hasattr(self.scene_manager, 'visited_scenes') else []
+                },
+                "additional_systems": {
+                    "npc_system": self.npc_system.to_dict(),
+                    "integration_system": self.integration_system.to_dict(),
+                    "population_system": self.population_system.to_dict(),
+                    "attention_system": self.attention_system.to_dict(),
+                    "memory_system": self.memory_system.export_state(),
+                    "fracture_system": self.fracture_system.to_dict(),
+                    "psychological_system": self.psych_state.to_dict()
                 }
             }
             
@@ -1707,6 +1885,24 @@ class Game:
             # Restore scene
             if "scene" in save_data:
                 self.scene_manager.load_scene(save_data["scene"])
+
+            # Restore additional systems
+            if "additional_systems" in save_data:
+                systems = save_data["additional_systems"]
+                if "npc_system" in systems:
+                    self.npc_system.restore_states(systems["npc_system"])
+                if "integration_system" in systems:
+                    self.integration_system = IntegrationSystem.from_dict(systems["integration_system"])
+                if "population_system" in systems:
+                    self.population_system.restore_state(systems["population_system"])
+                if "attention_system" in systems:
+                    self.attention_system = AttentionSystem.from_dict(systems["attention_system"])
+                if "memory_system" in systems:
+                    self.memory_system.load_state(systems["memory_system"])
+                if "fracture_system" in systems:
+                    self.fracture_system.restore_state(systems["fracture_system"])
+                if "psychological_system" in systems:
+                    self.psych_state.restore_state(systems["psychological_system"])
             
             print(f"\n✓ Game loaded successfully from '{slot_id}'")
             print(f"   Location: {save_data.get('scene', 'Unknown')}")

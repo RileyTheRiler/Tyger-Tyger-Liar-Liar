@@ -445,3 +445,41 @@ class Board:
                     unlocks["check_bonuses"][skill] = unlocks["check_bonuses"].get(skill, 0) + bonus
         
         return unlocks
+
+    def to_dict(self) -> dict:
+        """Serialize board state for saving."""
+        theories_data = {}
+        for t_id, theory in self.theories.items():
+            theories_data[t_id] = {
+                "status": theory.status,
+                "internalization_progress_minutes": theory.internalization_progress_minutes,
+                "health": theory.health,
+                "proven": theory.proven,
+                "evidence_count": theory.evidence_count,
+                "contradictions": theory.contradictions,
+                "linked_evidence": theory.linked_evidence
+            }
+
+        return {
+            "theories": theories_data,
+            "active_count": self.get_active_or_internalizing_count()
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'Board':
+        """Deserialize from save data."""
+        board = cls()
+
+        theories_data = data.get("theories", {})
+        for t_id, state in theories_data.items():
+            theory = board.get_theory(t_id)
+            if theory:
+                theory.status = state.get("status", "available")
+                theory.internalization_progress_minutes = state.get("internalization_progress_minutes", 0)
+                theory.health = state.get("health", 100.0)
+                theory.proven = state.get("proven")
+                theory.evidence_count = state.get("evidence_count", 0)
+                theory.contradictions = state.get("contradictions", 0)
+                theory.linked_evidence = state.get("linked_evidence", [])
+
+        return board
