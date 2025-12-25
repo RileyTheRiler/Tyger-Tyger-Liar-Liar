@@ -5,7 +5,7 @@ import random
 from typing import Optional
 
 class SceneManager:
-    def __init__(self, time_system, board, skill_system, player_state, flashback_manager):
+    def __init__(self, time_system, board, skill_system, player_state, flashback_manager, clue_system=None):
         self.scenes = {}
         self.current_scene_data = None
         self.current_scene_id = None
@@ -14,6 +14,7 @@ class SceneManager:
         self.skill_system = skill_system
         self.player_state = player_state
         self.flashback_manager = flashback_manager
+        self.clue_system = clue_system
 
     def load_scenes_from_directory(self, directory: str, root_scenes: Optional[str] = None):
         # Fallback to finding existing scenes.json in root if directory doesn't look populated
@@ -119,6 +120,20 @@ class SceneManager:
             for tid in reqs:
                 theory = self.board.get_theory(tid)
                 if not theory or theory.status != "active":
+                    return False
+
+        # Clue Interpretation Check
+        if "clue_interpretation" in conditions:
+            # Format: {"clue_id": "foo", "lens": "believer"}
+            req = conditions["clue_interpretation"]
+            clue_id = req.get("clue_id")
+            required_lens = req.get("lens")
+
+            if self.clue_system and clue_id:
+                state = self.clue_system.get_acquired_clue(clue_id)
+                if not state:
+                    return False
+                if required_lens and state.current_lens != required_lens:
                     return False
 
         return True
