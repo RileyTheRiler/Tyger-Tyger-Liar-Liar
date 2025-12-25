@@ -1048,6 +1048,10 @@ class Game:
             self.journal.display_journal() # Prints directly
             return "refresh"
         
+        if clean in ['review', 'reassess']:
+            self.reassess_journal()
+            return "refresh"
+
         # Taboo Actions (Attention System)
         taboo_map = {
             'whistle': 'whistle_at_aurora',
@@ -2134,24 +2138,15 @@ class Game:
                  tags=["theory", "disproven"]
              )
 
-    def auto_journal_entry(self, title, description, event_type="general", tags=None):
-        """Auto-generate a journal entry based on an event."""
-        # Idempotency check: Don't add duplicate entries for the same event
-        # We assume title + description acts as a unique signature for this event instance
-        # In a more complex system, we'd pass a unique event_id
-        for entry in self.journal.entries:
-            if entry.title == title and entry.what_happened == description:
-                return
-
-        # Determine "Meaning" and "Confidence" based on stats
+    def _evaluate_journal_entry(self, event_type):
+        """Calculate Meaning and Confidence based on current skills."""
         meaning = "I need to investigate further."
         confidence = "Low"
 
-        # Safe access to skills (default to 0 if system not ready or skill missing)
+        # Safe access to skills
         logic = 0
         pattern_recognition = 0
         if self.skill_system:
-            # Use get_skill_total which accounts for modifiers
             logic = self.skill_system.get_skill_total("Logic")
             pattern_recognition = self.skill_system.get_skill_total("Pattern Recognition")
 
@@ -2169,7 +2164,39 @@ class Game:
             if logic > 6:
                 confidence = "High"
 
+        return meaning, confidence
+
+    def auto_journal_entry(self, title, description, event_type="general", tags=None):
+        """Auto-generate a journal entry based on an event."""
+        # Idempotency check
+        for entry in self.journal.entries:
+            if entry.title == title and entry.what_happened == description:
+                return
+
+        meaning, confidence = self._evaluate_journal_entry(event_type)
         self.journal.add_entry(title, description, meaning, confidence, tags)
+
+    def reassess_journal(self):
+        """Update existing journal entries based on current skills."""
+        count = 0
+        for entry in self.journal.entries:
+            # Determine event type from tags
+            event_type = "general"
+            if "evidence" in entry.tags:
+                event_type = "evidence"
+            elif "theory" in entry.tags:
+                event_type = "theory"
+
+            new_meaning, new_confidence = self._evaluate_journal_entry(event_type)
+
+            if new_meaning != entry.meaning or new_confidence != entry.confidence:
+                self.journal.update_entry(entry.id, meaning=new_meaning, confidence=new_confidence)
+                count += 1
+
+        if count > 0:
+            self.print(f"\n[You review your notes. {count} entries appear in a new light.]")
+        else:
+            self.print("\n[You review your notes, but your perspective remains unchanged.]")
 
     def process_choice(self, choice):
         # Handle Skill Checks
