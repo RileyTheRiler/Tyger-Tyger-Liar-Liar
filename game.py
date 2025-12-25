@@ -734,7 +734,187 @@ class Game:
             if clean == 'debug':
                 self.debug_mode = not self.debug_mode
                 print(f"[DEBUG MODE: {'ON' if self.debug_mode else 'OFF'}]")
+                if self.debug_mode:
+                    print("  Debug commands: dbhelp, dbskill, dbclue, dbtrust, dbcond, dbgoto,")
+                    print("                  dbsanity, dbreality, dbattention, dbfracture, dbpop, dblens")
                 return "refresh"
+
+            # === DEBUG/PLAYTEST COMMANDS (require debug mode) ===
+            if self.debug_mode:
+                # Debug Help
+                if clean == 'dbhelp':
+                    print("\n=== DEBUG COMMANDS ===")
+                    print("  dbskill <skill> <value>   - Set skill level")
+                    print("  dbclue <clue_id>          - Acquire a clue")
+                    print("  dbtrust <npc_id> <value>  - Set NPC trust")
+                    print("  dbcond add <condition_id> - Add a condition")
+                    print("  dbcond remove <cond_id>   - Remove a condition")
+                    print("  dbgoto <scene_id>         - Teleport to scene")
+                    print("  dbsanity <value>          - Set sanity (0-100)")
+                    print("  dbreality <value>         - Set reality (0-100)")
+                    print("  dbattention <value>       - Set attention level")
+                    print("  dbfracture                - Trigger a fracture effect")
+                    print("  dbpop <value>             - Set population")
+                    print("  dblens <lens>             - Force lens (believer/skeptic/haunted)")
+                    print("  dbtheory <theory_id>      - Unlock and internalize theory")
+                    print("  dbstatus                  - Show all system states")
+                    return "refresh"
+
+                # Set Skill Level
+                if clean.startswith('dbskill '):
+                    parts = raw.split()[1:]
+                    if len(parts) >= 2:
+                        skill_name = ' '.join(parts[:-1])
+                        try:
+                            value = int(parts[-1])
+                            if skill_name in self.skill_system.skills:
+                                self.skill_system.skills[skill_name].base_level = value
+                                print(f"[DEBUG] {skill_name} set to {value}")
+                            else:
+                                print(f"[DEBUG] Skill not found: {skill_name}")
+                        except ValueError:
+                            print("Usage: dbskill <skill_name> <value>")
+                    return "refresh"
+
+                # Acquire Clue
+                if clean.startswith('dbclue '):
+                    clue_id = raw.split(maxsplit=1)[1].strip()
+                    clue = self.clue_system.acquire_clue(clue_id)
+                    if clue:
+                        print(f"[DEBUG] Acquired clue: {clue.title}")
+                    else:
+                        print(f"[DEBUG] Clue not found: {clue_id}")
+                    return "refresh"
+
+                # Set NPC Trust
+                if clean.startswith('dbtrust '):
+                    parts = raw.split()[1:]
+                    if len(parts) >= 2:
+                        npc_id = parts[0]
+                        try:
+                            value = int(parts[1])
+                            if npc_id in self.npc_system.npcs:
+                                self.npc_system.npcs[npc_id].trust = max(0, min(100, value))
+                                print(f"[DEBUG] {npc_id} trust set to {value}")
+                            else:
+                                print(f"[DEBUG] NPC not found: {npc_id}")
+                        except ValueError:
+                            print("Usage: dbtrust <npc_id> <value>")
+                    return "refresh"
+
+                # Add/Remove Condition
+                if clean.startswith('dbcond '):
+                    parts = raw.split()[1:]
+                    if len(parts) >= 2:
+                        action = parts[0]
+                        cond_id = parts[1]
+                        if action == 'add':
+                            self.condition_system.add_condition(cond_id)
+                            print(f"[DEBUG] Added condition: {cond_id}")
+                        elif action == 'remove':
+                            self.condition_system.remove_condition(cond_id)
+                            print(f"[DEBUG] Removed condition: {cond_id}")
+                    else:
+                        print("Usage: dbcond add/remove <condition_id>")
+                    return "refresh"
+
+                # Teleport to Scene
+                if clean.startswith('dbgoto '):
+                    scene_id = raw.split(maxsplit=1)[1].strip()
+                    if self.scene_manager.load_scene(scene_id):
+                        print(f"[DEBUG] Teleported to: {scene_id}")
+                        return "refresh"
+                    else:
+                        print(f"[DEBUG] Scene not found: {scene_id}")
+                    return "refresh"
+
+                # Set Sanity
+                if clean.startswith('dbsanity '):
+                    try:
+                        value = int(raw.split()[1])
+                        self.player_state["sanity"] = max(0, min(100, value))
+                        print(f"[DEBUG] Sanity set to {self.player_state['sanity']}")
+                    except (ValueError, IndexError):
+                        print("Usage: dbsanity <value>")
+                    return "refresh"
+
+                # Set Reality
+                if clean.startswith('dbreality '):
+                    try:
+                        value = int(raw.split()[1])
+                        self.player_state["reality"] = max(0, min(100, value))
+                        print(f"[DEBUG] Reality set to {self.player_state['reality']}")
+                    except (ValueError, IndexError):
+                        print("Usage: dbreality <value>")
+                    return "refresh"
+
+                # Set Attention
+                if clean.startswith('dbattention '):
+                    try:
+                        value = int(raw.split()[1])
+                        self.attention_system.attention_level = max(0, min(100, value))
+                        print(f"[DEBUG] Attention set to {self.attention_system.attention_level}")
+                    except (ValueError, IndexError):
+                        print("Usage: dbattention <value>")
+                    return "refresh"
+
+                # Trigger Fracture
+                if clean == 'dbfracture':
+                    self.fracture_system.fracture_level += 20
+                    effect = self.fracture_system.get_random_fracture_effect()
+                    if effect:
+                        print(f"[DEBUG] Fracture triggered: {effect}")
+                    else:
+                        print("[DEBUG] Fracture level increased")
+                    return "refresh"
+
+                # Set Population
+                if clean.startswith('dbpop '):
+                    try:
+                        value = int(raw.split()[1])
+                        self.population_system.population = max(0, min(347, value))
+                        print(f"[DEBUG] Population set to {self.population_system.population}")
+                    except (ValueError, IndexError):
+                        print("Usage: dbpop <value>")
+                    return "refresh"
+
+                # Force Lens
+                if clean.startswith('dblens '):
+                    lens = raw.split()[1].lower()
+                    if lens in ['believer', 'skeptic', 'haunted', 'neutral']:
+                        self.lens_system.current_lens = lens
+                        if lens != 'neutral':
+                            self.player_archetype = Archetype(lens.upper())
+                        print(f"[DEBUG] Lens forced to: {lens}")
+                    else:
+                        print("Usage: dblens believer|skeptic|haunted|neutral")
+                    return "refresh"
+
+                # Unlock and Internalize Theory
+                if clean.startswith('dbtheory '):
+                    theory_id = raw.split()[1]
+                    theory = self.board.get_theory(theory_id)
+                    if theory:
+                        theory.status = "active"
+                        print(f"[DEBUG] Theory '{theory.name}' activated")
+                    else:
+                        print(f"[DEBUG] Theory not found: {theory_id}")
+                    return "refresh"
+
+                # Status Overview
+                if clean == 'dbstatus':
+                    print("\n=== DEBUG STATUS ===")
+                    print(f"Sanity: {self.player_state['sanity']}")
+                    print(f"Reality: {self.player_state['reality']}")
+                    print(f"Attention: {self.attention_system.attention_level}")
+                    print(f"Lens: {self.lens_system.calculate_lens()}")
+                    print(f"Population: {self.population_system.population}/347")
+                    print(f"Fracture Level: {self.fracture_system.fracture_level}")
+                    print(f"Active Conditions: {len(self.condition_system.active_conditions)}")
+                    print(f"Acquired Clues: {len(self.clue_system.acquired_clues)}")
+                    active_theories = [t.name for t in self.board.theories.values() if t.status == 'active']
+                    print(f"Active Theories: {active_theories}")
+                    return "refresh"
 
             # Theory Resolution Commands
             if clean.startswith('prove '):
