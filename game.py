@@ -159,6 +159,21 @@ class Game:
 
         self.scene_manager.load_scenes_from_directory(scenes_dir, root_scenes)
 
+        # Load global configuration
+        config_path = resource_path('game.config.json')
+        if os.path.exists(config_path):
+            import json
+            try:
+                with open(config_path, 'r') as f:
+                    self.config = json.load(f)
+                    # Apply config
+                    if self.config.get("debug", {}).get("god_mode"):
+                        self.debug_mode = True
+            except:
+                self.config = {}
+        else:
+            self.config = {}
+
     def on_time_passed(self, minutes: int):
         msgs = self.board.on_time_passed(minutes)
         if msgs:
@@ -319,6 +334,8 @@ class Game:
 
             if self.in_dialogue:
                 self.run_dialogue_loop()
+            elif self.input_mode == InputMode.ENCOUNTER:
+                self.run_encounter_loop()
             else:
                 self.display_scene()
                 
@@ -363,7 +380,13 @@ class Game:
                              self.log_event("scene_entry", scene_id=next_id, scene_name=new_scene.get("name", "Unknown"))
 
     def display_status_line(self):
-        mode_str = "DIALOGUE" if self.input_mode == InputMode.DIALOGUE else "INVESTIGATION"
+        if self.input_mode == InputMode.DIALOGUE:
+            mode_str = "DIALOGUE"
+        elif self.input_mode == InputMode.ENCOUNTER:
+            mode_str = "ENCOUNTER"
+        else:
+            mode_str = "INVESTIGATION"
+
         debug_str = " [DEBUG]" if self.debug_mode else ""
         print_separator("-", 64)
         print(f"[{mode_str} MODE{debug_str}] - (b)oard, (c)haracter, (i)nventory, (e)vidence")
@@ -444,10 +467,7 @@ class Game:
         
         # Check for Encounter Trigger
         if "encounter_id" in scene and scene["encounter_id"]:
-             # For now, just print notification, as we don't have encounter data loaded
-             # Ideally we would load encounter definition and start it
-             print(f"\n[!] WARNING: ENCOUNTER TRIGGERED ({scene['encounter_id']}) [!]\n")
-             # Future: self.run_encounter(scene["encounter_id"])
+             self.start_encounter(scene["encounter_id"])
 
         # New Text Composition
         state = self._get_composer_state()
@@ -1068,7 +1088,7 @@ class Game:
             # Restore new systems
             if "new_systems" in save_data:
                 ns = save_data["new_systems"]
-                if "npc_system" in ns: self.npc_system.restore_state(ns["npc_system"])
+                if "npc_system" in ns: self.npc_system.restore_states(ns["npc_system"])
                 if "condition_system" in ns: self.condition_system.restore_state(ns["condition_system"])
                 if "population_system" in ns: self.population_system.restore_state(ns["population_system"])
                 if "clue_system" in ns: self.clue_system.restore_state(ns["clue_system"])
@@ -1237,6 +1257,78 @@ class Game:
             self.in_dialogue = True
         else:
             print("Failed to start dialogue.")
+
+    def start_encounter(self, encounter_id):
+        # Load encounter definition
+        # Since we don't have a global loader for encounters yet, I'll hack load it here or check a global dict
+        # Assuming we need to load from 'data/encounters/vertical_slice_encounters.json'
+
+        # NOTE: Ideally this loading should happen in __init__ or a ResourceManager
+        enc_path = resource_path(os.path.join('data', 'encounters', 'vertical_slice_encounters.json'))
+        encounter_def = None
+
+        if os.path.exists(enc_path):
+            import json
+            with open(enc_path, 'r') as f:
+                data = json.load(f)
+                # Find the specific encounter
+                for enc in data:
+                    if enc['id'] == encounter_id:
+                        encounter_def = enc
+                        break
+
+        if not encounter_def:
+            print(f"[ERROR] Encounter '{encounter_id}' definition not found.")
+            return
+
+        self.encounter_runner.load_encounter(encounter_def)
+        self.input_mode = InputMode.ENCOUNTER
+
+    def run_encounter_loop(self):
+        state = self.encounter_runner.state
+        if not state:
+            self.input_mode = InputMode.INVESTIGATION
+            return
+
+        print_separator("!")
+        print(f"THREAT LEVEL: {state.threat_level} | TURN: {state.turn_count}")
+        print("ACTIONS: ATTACK, RUN, HIDE, TALK, USE, INVENTORY")
+
+        raw = input("E> ").strip()
+        if not raw:
+            return
+
+        # Parse command
+        verb, target = self.parser.normalize(raw)
+
+        if verb in ["INVENTORY", "INV"]:
+            self.inventory_system.list_inventory()
+            return
+
+        if verb == "HELP":
+            print("Available actions: ATTACK [target], RUN, HIDE, TALK, USE [item]")
+            return
+
+        if verb:
+            result = self.encounter_runner.process_turn(verb, target)
+
+            for msg in result["messages"]:
+                print(f" > {msg}")
+
+            if result["status"] == "ended":
+                print(f"\n*** ENCOUNTER ENDED: {result['result'].upper()} ***\n")
+                self.input_mode = InputMode.INVESTIGATION
+
+                # Handle outcomes
+                if result['result'] == "victory":
+                    self.skill_system.add_xp(50)
+                elif result['result'] == "escaped":
+                    self.skill_system.add_xp(10)
+                elif result['result'] == "collapse":
+                    # Force bad ending or heavy penalty?
+                    pass
+        else:
+            print("Invalid action.")
 
     def run_dialogue_loop(self):
         data = self.dialogue_manager.get_render_data()

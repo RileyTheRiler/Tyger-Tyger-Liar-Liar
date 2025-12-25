@@ -1,0 +1,57 @@
+[
+  {
+    "id": "enc_shadow_stalker",
+    "name": "The Shadow Stalker",
+    "description": "A figure made of absences. It stands where the light isn't. It is watching you.",
+    "initial_threat": 2,
+    "initiative_score": 12,
+    "environment_status": {
+      "light": "dim",
+      "noise": "quiet"
+    },
+    "turn_limit": 10,
+    "actions": {
+      "ATTACK": {
+        "skill": "Hand-to-Hand Combat",
+        "difficulty": 12,
+        "success_effect": {"threat_damage": 2, "message": "You strike the shadow. It recoils, briefly solid."},
+        "fail_effect": {"sanity_damage": 5, "message": "Your hand passes through it. The cold burns."}
+      },
+      "RUN": {
+        "skill": "Athletics",
+        "difficulty": 14,
+        "success_effect": {"escape": true, "message": "You scramble away, leaving the shadow behind."},
+        "fail_effect": {"stamina_damage": 2, "message": "You slip on the ice. It is closer now."}
+      },
+      "HIDE": {
+        "skill": "Stealth",
+        "difficulty": 10,
+        "success_effect": {"threat_reduction": 1, "message": "You merge with the darkness. It seems confused."},
+        "fail_effect": {"threat_increase": 1, "message": "You knock over a can. It turns towards you."}
+      },
+      "TALK": {
+        "skill": "Paranormal Sensitivity",
+        "difficulty": 15,
+        "success_effect": {"threat_reduction": 3, "message": "You speak the Old Tongue. It pauses, listening."},
+        "fail_effect": {"sanity_damage": 10, "message": "It screams in your mind. A thousand voices at once."}
+      }
+    },
+    "entity_moves": [
+      {
+        "threshold": 0,
+        "message": "The shadow watches.",
+        "effects": {"sanity": -1}
+      },
+      {
+        "threshold": 3,
+        "message": "The shadow extends a limb towards you.",
+        "effects": {"sanity": -5, "reality": -2}
+      },
+      {
+        "threshold": 5,
+        "message": "The shadow engulfs your vision.",
+        "effects": {"sanity": -10, "reality": -10}
+      }
+    ]
+  }
+]

@@ -4,6 +4,7 @@ import re
 class InputMode:
     DIALOGUE = "DIALOGUE"
     INVESTIGATION = "INVESTIGATION"
+    ENCOUNTER = "ENCOUNTER"
 
 class CommandParser:
     def __init__(self):
@@ -16,7 +17,10 @@ class CommandParser:
             "GO": ["go", "walk", "move", "run", "travel"],
             "SWITCH": ["switch"],
             "HELP": ["help", "?"],
-            "INVENTORY": ["inventory", "inv", "i", "items", "bag", "pockets"]
+            "INVENTORY": ["inventory", "inv", "i", "items", "bag", "pockets"],
+            "ATTACK": ["attack", "fight", "hit", "strike", "shoot", "punch"],
+            "RUN": ["run", "flee", "escape", "retreat"],
+            "HIDE": ["hide", "sneak", "crouch", "stealth"]
         }
         
         # Reverse mapping for faster lookup

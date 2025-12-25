@@ -81,45 +81,75 @@ class EncounterRunner:
         return response
 
     def _resolve_player_action(self, action: str, target: str) -> dict:
-        """Resolve the player's chosen action."""
-        # This would use the DiceSystem for resolution
-        # Simplified for now
+        """Resolve the player's chosen action using data definition."""
+        actions_def = self.active_encounter.get("actions", {})
 
-        # Valid actions: ATTACK, HIDE, RUN, TALK, USE
-        if action == "RUN":
-            roll = self.skill_system.roll_check("Athletics", 10 + self.state.threat_level)
-            if roll["success"]:
-                 return {"message": "You scramble away into the darkness.", "end_encounter": True, "outcome": "escaped"}
-            else:
-                 return {"message": "You try to run, but the path twists back on itself."}
+        if action not in actions_def:
+             # Fallback for undefined actions
+             return {"message": f"You try to {action}, but it seems ineffective here."}
 
-        if action == "HIDE":
-            roll = self.skill_system.roll_check("Stealth", 10 + self.state.threat_level)
-            if roll["success"]:
-                self.state.threat_level = max(0, self.state.threat_level - 1)
-                return {"message": "You stay low and quiet. The presence recedes slightly."}
-            else:
-                self.state.threat_level += 1
-                return {"message": "You knock over something in the dark. It hears you."}
+        act_def = actions_def[action]
+        skill = act_def.get("skill", "Composure")
+        base_dc = act_def.get("difficulty", 10)
 
-        return {"message": f"You try to {action}, but it has little effect."}
+        # Roll using DiceSystem indirectly via SkillSystem wrapper
+        # The DiceSystem is passed in but SkillSystem handles checks usually.
+        # But we want to use the unified DiceSystem ideally.
+        # Let's assume SkillSystem.roll_check uses DiceSystem internally or mimics it.
+        # Current SkillSystem.roll_check returns dict with 'success' and 'total'.
+
+        result = self.skill_system.roll_check(skill, base_dc)
+
+        if result["success"]:
+            eff = act_def.get("success_effect", {})
+            msg = eff.get("message", "Success.")
+
+            # Apply effects
+            if "threat_damage" in eff:
+                self.state.threat_level = max(0, self.state.threat_level - eff["threat_damage"])
+            if "threat_reduction" in eff:
+                 self.state.threat_level = max(0, self.state.threat_level - eff["threat_reduction"])
+
+            if eff.get("escape"):
+                return {"message": msg, "end_encounter": True, "outcome": "escaped"}
+
+            # Check if threat eliminated (for ATTACK)
+            if self.state.threat_level <= 0 and action == "ATTACK":
+                 return {"message": msg + " The entity dissolves.", "end_encounter": True, "outcome": "victory"}
+
+            return {"message": msg}
+        else:
+            eff = act_def.get("fail_effect", {})
+            msg = eff.get("message", "Failure.")
+
+            if "threat_increase" in eff:
+                self.state.threat_level += eff["threat_increase"]
+
+            # Damage handled here or in entity reaction?
+            # Let's apply immediate fail damage
+            if "sanity_damage" in eff:
+                self.player_state["sanity"] -= eff["sanity_damage"]
+                msg += f" [SANITY -{eff['sanity_damage']}]"
+
+            return {"message": msg}
 
     def _resolve_entity_action(self) -> dict:
         """Determine what the entity does."""
-        # Simple AI based on threat level
-        if self.state.threat_level > 5:
-            return {
-                "message": "The entity LASHES OUT!",
-                "damage_sanity": 10,
-                "damage_reality": 5
-            }
-        elif self.state.threat_level > 2:
-            return {
-                "message": "The shadows deepen around you.",
-                "damage_sanity": 5
-            }
-        else:
-             return {
-                "message": "It watches and waits.",
-                "damage_sanity": 1
-            }
+        moves = self.active_encounter.get("entity_moves", [])
+
+        # Find move with highest threshold <= current threat
+        selected_move = None
+        for move in sorted(moves, key=lambda x: x["threshold"], reverse=True):
+            if self.state.threat_level >= move["threshold"]:
+                selected_move = move
+                break
+
+        if not selected_move:
+             return {"message": "The entity watches."}
+
+        effects = selected_move.get("effects", {})
+        return {
+            "message": selected_move.get("message", "The entity acts."),
+            "damage_sanity": abs(effects.get("sanity", 0)), # Ensure positive value for damage
+            "damage_reality": abs(effects.get("reality", 0))
+        }

@@ -298,9 +298,25 @@
         }
       },
       {
+        "text": "Investigate the shadows.",
+        "next_scene": "woods_encounter_start"
+      },
+      {
         "text": "Leave quickly.",
         "next_scene": "cliffhanger_moment"
       }
+    ]
+  },
+  {
+    "id": "woods_encounter_start",
+    "name": "The Shadows Move",
+    "text": "You step closer to the tree line. The darkness seems to detach itself from the trees. It forms a shape. A silhouette made of void.",
+    "encounter_id": "enc_shadow_stalker",
+    "choices": [
+        {
+            "text": "Stand your ground.",
+            "next_scene": "cliffhanger_moment"
+        }
     ]
   },
   {
