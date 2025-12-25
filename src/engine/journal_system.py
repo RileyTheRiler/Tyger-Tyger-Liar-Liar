@@ -1,4 +1,5 @@
 import json
+import uuid
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Optional
 from datetime import datetime
@@ -6,9 +7,12 @@ from datetime import datetime
 @dataclass
 class JournalEntry:
     """Narrative or discovery log entry."""
+    id: str
     timestamp: str
     title: str
-    body: str
+    what_happened: str
+    meaning: str
+    confidence: str  # "Low", "Medium", "High"
     tags: List[str] = field(default_factory=list)
 
 @dataclass
@@ -56,13 +60,36 @@ class JournalManager:
         self.annotations: List[Annotation] = []
         self.leads: List[str] = []  # Week 6: Open threads/mystery flags
 
-    def add_entry(self, title: str, body: str, tags: List[str] = None, timestamp: str = None):
+    def add_entry(self, title: str, what_happened: str, meaning: str, confidence: str = "Low", tags: List[str] = None, timestamp: str = None, entry_id: str = None) -> str:
         """Add a narrative journal entry."""
         if timestamp is None:
             timestamp = datetime.now().isoformat()
-        entry = JournalEntry(timestamp=timestamp, title=title, body=body, tags=tags or [])
+        if entry_id is None:
+            entry_id = str(uuid.uuid4())
+
+        entry = JournalEntry(
+            id=entry_id,
+            timestamp=timestamp,
+            title=title,
+            what_happened=what_happened,
+            meaning=meaning,
+            confidence=confidence,
+            tags=tags or []
+        )
         self.entries.append(entry)
         print(f"[Journal] Entry added: {title}")
+        return entry.id
+
+    def update_entry(self, entry_id: str, what_happened: str = None, meaning: str = None, confidence: str = None):
+        """Update an existing journal entry retroactively."""
+        for entry in self.entries:
+            if entry.id == entry_id:
+                if what_happened: entry.what_happened = what_happened
+                if meaning: entry.meaning = meaning
+                if confidence: entry.confidence = confidence
+                print(f"[Journal] Entry updated: {entry.title}")
+                return True
+        return False
 
     def add_suspect(self, suspect_data: dict):
         """Adds or updates a suspect entry."""
@@ -145,7 +172,7 @@ class JournalManager:
     def display_journal(self, limit: int = 10):
         """Display recent journal entries."""
         print("\n" + "="*60)
-        print("JOURNAL ENTRIES")
+        print("CASE FILE / JOURNAL")
         print("="*60)
         
         if not self.entries:
@@ -154,10 +181,13 @@ class JournalManager:
         
         recent = self.entries[-limit:]
         for entry in reversed(recent):
-            print(f"\n[{entry.timestamp}] {entry.title}")
-            print(f"  {entry.body}")
+            print(f"\n[{entry.timestamp}] {entry.title.upper()}")
+            print(f"  WHAT HAPPENED: {entry.what_happened}")
+            print(f"  INTERPRETATION: {entry.meaning}")
+            print(f"  CONFIDENCE: [{entry.confidence.upper()}]")
             if entry.tags:
                 print(f"  Tags: {', '.join(entry.tags)}")
+            print("-" * 60)
         print("="*60)
 
     def export_state(self) -> dict:
