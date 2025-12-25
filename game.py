@@ -37,6 +37,16 @@ from src.save_system import EventLog, SaveSystem
 from src.journal_system import JournalManager
 from interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result
 
+# New GDD-aligned systems
+from src.npc_system import NPCSystem
+from src.condition_system import ConditionSystem
+from src.population_system import PopulationSystem
+from src.clue_system import ClueSystem
+from src.text_composer import TextComposer, Archetype
+from src.fracture_system import FractureSystem, UnsafeMenu
+from src.dice import DiceSystem
+from src.encounter_runner import EncounterRunner
+
 class Game:
     def __init__(self):
         # Initialize Systems
@@ -76,6 +86,36 @@ class Game:
             "checked_whites": []
         }
 
+        # === NEW GDD-ALIGNED SYSTEMS ===
+
+        # NPC System - Trust/Fear tracking
+        npcs_dir = resource_path(os.path.join('data', 'npcs'))
+        self.npc_system = NPCSystem(npcs_dir)
+
+        # Condition System - Injuries and treatments
+        conditions_dir = resource_path(os.path.join('data', 'conditions'))
+        self.condition_system = ConditionSystem(conditions_dir)
+
+        # Population System - 347 tracking
+        self.population_system = PopulationSystem()
+
+        # Clue System - Passive perception and Board integration
+        clues_dir = resource_path(os.path.join('data', 'clues'))
+        self.clue_system = ClueSystem(clues_dir, self.board)
+
+        # Text Composer - For dynamic scene rendering
+        self.text_composer = TextComposer()
+
+        # Fracture System - For reality breaks
+        self.fracture_system = FractureSystem()
+
+        # Encounter Runner
+        self.encounter_runner = EncounterRunner(
+            self.player_state,
+            self.skill_system,
+            DiceSystem()
+        )
+
         # Initialize Scene Manager
         self.scene_manager = SceneManager(
             self.time_system, 
@@ -104,7 +144,19 @@ class Game:
         
         # Load Scenes
         scenes_dir = resource_path(os.path.join('data', 'scenes'))
-        root_scenes = resource_path('scenes.json')
+        # Check for vertical slice config
+        slice_config = resource_path('scenes_config.json')
+        if os.path.exists(slice_config):
+             import json
+             try:
+                 with open(slice_config, 'r') as f:
+                     config = json.load(f)
+                     root_scenes = resource_path(config.get("root", 'scenes.json'))
+             except:
+                 root_scenes = resource_path('scenes.json')
+        else:
+            root_scenes = resource_path('scenes.json')
+
         self.scene_manager.load_scenes_from_directory(scenes_dir, root_scenes)
 
     def on_time_passed(self, minutes: int):
@@ -149,7 +201,24 @@ class Game:
             self.scene_manager.apply_ambient_effects(minutes)
             
         # Recovery / Injury Checks
-        self.process_recovery(minutes)
+        # self.process_recovery(minutes)
+
+        # === NEW SYSTEM UPDATES ===
+
+        # Update Condition System (injuries heal/worsen)
+        condition_events = self.condition_system.update_time(minutes)
+        for event in condition_events:
+            if event["type"] == "healed":
+                print(f"\n[RECOVERY] Your {event['condition_name']} has healed.")
+            elif event["type"] == "worsened":
+                print(f"\n[WARNING] Your {event['condition_name']} has worsened!")
+
+        # Update Fracture System state
+        self.fracture_system.update_state(
+            attention=self.attention_system.attention_level,
+            day=self.population_system.current_day,
+            reality=self.player_state["reality"]
+        )
 
     def process_recovery(self, minutes: int):
         injuries = self.player_state.get("injuries", [])
@@ -351,6 +420,11 @@ class Game:
         real_status = "LUCID" if real >= 75 else "DOUBT" if real >= 50 else "DELUSION" if real >= 25 else "BROKEN"
 
         print_separator("=")
+        # Update Lens System state for Haunted calculation
+        self.lens_system.update_state(
+            attention_level=self.attention_system.attention_level,
+            sanity=san
+        )
         lens_str = self.lens_system.calculate_lens().upper()
         attention_display = self.attention_system.get_status_display()
         integration_display = self.integration_system.get_status_display()
@@ -368,10 +442,53 @@ class Game:
             media = scene["background_media"]
             print(f"[MEDIA: Loading {media['type']} '{media['src']}']")
         
+        # Check for Encounter Trigger
+        if "encounter_id" in scene and scene["encounter_id"]:
+             # For now, just print notification, as we don't have encounter data loaded
+             # Ideally we would load encounter definition and start it
+             print(f"\n[!] WARNING: ENCOUNTER TRIGGERED ({scene['encounter_id']}) [!]\n")
+             # Future: self.run_encounter(scene["encounter_id"])
+
+        # New Text Composition
+        state = self._get_composer_state()
+
+        # 1. Passive Clue Detection
+        passive_clues = self.clue_system.evaluate_passive_clues(
+            scene_id=self.scene_manager.current_scene_id,
+            player_state=state
+        )
+        for clue in passive_clues:
+            print(f"\n[PASSIVE: {clue.get('text', 'Something catches your eye...')}]")
+            # Auto-add clue to board logic could go here if not handled by ClueSystem internal state
+
+        # 2. Text Composition with Lens
+        # Lens is now part of composer logic mostly, but we still pass it for now
+        # Actually TextComposer handles logic, we need to gather variants
+
         variants = scene.get("variants", {})
         base_text = scene.get("text", "...")
-        filtered_text = self.lens_system.filter_text(base_text, variants)
-        display_text = self.apply_reality_distortion(filtered_text)
+
+        # We use the new TextComposer to render
+        # It needs 'archetype' which comes from LensSystem usually, or we pass specific lens
+
+        current_lens = self.lens_system.calculate_lens() # believer, skeptic, balanced
+        # Map lens to Archetype enum if possible, or just string
+        archetype_map = {
+            "believer": Archetype.BELIEVER,
+            "skeptic": Archetype.SKEPTIC,
+            "balanced": Archetype.BALANCED,
+            "haunted": Archetype.HAUNTED
+        }
+        arch = archetype_map.get(current_lens, Archetype.BALANCED)
+
+        composed_text = self.text_composer.compose(
+            base_text,
+            variants,
+            state,
+            current_lens=arch
+        )
+
+        display_text = self.apply_reality_distortion(composed_text)
         print("\n" + display_text + "\n")
         
         # Show specific ambient indicators
@@ -491,6 +608,92 @@ class Game:
                 print("You wake up feeling rested. (+20 Sanity)")
                 return "refresh"
             
+            # === NEW SYSTEM COMMANDS ===
+
+            # Population Status
+            if clean in ['pop', 'population']:
+                status = self.population_system.get_status()
+                print(f"\n=== KALTVIK POPULATION ===")
+                print(f"Current: {status['population']}/{status['starting']} ({status['percentage_lost']:.1f}% lost)")
+                print(f"Day: {self.population_system.current_day}")
+                if status['events']:
+                    print("\nRecent events:")
+                    for event in status['events'][-5:]:
+                        print(f"  - Day {event['day']}: {event['reason']} ({event['type']}, -{event['count']})")
+                return "refresh"
+
+            # View Conditions
+            if clean in ['conditions', 'injuries', 'cond']:
+                conditions = self.condition_system.get_conditions_summary()
+                if not conditions:
+                    print("\n[No active conditions]")
+                else:
+                    print("\n=== ACTIVE CONDITIONS ===")
+                    for c in conditions:
+                        severity = c.get('severity', 'unknown').upper()
+                        treatment_str = f" (Treatable: {', '.join(c.get('available_treatments', []))})" if c.get('available_treatments') else ""
+                        print(f"  {c['name']} [{severity}]{treatment_str}")
+                        penalties = c.get('penalties', {})
+                        if penalties:
+                            pen_str = ", ".join([f"{k}:{v:+d}" for k, v in penalties.items()])
+                            print(f"    Penalties: {pen_str}")
+                return "refresh"
+
+            # Treat Condition
+            if clean.startswith('treat '):
+                parts = raw.split(maxsplit=1)
+                if len(parts) > 1:
+                    condition_name = parts[1].strip()
+                    # Find condition by name or ID
+                    for cond_id, cond in self.condition_system.active_conditions.items():
+                        if cond.name.lower() == condition_name.lower() or cond_id == condition_name:
+                            # Try available treatments
+                            treatments = self.condition_system.get_available_treatments(cond_id)
+                            if not treatments:
+                                print(f"No available treatments for {cond.name}")
+                            else:
+                                # Try first available treatment
+                                treatment = treatments[0]
+                                result = self.condition_system.apply_treatment(cond_id, treatment)
+                                if result.get("success"):
+                                    print(f"[TREATMENT] Applied {treatment} to {cond.name}")
+                                    if result.get("healed"):
+                                        print(f"[HEALED] {cond.name} has been cured!")
+                                else:
+                                    print(f"[FAILED] {result.get('error', 'Treatment failed')}")
+                            break
+                    else:
+                        print(f"No condition found: {condition_name}")
+                else:
+                    print("Usage: treat <condition_name>")
+                return "refresh"
+
+            # NPC Info
+            if clean.startswith('npc '):
+                parts = raw.split(maxsplit=1)
+                if len(parts) > 1:
+                    npc_name = parts[1].strip().lower()
+                    found = False
+                    for npc_id, npc in self.npc_system.npcs.items():
+                        if npc.name.lower() == npc_name or npc_id == npc_name:
+                            print(f"\n=== {npc.name} ===")
+                            print(f"Title: {npc.title}")
+                            print(f"Trust: {npc.trust}/100")
+                            print(f"Fear: {npc.fear}/100")
+                            knowledge = self.npc_system.get_available_knowledge(npc_id)
+                            if knowledge:
+                                print(f"Available Topics: {', '.join(knowledge)}")
+                            found = True
+                            break
+                    if not found:
+                        print(f"NPC not found: {npc_name}")
+                else:
+                    # List all NPCs
+                    print("\n=== KNOWN NPCs ===")
+                    for npc_id, npc in self.npc_system.npcs.items():
+                        print(f"  {npc.name} (Trust: {npc.trust})")
+                return "refresh"
+
             # Debug Mode Commands
             if clean == 'debug':
                 self.debug_mode = not self.debug_mode
@@ -567,6 +770,38 @@ class Game:
                 self.player_state["event_flags"].add("leave_town")
                 print("[You pack your bags and prepare to leave Tyger Tyger...]")
                 return "refresh"
+
+            # Debug/Playtest Commands
+            if self.debug_mode:
+                if clean.startswith('teleport '):
+                     parts = raw.split(maxsplit=1)
+                     if len(parts) > 1:
+                         scene_id = parts[1].strip()
+                         new_scene = self.scene_manager.load_scene(scene_id)
+                         if new_scene:
+                             print(f"[DEBUG] Teleported to {scene_id}")
+                         else:
+                             print(f"[DEBUG] Scene '{scene_id}' not found")
+                     return "refresh"
+
+                if clean.startswith('set_trust '):
+                     parts = raw.split()
+                     if len(parts) >= 3:
+                         npc_id = parts[1]
+                         val = int(parts[2])
+                         self.npc_system.modify_trust(npc_id, val - self.npc_system.npcs[npc_id].trust if npc_id in self.npc_system.npcs else 0)
+                         # Actually modify_trust adds, so we need to set directly or calculate diff
+                         # Let's just use modify_trust for delta or implement set
+                         if npc_id in self.npc_system.npcs:
+                             self.npc_system.npcs[npc_id].trust = val
+                             print(f"[DEBUG] {npc_id} Trust set to {val}")
+                     return "refresh"
+
+                if clean == 'fracture':
+                    self.player_state['reality'] -= 20
+                    self.fracture_system.update_state(self.attention_system.attention_level, self.population_system.current_day, self.player_state['reality'])
+                    print("[DEBUG] Reality damaged, fracture state updated.")
+                    return "refresh"
 
             
             if self.debug_mode:
@@ -769,6 +1004,13 @@ class Game:
                 "scene_state": {
                     "current_scene_id": self.scene_manager.current_scene_id,
                     "visited_scenes": list(self.scene_manager.visited_scenes) if hasattr(self.scene_manager, 'visited_scenes') else []
+                },
+                "new_systems": {
+                    "npc_system": self.npc_system.to_dict(),
+                    "condition_system": self.condition_system.to_dict(),
+                    "population_system": self.population_system.to_dict(),
+                    "clue_system": self.clue_system.to_dict(),
+                    "fracture_system": self.fracture_system.to_dict()
                 }
             }
             
@@ -823,6 +1065,15 @@ class Game:
             if "event_log" in save_data:
                 self.event_log = EventLog.from_dict(save_data["event_log"])
             
+            # Restore new systems
+            if "new_systems" in save_data:
+                ns = save_data["new_systems"]
+                if "npc_system" in ns: self.npc_system.restore_state(ns["npc_system"])
+                if "condition_system" in ns: self.condition_system.restore_state(ns["condition_system"])
+                if "population_system" in ns: self.population_system.restore_state(ns["population_system"])
+                if "clue_system" in ns: self.clue_system.restore_state(ns["clue_system"])
+                if "fracture_system" in ns: self.fracture_system.restore_state(ns["fracture_system"])
+
             # Restore scene
             if "scene" in save_data:
                 self.scene_manager.load_scene(save_data["scene"])
@@ -1073,6 +1324,47 @@ class Game:
         print(self.board_ui.render())
         print("\nCommands: 'evidence <theory_id> <evidence_id>' | 'contradict <theory_id> <evidence_id>'")
         print("          'prove <theory_id>' | 'disprove <theory_id>'\n")
+
+    def _get_composer_state(self) -> dict:
+        """
+        Gather player state for TextComposer and ClueSystem.
+        Returns dict with skills, flags, theories, equipment, trust, attention.
+        """
+        # Build skills dict from SkillSystem
+        skills = {}
+        for skill_name, skill in self.skill_system.skills.items():
+            skills[skill_name] = skill.effective_level
+
+        # Build equipment list from inventory
+        inventory_items = []
+        equipped_items = [] # We don't have separate equipped yet, assuming all inventory is available or specific equipped logic
+        if hasattr(self.inventory_system, 'inventory'):
+             # Inventory is a list of Items
+             for item in self.inventory_system.inventory:
+                 inventory_items.append(item.id if hasattr(item, 'id') else str(item))
+
+        # Build theories list
+        theories = []
+        # active theories from board
+        for t_id, theory in self.board.theories.items():
+             if theory.status == "active": # or proven?
+                 theories.append(t_id)
+
+        # Build trust dict
+        trust = {}
+        for npc_id, npc in self.npc_system.npcs.items():
+            trust[npc_id] = npc.trust
+
+        return {
+            "skills": skills,
+            "flags": self.player_state.get("event_flags", set()),
+            "theories": theories,
+            "equipment": inventory_items,
+            "trust": trust,
+            "attention": self.attention_system.attention_level,
+            "sanity": self.player_state["sanity"],
+            "reality": self.player_state["reality"]
+        }
 
     def apply_effects(self, effects):
         for key, value in effects.items():

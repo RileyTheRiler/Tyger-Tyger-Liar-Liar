@@ -62,56 +62,64 @@
       }
     },
     "text": {
-      "type": "object",
-      "required": ["base"],
-      "properties": {
-        "base": {
+      "oneOf": [
+        {
           "type": "string",
-          "description": "Objective anchor text - minimal, factual"
+          "description": "Simple text description"
         },
-        "lens": {
+        {
           "type": "object",
+          "required": ["base"],
           "properties": {
-            "believer": {"type": "string", "description": "Believer archetype interpretation"},
-            "skeptic": {"type": "string", "description": "Skeptic archetype interpretation"},
-            "haunted": {"type": "string", "description": "Haunted archetype interpretation"}
-          }
-        },
-        "inserts": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["condition", "text"],
-            "properties": {
-              "condition": {
+            "base": {
+              "type": "string",
+              "description": "Objective anchor text - minimal, factual"
+            },
+            "lens": {
+              "type": "object",
+              "properties": {
+                "believer": {"type": "string", "description": "Believer archetype interpretation"},
+                "skeptic": {"type": "string", "description": "Skeptic archetype interpretation"},
+                "haunted": {"type": "string", "description": "Haunted archetype interpretation"}
+              }
+            },
+            "inserts": {
+              "type": "array",
+              "items": {
                 "type": "object",
-                "description": "Condition for insert to appear",
+                "required": ["condition", "text"],
                 "properties": {
-                  "skill_gte": {
+                  "condition": {
                     "type": "object",
-                    "additionalProperties": {"type": "integer"},
-                    "description": "Skill must be >= value"
+                    "description": "Condition for insert to appear",
+                    "properties": {
+                      "skill_gte": {
+                        "type": "object",
+                        "additionalProperties": {"type": "integer"},
+                        "description": "Skill must be >= value"
+                      },
+                      "flag_set": {"type": "string"},
+                      "theory_active": {"type": "string"},
+                      "trust_gte": {
+                        "type": "object",
+                        "additionalProperties": {"type": "integer"}
+                      },
+                      "attention_gte": {"type": "integer"},
+                      "equipment": {"type": "string"}
+                    }
                   },
-                  "flag_set": {"type": "string"},
-                  "theory_active": {"type": "string"},
-                  "trust_gte": {
-                    "type": "object",
-                    "additionalProperties": {"type": "integer"}
-                  },
-                  "attention_gte": {"type": "integer"},
-                  "equipment": {"type": "string"}
+                  "text": {"type": "string", "description": "Text to insert"},
+                  "insert_at": {
+                    "type": "string",
+                    "enum": ["BEFORE_CHOICES", "AFTER_BASE", "AFTER_LENS", "MID_PARAGRAPH"],
+                    "default": "AFTER_LENS"
+                  }
                 }
-              },
-              "text": {"type": "string", "description": "Text to insert"},
-              "insert_at": {
-                "type": "string",
-                "enum": ["BEFORE_CHOICES", "AFTER_BASE", "AFTER_LENS", "MID_PARAGRAPH"],
-                "default": "AFTER_LENS"
               }
             }
           }
         }
-      }
+      ]
     },
     "choices": {
       "type": "array",

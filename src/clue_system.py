@@ -157,17 +157,29 @@ class ClueSystem:
 
     def _add_clue_to_board(self, clue: Clue):
         """Add a clue node to the Board and link it."""
-        # This would integrate with the Board system
-        # For now, we'll just print the action
         print(f"[BOARD] Added clue node: {clue.title}")
 
         # Auto-link based on theory links
         for link in clue.links_to_theories:
-            print(f"[BOARD] Linked clue to theory '{link.theory_id}' ({link.relation})")
+            if self.board:
+                if link.relation == "supports":
+                    self.board.add_evidence_to_theory(link.theory_id, clue.id)
+                elif link.relation == "contradicts":
+                    result = self.board.add_contradiction_to_theory(link.theory_id, clue.id)
+                    if result.get('theory_collapsed'):
+                        print(f"!!! {result['message']} !!!")
+                elif link.relation == "associated":
+                     # Association only, maybe just log it or add to a list
+                     # Assuming add_evidence_to_theory handles generic association if needed
+                     # but Board currently splits supports/contradicts.
+                     # We can treat associated as weak support or just metadata.
+                     pass
 
-        # Auto-link based on tags
+        # Auto-link based on tags - NOT IMPLEMENTED IN BOARD YET
+        # But we can simulate it by printing
         for tag in clue.tags:
-            print(f"[BOARD] Tagged clue with: {tag}")
+            # Future: self.board.add_tag(clue.id, tag)
+            pass
 
     def evaluate_passive_clues(self, scene_passive_clues: List[dict],
                                 player_state: dict) -> List[Tuple[Clue, str]]:
