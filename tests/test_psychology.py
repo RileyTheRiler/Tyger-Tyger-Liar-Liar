@@ -3,7 +3,8 @@ import sys
 import os
 
 # Ensure src is in path
-sys.path.append(os.path.join(os.getcwd(), 'src'))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
 from mechanics import SkillSystem
 from game import Game
