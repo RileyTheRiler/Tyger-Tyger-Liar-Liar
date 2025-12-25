@@ -17,13 +17,17 @@ def test_journal_entries():
     
     journal.add_entry(
         title="Found Blood Sample",
-        body="Collected blood sample under porch. Forensics needed.",
+        what_happened="Collected blood sample under porch. Forensics needed.",
+        meaning="Someone was injured here recently.",
+        confidence="High",
         tags=["evidence", "forensics"]
     )
     
     journal.add_entry(
         title="Interview with Dr. Keats",
-        body="Dr. Keats seemed nervous when discussing the woods.",
+        what_happened="Dr. Keats seemed nervous when discussing the woods.",
+        meaning="He is hiding something about the night of the incident.",
+        confidence="Medium",
         tags=["interview", "suspicious"]
     )
     
@@ -118,7 +122,7 @@ def test_serialization():
     print("\n=== Testing Serialization ===")
     journal1 = JournalManager()
     
-    journal1.add_entry("Test Entry", "Test body", ["test"])
+    journal1.add_entry("Test Entry", "Test body", "Meaning", "Low", ["test"])
     journal1.add_lead("Test lead")
     
     # Export

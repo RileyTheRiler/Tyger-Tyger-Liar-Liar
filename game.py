@@ -634,6 +634,7 @@ class Game:
             ),
             "population_status": self.population_system.get_population_status(),
             "theories_active": self.board.get_active_or_internalizing_count(),
+            "journal": self.journal.export_state(),
             "input_mode": self.input_mode.name if hasattr(self.input_mode, 'name') else str(self.input_mode),
             "choices": scene.get("choices", []),
             "board_data": self.board.get_board_data(),
@@ -1279,6 +1280,7 @@ class Game:
                 theory_id = parts[1].strip()
                 if self.board.resolve_theory(theory_id, True):
                     self.print(f"[THEORY PROVEN: {theory_id}]")
+                    self.log_event("theory_proven", theory_id=theory_id)
                 else:
                     self.print(f"[ERROR: Theory '{theory_id}' not found]")
             return "refresh"
@@ -1289,6 +1291,7 @@ class Game:
                 theory_id = parts[1].strip()
                 if self.board.resolve_theory(theory_id, False):
                     self.print(f"[THEORY DISPROVEN: {theory_id}]")
+                    self.log_event("theory_disproven", theory_id=theory_id)
                 else:
                     self.print(f"[ERROR: Theory '{theory_id}' not found]")
             return "refresh"
@@ -1520,6 +1523,8 @@ class Game:
                  case_id="general"
              )
              self.inventory_system.add_evidence(evidence)
+
+             self.log_event("evidence_found", name=evidence.name, description=evidence.description)
 
         elif verb == "COLLECT" or verb == "TAKE":
             if not target:
@@ -2105,6 +2110,67 @@ class Game:
         """Log a significant game event."""
         self.event_log.add_event(event_type, **details)
 
+        # Week 6: Hook into event log to drive Journal
+        # We check specific event types to auto-create journal entries
+        if event_type == "evidence_found":
+             self.auto_journal_entry(
+                 title=f"Evidence: {details.get('name', 'Unknown')}",
+                 description=details.get('description', 'Found evidence.'),
+                 event_type="evidence",
+                 tags=["evidence", "discovery"]
+             )
+        elif event_type == "theory_proven":
+             self.auto_journal_entry(
+                 title=f"Theory Proven: {details.get('theory_id', 'Unknown')}",
+                 description=f"Confirmed theory: {details.get('theory_id')}",
+                 event_type="theory",
+                 tags=["theory", "proven"]
+             )
+        elif event_type == "theory_disproven":
+             self.auto_journal_entry(
+                 title=f"Theory Disproven: {details.get('theory_id', 'Unknown')}",
+                 description=f"Rejected theory: {details.get('theory_id')}",
+                 event_type="theory",
+                 tags=["theory", "disproven"]
+             )
+
+    def auto_journal_entry(self, title, description, event_type="general", tags=None):
+        """Auto-generate a journal entry based on an event."""
+        # Idempotency check: Don't add duplicate entries for the same event
+        # We assume title + description acts as a unique signature for this event instance
+        # In a more complex system, we'd pass a unique event_id
+        for entry in self.journal.entries:
+            if entry.title == title and entry.what_happened == description:
+                return
+
+        # Determine "Meaning" and "Confidence" based on stats
+        meaning = "I need to investigate further."
+        confidence = "Low"
+
+        # Safe access to skills (default to 0 if system not ready or skill missing)
+        logic = 0
+        pattern_recognition = 0
+        if self.skill_system:
+            # Use get_skill_total which accounts for modifiers
+            logic = self.skill_system.get_skill_total("Logic")
+            pattern_recognition = self.skill_system.get_skill_total("Pattern Recognition")
+
+        if event_type == "evidence":
+            if logic > 4:
+                meaning = "This is a crucial piece of the puzzle."
+                confidence = "High"
+            elif pattern_recognition > 4:
+                meaning = "This feels significant."
+                confidence = "Medium"
+
+        elif event_type == "theory":
+            meaning = "My understanding of the case is shifting."
+            confidence = "Medium"
+            if logic > 6:
+                confidence = "High"
+
+        self.journal.add_entry(title, description, meaning, confidence, tags)
+
     def process_choice(self, choice):
         # Handle Skill Checks
         # Mapped to 'skill_check' per scenes.json
@@ -2323,6 +2389,8 @@ class Game:
                     # Add findings as evidence
                     new_ev = Evidence(res['evidence_id'], res['findings'], "medical", name=f"Autopsy: {zone_name}")
                     self.inventory_system.add_evidence(new_ev)
+
+                    self.log_event("evidence_found", name=new_ev.name, description=new_ev.description)
                 
                 self.print(f"Body Integrity: {self.current_autopsy.integrity}%")
             elif zone_idx == len(zones):
@@ -2354,6 +2422,7 @@ class Game:
             elif key == "add_evidence":
                 ev = Evidence.from_dict(value)
                 self.inventory_system.add_evidence(ev)
+                self.log_event("evidence_found", name=ev.name, description=ev.description)
             elif key == "unlock_thought":
                 if value not in self.player_state["thoughts"]:
                     self.player_state["thoughts"].append(value)
