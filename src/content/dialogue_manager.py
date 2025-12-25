@@ -3,6 +3,7 @@ import os
 import random
 from typing import Dict, List, Optional, Any, Tuple
 from engine.text_composer import TextComposer, DialogueTextComposer, Archetype
+from engine.psychological_system import PsychologicalState
 
 class DialogueManager:
     def __init__(self, skill_system, board, player_state, npc_system=None):
@@ -15,12 +16,18 @@ class DialogueManager:
         self.text_composer = TextComposer(skill_system, board, player_state)
         self.dialogue_composer = DialogueTextComposer(self.text_composer)
 
+        # Initialize Psych System (Week 15)
+        self.psych_system = PsychologicalState(player_state)
+
         self.current_dialogue_id = None
         self.current_npc_id = None  # Track which NPC we're talking to
         self.nodes = {}
         self.current_node_id = None
         self.active_interjections = []  # List of strings from passive checks
         
+        # Cache for choices to avoid re-calculation in select_choice
+        self._cached_choices = []
+
         # New Week 5 additions
         self.interrupt_data = {}
         self._load_interrupt_lines()
@@ -91,6 +98,9 @@ class DialogueManager:
         self.current_node_id = node_id
         node = self.nodes[node_id]
         
+        # Reset cache on new node
+        self._cached_choices = []
+
         # Run passive checks immediately
         self.active_interjections = self._run_passive_checks(node)
         
@@ -235,10 +245,38 @@ class DialogueManager:
         archetype = self.text_composer.calculate_dominant_lens(self.player_state)
         speaker, composed_text = self.dialogue_composer.compose_line(node, archetype, self.player_state, npc=npc)
 
-        # Filter/Process choices
+        # Use cached choices if available for this node, otherwise compute
+        if not self._cached_choices:
+            self._cached_choices = self._compute_visible_choices(node, composed_text)
+
+        return {
+            "speaker": speaker,
+            "text": composed_text,
+            "interjections": self.active_interjections,
+            "choices": self._cached_choices
+        }
+
+    def _compute_visible_choices(self, node, composed_text):
+        """Filters and processes choices based on state, sanity, and logic."""
         visible_choices = []
+        is_hallucinating = self.psych_system.is_hallucinating()
+
         for choice in node.get("choices", []):
+            reliability = str(choice.get("reliability", "true")).lower()
+
+            # 1. Reliability Check
+            if reliability == "false":
+                if not is_hallucinating and not self.debug_show_hidden:
+                    continue # Hide false choices if sane
+
+            # 2. Visibility Conditions Check (Applies to ALL reliable/ambiguous options)
+            if "visibility_conditions" in choice:
+                if not self._check_visibility(choice["visibility_conditions"]):
+                    continue
+
+            # 3. Requirements Check
             req_met, reason = self._check_requirements(choice)
+
             visible_choices.append({
                 "text": choice.get("text", "..."),
                 "enabled": req_met,
@@ -246,12 +284,44 @@ class DialogueManager:
                 "original_data": choice
             })
             
-        return {
-            "speaker": speaker,
-            "text": composed_text,
-            "interjections": self.active_interjections,
-            "choices": visible_choices
-        }
+        # 4. Low Stability: Hide a valid option?
+        if not self.debug_show_hidden:
+            sanity_tier = self.psych_system.get_sanity_tier()
+            if sanity_tier <= 1 and len(visible_choices) > 1: # Psychosis/Breakdown
+                # Find valid, reliable options
+                valid_indices = []
+                for i, c in enumerate(visible_choices):
+                    is_reliable = str(c["original_data"].get("reliability", "true")).lower() == "true"
+                    if is_reliable and c["enabled"]:
+                        valid_indices.append(i)
+
+                if valid_indices:
+                    # Deterministic seed based on node ID and turn count (stable per turn)
+                    seed_str = f"{self.current_node_id}_{self.player_state.get('turn_count', 0)}"
+                    rng = random.Random(seed_str)
+                    to_remove_idx = rng.choice(valid_indices)
+                    visible_choices.pop(to_remove_idx)
+
+        # 5. Log Hallucinations (Only once during computation)
+        for c in visible_choices:
+            if str(c["original_data"].get("reliability", "true")).lower() == "false":
+                # Use a specific key format
+                self.psych_system.record_hallucination(f"false_choice_{self.current_node_id}_{c['text'][:10]}")
+
+        return visible_choices
+
+    def _check_visibility(self, conditions: dict) -> bool:
+        """Check visibility conditions (sanity_min, sanity_max, etc)."""
+        sanity = self.player_state.get("sanity", 100.0)
+
+        if "sanity_min" in conditions and sanity < conditions["sanity_min"]:
+            return False
+        if "sanity_max" in conditions and sanity > conditions["sanity_max"]:
+            return False
+
+        # Add more conditions as needed (reality, trust, etc)
+
+        return True
 
     def _check_requirements(self, choice: dict) -> (bool, str):
         # 1. Skill Gates (Level check)
@@ -304,20 +374,27 @@ class DialogueManager:
     def select_choice(self, index: int):
         """Executes the choice at the given index from the last rendered list."""
         if not self.current_node_id or self.current_node_id not in self.nodes:
-            return False, "Not in a dialogue node."
-            
-        node = self.nodes[self.current_node_id]
-        choices = node.get("choices", [])
+             return False, "Not in a dialogue node."
+
+        # Use the cached choices (what the user actually saw)
+        # If select_choice is called before get_render_data (rare/scripting), we compute it.
+        if not self._cached_choices:
+             # Force computation via internal method, but note that get_render_data usually drives this.
+             # If we haven't rendered, composed_text might be missing for seeding, but we can fake it or just run simple.
+             # Better to call get_render_data to populate everything.
+             self.get_render_data()
+
+        visible_choices = self._cached_choices
         
-        if index < 0 or index >= len(choices):
+        if index < 0 or index >= len(visible_choices):
             return False, "Invalid choice index."
             
-        choice = choices[index]
+        choice_wrapper = visible_choices[index]
+        choice = choice_wrapper["original_data"]
         
-        # Double check requirement
-        allowed, _ = self._check_requirements(choice)
-        if not allowed:
-            return False, "Requirement not met."
+        # Check enabled status from wrapper
+        if not choice_wrapper["enabled"]:
+             return False, f"Requirement not met: {choice_wrapper['reason']}"
             
         # Apply Effects
         if "effects" in choice:
