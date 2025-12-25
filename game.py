@@ -58,10 +58,12 @@ from engine.fear_system import FearManager
 from engine.unreliable_narrator import HallucinationEngine
 from npc_system import NPCSystem
 from fracture_system import FractureSystem
+from engine.event_schema import EventType, EventSource, GameEvent
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, api_mode=False):
+        self.api_mode = api_mode
         # Initialize Output Buffer
         self.output = OutputBuffer()
 
@@ -229,7 +231,20 @@ class Game:
 
     
     def print(self, text=""):
-        self.output.print(str(text))
+        if self.api_mode:
+            event = GameEvent.create(
+                type=EventType.NARRATIVE_TEXT,
+                payload={"text": str(text)},
+                source=EventSource.NARRATOR # Default, might need context
+            )
+            print(event.to_json(), flush=True)
+        else:
+            self.output.print(str(text))
+
+    def emit_event(self, type: EventType, payload: dict, source: EventSource = EventSource.SYSTEM):
+        if self.api_mode:
+            event = GameEvent.create(type, payload, source)
+            print(event.to_json(), flush=True)
 
     def on_time_passed(self, minutes: int):
         msgs = self.board.on_time_passed(minutes)
@@ -694,6 +709,10 @@ class Game:
         return False
 
     def display_state(self):
+        # Always emit state update in API mode
+        if self.api_mode:
+            self.emit_event(EventType.STATE_UPDATE, self.get_ui_state())
+
         if self.in_dialogue:
             self.display_dialogue()
         else:
@@ -719,7 +738,8 @@ class Game:
                         self.print(f" {item}")
                 self.print("~" * 60)
 
-            self.display_status_line()
+            if not self.api_mode:
+                self.display_status_line()
 
             # Ensure choices are displayed even if scene data is missing (empty list)
             if self.scene_manager.current_scene_data:
@@ -863,8 +883,16 @@ class Game:
         archetype = archetype_map.get(current_lens, Archetype.NEUTRAL)
         
         # Override if manually set in player_state
-        if self.player_state.get("archetype", Archetype.NEUTRAL) != Archetype.NEUTRAL:
-             archetype = self.player_state["archetype"]
+        # Ensure we are working with Archetype objects, not strings from state
+        state_archetype = self.player_state.get("archetype", Archetype.NEUTRAL)
+        if isinstance(state_archetype, str):
+            try:
+                state_archetype = Archetype(state_archetype)
+            except ValueError:
+                state_archetype = Archetype.NEUTRAL
+
+        if state_archetype != Archetype.NEUTRAL:
+             archetype = state_archetype
 
         # 2. Prepare Data for Composer (Adapter Layer)
         text_obj = scene.get("text", {"base": "..."})
@@ -1520,6 +1548,12 @@ class Game:
                  case_id="general"
              )
              self.inventory_system.add_evidence(evidence)
+             self.emit_event(EventType.CLUE_ADDED, {
+                 "id": evidence.id,
+                 "name": evidence.name,
+                 "description": evidence.description,
+                 "type": evidence.type
+             })
 
         elif verb == "COLLECT" or verb == "TAKE":
             if not target:
@@ -2360,9 +2394,38 @@ class Game:
                     print(f"[THOUGHT UNLOCKED: {value}]")
 
 if __name__ == "__main__":
-    game = Game()
-    start_id = sys.argv[1] if len(sys.argv) > 1 else "bedroom"
-    game.run(start_id)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("start_scene", nargs="?", default="bedroom")
+    parser.add_argument("--api", action="store_true", help="Run in API mode (JSON output)")
+    args = parser.parse_args()
+
+    game = Game(api_mode=args.api)
+
+    # In API mode, we might need a different loop or just standard input processing
+    if args.api:
+        # Initial load
+        game.start_game(args.start_scene)
+
+        # Simple REPL for API
+        while True:
+            try:
+                line = sys.stdin.readline()
+                if not line: break
+                game.step(line.strip())
+            except KeyboardInterrupt:
+                break
+    else:
+        # Legacy/CLI run
+        game.start_game(args.start_scene)
+        while True:
+            try:
+                user_input = input("> ")
+                game.step(user_input)
+            except EOFError:
+                break
+            except KeyboardInterrupt:
+                break
 
     # Week 14: Theory Discovery
     def check_theory_unlocks(self):
