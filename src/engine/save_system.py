@@ -1,5 +1,6 @@
 import json
 import os
+import hashlib
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
@@ -56,7 +57,7 @@ class EventLog:
 
 
 class SaveSystem:
-    """Manages game save/load functionality."""
+    """Manages game save/load functionality with hash verification."""
     
     def __init__(self, save_directory: str = "saves"):
         self.save_directory = save_directory
@@ -69,9 +70,21 @@ class SaveSystem:
         """Get the full path for a save file."""
         return os.path.join(self.save_directory, f"{slot_id}.json")
     
+    def _calculate_hash(self, data: Dict[str, Any]) -> str:
+        """Calculate SHA-256 hash of the save data (excluding the hash field itself)."""
+        # Create a copy to avoid modifying the original
+        data_to_hash = data.copy()
+        if "hash" in data_to_hash:
+            del data_to_hash["hash"]
+
+        # Sort keys to ensure consistent JSON serialization
+        # Use default=str to handle non-serializable objects like sets in hash calculation
+        json_str = json.dumps(data_to_hash, sort_keys=True, ensure_ascii=False, default=str)
+        return hashlib.sha256(json_str.encode('utf-8')).hexdigest()
+
     def save_game(self, slot_id: str, state_data: Dict[str, Any]) -> bool:
         """
-        Save game state to a file.
+        Save game state to a file with hash verification.
         
         Args:
             slot_id: Unique identifier for this save slot
@@ -87,13 +100,16 @@ class SaveSystem:
             save_data = {
                 "id": slot_id,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "version": "1.0",  # For future compatibility
+                "version": "1.1",
                 **state_data
             }
             
+            # Calculate and append hash
+            save_data["hash"] = self._calculate_hash(save_data)
+
             # Write to file with pretty formatting
             with open(save_path, 'w', encoding='utf-8') as f:
-                json.dump(save_data, f, indent=2, ensure_ascii=False)
+                json.dump(save_data, f, indent=2, ensure_ascii=False, default=list)
             
             print(f"[SAVE] Game saved to slot '{slot_id}'")
             return True
@@ -104,7 +120,7 @@ class SaveSystem:
     
     def load_game(self, slot_id: str) -> Optional[Dict[str, Any]]:
         """
-        Load game state from a file.
+        Load game state from a file and verify integrity.
         
         Args:
             slot_id: Unique identifier for the save slot to load
@@ -122,6 +138,17 @@ class SaveSystem:
             with open(save_path, 'r', encoding='utf-8') as f:
                 save_data = json.load(f)
             
+            # Verify Hash if present
+            stored_hash = save_data.get("hash")
+            if stored_hash:
+                calculated_hash = self._calculate_hash(save_data)
+                if stored_hash != calculated_hash:
+                    print(f"[WARNING] Save file integrity check FAILED for '{slot_id}'!")
+                    print("          The file may have been corrupted or modified externally.")
+                    # We continue loading but warn the user
+                else:
+                    print(f"[SYSTEM] Save integrity verified.")
+
             print(f"[LOAD] Game loaded from slot '{slot_id}'")
             return save_data
             
@@ -150,12 +177,16 @@ class SaveSystem:
                     with open(save_path, 'r', encoding='utf-8') as f:
                         data = json.load(f)
                     
+                    # Extract expanded metadata
                     saves.append({
                         "slot_id": slot_id,
                         "timestamp": data.get("timestamp", "Unknown"),
                         "scene": data.get("scene", "Unknown"),
                         "summary": data.get("summary", "No summary"),
-                        "datetime": data.get("datetime", "Unknown")
+                        "datetime": data.get("datetime", "Unknown"),
+                        "sanity": data.get("character_state", {}).get("player_state", {}).get("sanity", "??"),
+                        "attention": data.get("additional_systems", {}).get("attention_system", {}).get("attention_level", "??"),
+                        "active_theories": data.get("board_state", {}).get("active_count", 0) # Assuming this is available or derived
                     })
                 except Exception as e:
                     print(f"[WARNING] Could not read save file '{filename}': {e}")

@@ -1,6 +1,7 @@
 
 import re
 from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional
 
 class InputMode:
     DIALOGUE = "DIALOGUE"
