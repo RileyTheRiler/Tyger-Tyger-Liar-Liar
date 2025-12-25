@@ -63,7 +63,6 @@ from engine.environmental_effects import EnvironmentalEffects
 from engine.psychological_system import PsychologicalState, FailureType
 from engine.fear_system import FearManager
 from engine.unreliable_narrator import HallucinationEngine
-from engine.narrative_memory_system import NarrativeMemorySystem
 from engine.parser_hallucination import ParserHallucinationEngine
 from npc_system import NPCSystem
 from fracture_system import FractureSystem
@@ -72,8 +71,7 @@ from trigger_system import TriggerManager
 from liar_engine import LiarEngine
 from population_system import PopulationSystem
 from engine.story_manager import StoryManager
-
-
+from engine.reality_checker import RealityConsistencyChecker
 from npc_manager import NPCManager
 
 class Game:
@@ -141,8 +139,12 @@ class Game:
         self.skill_system = SkillSystem(resource_path(os.path.join(self.content_root, 'skills.json')))
         self.clue_system = ClueSystem()
         self.attention_system = AttentionSystem()
+        
+        # Initialize Psychological Systems (Week 15) - Early for ManifestationManager
+        self.psych_state = PsychologicalState(self.player_state)
+
         self.manifestation_manager = ManifestationManager(
-            self.board, self.player_state, self.attention_system
+            self.board, self.psych_state, self.attention_system
         )
         
         # Load Systems
@@ -163,8 +165,7 @@ class Game:
         # Link Time System to Board
         self.time_system.add_listener(self.on_time_passed)
         
-        # Initialize Psychological Systems (Week 15) - Initialized early for TextComposer
-        self.psych_state = PsychologicalState(self.player_state)
+        # Initialize Other Psych Systems
         self.fear_manager = FearManager()
         self.hallucination_engine = HallucinationEngine()
         
@@ -184,11 +185,24 @@ class Game:
         self.text_composer.developer_commentary = self.config.get("developer_commentary", False)
         self.last_composed_text = ""
 
+        # Initialize Reality Consistency Checker (Dev Tool)
+        self.reality_checker = RealityConsistencyChecker(debug_mode=self.config.get("debug_mode", False))
+
         # Initialize Flashback Manager (Phase 6)
         self.flashback_manager = FlashbackManager(self.skill_system, self.player_state)
 
 
         # Initialize Scene Manager
+        self.scene_manager = SceneManager(
+            self.time_system, 
+            self.board, 
+            self.skill_system, 
+            self.player_state,
+            self.flashback_manager,
+            clue_system=None # Injected later or we can move ClueSystem init up
+        )
+        self.last_composed_text = ""
+        
         # Initialize Population & Liar Engine
         self.population_system = PopulationSystem()
         self.liar_engine = LiarEngine(self.skill_system, self.inventory_system)
@@ -200,12 +214,7 @@ class Game:
             self.player_state,
             output_buffer=self.output
         )
-
-        # Initialize NPC Manager
-        self.npc_manager = NPCManager(os.path.join(self.content_root, "npcs"))
         
-
-
         # Initialize NPC System (Week 11)
         npcs_dir = resource_path(os.path.join(self.content_root, 'npcs'))
         self.npc_system = NPCSystem(npcs_dir if os.path.exists(npcs_dir) else None)
@@ -280,24 +289,26 @@ class Game:
         # Initialize Fracture System
         self.fracture_system = FractureSystem(self.get_game_state())
 
-        # Initialize Narrative Memory System (Week 16)
-        self.narrative_memory = NarrativeMemorySystem(
-            text_composer=self.text_composer,
-            player_state=self.player_state,
-            time_system=self.time_system
-        )
-
         self.active_argument = None # Phase 4 internal debates
         self.current_autopsy = None # Phase 5 autopsies
         
         # Load Documents (Phase 6)
         docs_path = resource_path(os.path.join(self.content_root, 'documents', 'documents.json'))
         self.inventory_system.load_documents(docs_path)
+
+        # Initialize Clue System
+        clues_dir = resource_path(os.path.join('data', 'clues'))
+        self.clue_system = ClueSystem(clues_dir, self.board)
         
         # Load Scenes
         scenes_dir = resource_path(os.path.join(self.content_root, 'scenes'))
         root_scenes = resource_path(os.path.join(self.content_root, 'scenes.json'))
+        # Pass clue_system to SceneManager (requires update in SceneManager)
+        self.scene_manager.clue_system = self.clue_system
         self.scene_manager.load_scenes_from_directory(scenes_dir, root_scenes)
+
+        # Link Story Manager
+        self.story_manager.set_scene_manager(self.scene_manager)
 
     
     def print(self, text=""):
@@ -929,18 +940,6 @@ class Game:
                         self.print(memory_scene.get("text", ""))
                         self.print("\n" + "~"*60 + "\n")
         
-        # 3. Spontaneous False Memories (Week 16)
-        recall_text = self.narrative_memory.check_spontaneous_recall(self.player_state)
-        if recall_text:
-            self.print("\n[INTRUSIVE MEMORY SURFACING]")
-            self.print(recall_text)
-            self.log_event("spontaneous_recall", memory="arrival_memory")
-
-        # 4. Breakdowns
-        if self.player_state["sanity"] <= 0:
-            self.print("\n>> SANITY CRITICAL: You collapse under the weight of your own mind. <<")
-            self.player_state["sanity"] = 10 
-            self.log_event("breakdown", breakdown_type="sanity")
         # 3. Breakdowns & Soft Failures
         theory_count = self.board.get_active_or_internalizing_count()
         new_failures = self.psych_state.check_soft_failures(theory_count)
@@ -1068,7 +1067,40 @@ class Game:
         # 3. Compose
         # 3. Compose
         thermal_active = self.player_state.get("thermal_mode", False)
+
+        # Pass reality checker if debug
+
         composed_result = self.text_composer.compose(text_data, archetype, self.player_state, thermal_mode=thermal_active)
+
+        # --- Reality Consistency Check (Dev Tool) ---
+        if self.debug_mode:
+            # We assume current text is asserting something about current location and time
+            # 1. Fact: Current Location
+            self.reality_checker.register_fact(
+                subject="player",
+                attribute="location",
+                value=self.player_state.get("current_location", "unknown"),
+                timestamp=int((self.time_system.current_time - self.time_system.start_time).total_seconds() / 60),
+                location_id=self.player_state.get("current_location", "unknown"),
+                is_distorted=composed_result.fracture_applied or archetype == Archetype.HAUNTED,
+                source_text=f"Scene Display: {scene.get('name')}"
+            )
+
+            # 2. Explicit facts in text_data? (Need to update scenes to use this)
+            if "facts" in text_data:
+                for f_data in text_data["facts"]:
+                     self.reality_checker.register_fact(
+                        subject=f_data.get("subject"),
+                        attribute=f_data.get("attribute"),
+                        value=f_data.get("value"),
+                        timestamp=int((self.time_system.current_time - self.time_system.start_time).total_seconds() / 60),
+                        location_id=self.player_state.get("current_location", "unknown"),
+                        is_distorted=composed_result.fracture_applied or archetype == Archetype.HAUNTED,
+                        source_text=f"Fact Assertion in {scene.get('id')}"
+                     )
+
+        self.last_composed_text = self.apply_reality_distortion(composed_result.full_text)
+        self.print("\n" + self.last_composed_text + "\n")
         self.last_composed_text = composed_result.full_text
         
         # Check dev toggle for side-by-side
@@ -1360,8 +1392,15 @@ class Game:
                 self.export_dossier()
             elif target == 'log':
                 self.export_log()
+            elif target == 'reality':
+                # Export Reality Report
+                report = self.reality_checker.generate_report()
+                fname = f"reality_report_{int(time.time())}.txt"
+                with open(fname, 'w', encoding='utf-8') as f:
+                    f.write(report)
+                self.print(f"[REALITY REPORT EXPORTED: {fname}]")
             else:
-                self.print("Usage: export [dossier|log]")
+                self.print("Usage: export [dossier|log|reality]")
             return "refresh"
 
         # Wait Command
@@ -1433,6 +1472,8 @@ class Game:
                 self.dialogue_manager.debug_show_hidden = self.debug_mode
                 if hasattr(self.dialogue_manager, 'text_composer'):
                     self.dialogue_manager.text_composer.debug_mode = self.debug_mode
+            # Sync reality checker
+            self.reality_checker.debug_mode = self.debug_mode
             return "refresh"
         
         if clean == 'devmode':
@@ -1854,7 +1895,6 @@ class Game:
             self.print("\n-=- AVAILABLE COMMANDS -=-")
             self.print(" INVESTIGATION: EXAMINE [target], SEARCH, COLLECT [item], EQUIP [item], ANALYZE [evidence]")
             self.print(" ACTIONS: PHOTOGRAPH [target], USE [target] (on [target])")
-            self.print(" MEMORY: RECALL [topic] (or 'list'), RECALL false_memory (debug)")
             self.print(" NAVIGATION: MAP, WHERE, [number], GO [location]")
             self.print(" SYSTEM: (b)oard, (c)haracter, (i)nventory, (e)vidence, (w)ait, (s)leep, (q)uit")
             self.print("--------------------------")
@@ -1940,27 +1980,6 @@ class Game:
 
         elif verb == "GROUND":
             self.perform_grounding_ritual()
-
-        # --- NARRATIVE MEMORY (Week 16) ---
-        elif verb == "RECALL":
-            if not target:
-                self.print("Recall what? (Use 'recall list' to see available memories)")
-                return
-
-            if target == "list":
-                self.print("\n=== RECENT MEMORIES ===")
-                # List last 10
-                sorted_mems = sorted(self.narrative_memory.memories.values(), key=lambda x: x.timestamp, reverse=True)[:10]
-                for m in sorted_mems:
-                    self.print(f"- {m.event_id}")
-            elif target == "false_memory":
-                # Debug trigger for false memory requirement
-                self.narrative_memory.inject_explicit_false_memory()
-                self.print(self.narrative_memory.recall_event("arrival_memory"))
-            else:
-                text = self.narrative_memory.recall_event(target)
-                self.print(f"\n[RECALLING: {target}]")
-                self.print(f"{text}")
 
         else:
             self.print(f"You try to {verb} the {target or 'air'}, but nothing happens yet.")
@@ -2099,18 +2118,13 @@ class Game:
 
     def apply_effects(self, effects):
         if not effects: return
-        
         # Normalize to list of dicts if it's a simple key-value dict
         effect_list = []
         if isinstance(effects, dict):
-            # Convert {"sanity": -5} to [{"type": "sanity", "value": -5}]
-            # Or handle directly. For backward compat, we can just process dict items.
             for key, value in effects.items():
                 if isinstance(value, dict) and "type" in value:
-                     # Already complex object? Rare in legacy.
-                     effect_list.append(value) # value should be full effect obj
+                     effect_list.append(value)
                 else:
-                     # Simple key-value
                      effect_list.append({"type": key, "value": value})
         elif isinstance(effects, list):
             effect_list = effects
@@ -2118,12 +2132,8 @@ class Game:
         for effect in effect_list:
             if not isinstance(effect, dict): continue
             
-            # Helper to get type/value whether it's normalized or raw
             eff_type = effect.get("type", "").lower()
             val = effect.get("value")
-            
-            # Handle specific key overrides for normalized dicts
-            # (e.g. if we normalized {"sanity": -5} -> type="sanity", value=-5)
             
             if eff_type == "sanity":
                 self.player_state["sanity"] = max(0, min(100, self.player_state["sanity"] + val))
@@ -2135,7 +2145,7 @@ class Game:
                 
             elif eff_type == "xp":
                 self.skill_system.add_xp(val)
-                self.print(f"[XP +{val}]") # add_xp usually prints too
+                self.print(f"[XP +{val}]")
                 
             elif eff_type == "add_item":
                 self.inventory_system.add_item_by_id(val) if isinstance(val, str) else self.inventory_system.add_item(val)
@@ -2145,14 +2155,23 @@ class Game:
                 self.inventory_system.add_evidence_by_id(val) if isinstance(val, str) else self.inventory_system.add_evidence(val)
                 self.print(f"[EVIDENCE ADDED: {val}]")
                 
+                # Bridge to ClueSystem: if evidence ID matches a clue ID, acquire it
+                ev_id = val if isinstance(val, str) else val.get("id") # Use .get("id") for dicts
+                if self.clue_system.get_clue(ev_id):
+                    # Use current lens for automatic acquisition via evidence
+                    lens = self.lens_system.calculate_lens() # Use lens_system.calculate_lens()
+                    state = self.clue_system.acquire_clue(ev_id, lens)
+                    if state:
+                        self.print(f"[CLUE SYSTEM] Evidence '{ev_id}' also interpreted as clue.")
+                        self.print(f"  Interpretation ({state.current_lens.upper()}): \"{state.current_interpretation}\"")
+                        self.log_event("clue_found", clue_id=ev_id, interpretation=state.current_interpretation, lens=state.current_lens)
+                
             elif eff_type == "unlock_thought":
                 if val not in self.player_state["thoughts"]:
                     self.player_state["thoughts"].append(val)
                     self.print(f"[THOUGHT UNLOCKED: {val}]")
                     
             elif eff_type == "attribute":
-                # input: {"type": "attribute", "target": "REASON", "value": 1}
-                # or normalized: {"type": "attribute", "value": {"target": "REASON", "value": 1}}
                 target = effect.get("target")
                 if not target and isinstance(val, dict): target = val.get("target")
                 
@@ -2164,14 +2183,9 @@ class Game:
                     self.print(f"[ATTRIBUTE MODIFIED: {target} -> {self.skill_system.attributes[target].value}]")
             
             elif eff_type == "teleport":
-                # {"type": "teleport", "target": "clinic_bed"}
                 target_id = effect.get("target")
-                # Fallback: Check inside 'value' if it's a dict (normalization artifact)
-                if not target_id and isinstance(val, dict):
-                    target_id = val.get("target")
-                # Fallback: Check if 'value' is the target string directly
-                if not target_id and isinstance(val, str):
-                    target_id = val
+                if not target_id and isinstance(val, dict): target_id = val.get("target")
+                if not target_id and isinstance(val, str): target_id = val
 
                 if target_id:
                     self.player_state["current_location"] = target_id
@@ -2181,19 +2195,27 @@ class Game:
                          self.print(f"\n[Moved to {target_id}...]")
             
             elif eff_type == "ending":
-                 # {"type": "ending", "target": "integrated_forced"}
                  ending_id = effect.get("target")
-                 # Fallback: Check inside 'value'
-                 if not ending_id and isinstance(val, dict):
-                     ending_id = val.get("target")
-                 # Fallback: Direct string
-                 if not ending_id and isinstance(val, str):
-                     ending_id = val
+                 if not ending_id and isinstance(val, dict): ending_id = val.get("target")
+                 if not ending_id and isinstance(val, str): ending_id = val
 
                  if ending_id:
                      self.endgame_manager.trigger_ending(ending_id)
 
+            elif eff_type == "add_clue":
+                # Check for explicit lens in the effect, otherwise default to current lens
+                clue_id = val
+                forced_lens = None
+                if isinstance(val, dict):
+                    clue_id = val.get("id")
+                    forced_lens = val.get("lens")
 
+                lens = forced_lens or self.lens_system.calculate_lens() # Use lens_system.calculate_lens()
+                state = self.clue_system.acquire_clue(clue_id, lens)
+                if state:
+                     self.print(f"\n[CLUE FOUND] {self.clue_system.get_clue(clue_id).title}")
+                     self.print(f"  Interpretation ({state.current_lens.upper()}): \"{state.current_interpretation}\"")
+                     self.log_event("clue_found", clue_id=clue_id, interpretation=state.current_interpretation, lens=state.current_lens) # Added log_event
     
     def handle_save_menu(self):
         """Interactive save menu."""
@@ -2223,7 +2245,8 @@ class Game:
         self.print("\n=== EXPORT DATA ===")
         self.print("1. Export Dossier (HTML)")
         self.print("2. Export Event Log (Text)")
-        self.print("\n(Use command: 'export dossier' or 'export log')")
+        self.print("3. Export Reality Report (Text)")
+        self.print("\n(Use command: 'export dossier', 'export log', or 'export reality')")
 
     def export_dossier(self):
         """Generates an HTML dossier of the current investigation."""
@@ -2355,8 +2378,7 @@ class Game:
                     "attention_system": self.attention_system.to_dict(),
                     "memory_system": self.memory_system.export_state(),
                     "fracture_system": self.fracture_system.to_dict(),
-                    "psychological_system": self.psych_state.to_dict(),
-                    "narrative_memory": self.narrative_memory.to_dict()
+                    "psychological_system": self.psych_state.to_dict()
                 }
             }
             
@@ -2432,8 +2454,6 @@ class Game:
                     self.fracture_system.restore_state(systems["fracture_system"])
                 if "psychological_system" in systems:
                     self.psych_state.restore_state(systems["psychological_system"])
-                if "narrative_memory" in systems:
-                    self.narrative_memory.load_state(systems["narrative_memory"])
             
             print(f"\n✓ Game loaded successfully from '{slot_id}'")
             print(f"   Location: {save_data.get('scene', 'Unknown')}")
@@ -2527,19 +2547,18 @@ class Game:
     def log_event(self, event_type: str, **details):
         """Log a significant game event."""
         self.event_log.add_event(event_type, **details)
+        # Week 6: Hook into Journal System if meaningful
+        if event_type in ["clue_found", "clue_updated"]:
+            title = f"Clue Discovery: {details.get('clue_id', 'Unknown')}"
+            if event_type == "clue_updated":
+                title = f"Clue Reinterpreted: {details.get('clue_id', 'Unknown')}"
 
-        # Week 16: Also log to Narrative Memory if it's a scene entry or major event
-        if event_type == "scene_entry":
-            scene_id = details.get("scene_id")
-            scene_data = self.scene_manager.scenes.get(scene_id)
-            if scene_data:
-                # Log the scene text as a memory
-                self.narrative_memory.log_event(
-                    event_id=f"scene_{scene_id}_{int(self.time_system.current_time.timestamp())}",
-                    text_data=scene_data.get("text", f"Visited {scene_data.get('name')}"),
-                    importance=5,
-                    tags=["scene_visit", scene_id]
-                )
+            body = f"{details.get('interpretation', 'No interpretation recorded.')}\n\nLens: {details.get('lens', 'neutral').upper()}"
+            self.journal.add_entry(
+                title=title,
+                body=body,
+                tags=["clue", details.get('lens', 'neutral')]
+            )
 
     def process_choice(self, choice):
         # Handle Skill Checks
@@ -2787,8 +2806,6 @@ class Game:
         print(self.board_ui.render())
         print("\nCommands: 'evidence <theory_id> <evidence_id>' | 'contradict <theory_id> <evidence_id>'")
         print("          'prove <theory_id>' | 'disprove <theory_id>'\n")
-
-
 
 if __name__ == "__main__":
     game = Game()

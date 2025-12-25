@@ -1,0 +1,18 @@
+[
+  {
+    "id": "clue_ancient_symbol",
+    "title": "Ancient Symbol Carving",
+    "text": {
+      "base": "A carving on the rock. It looks old.",
+      "lens": {
+        "believer": "It is a warding sigil. The lines hum with faint energy.",
+        "skeptic": "Geological erosion combined with pareidolia. Or perhaps graffiti.",
+        "haunted": "You carved this. Years ago. You remember the knife in your hand."
+      }
+    },
+    "source_scene_id": "scene_interpretation_demo_origin",
+    "tags": ["symbol", "rock", "ancient"],
+    "reliability": 0.6,
+    "analysis_skills": ["History", "Geology"]
+  }
+]
