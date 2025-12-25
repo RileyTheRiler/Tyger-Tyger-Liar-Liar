@@ -1576,8 +1576,8 @@ class Game:
                 self.print(f"You aren't equipping a '{target}'.")
 
         elif verb == "ANALYZE":
-             self.player_state["investigation_count"] += 1
-             self.handle_analyze(target)
+            self.player_state["investigation_count"] += 1
+            self.handle_analyze(target)
 
         elif verb == "COMBINE":
              self.print("You try to combine them, but nothing happens. (Not implemented yet)")
@@ -1618,9 +1618,9 @@ class Game:
             self.print("--------------------------")
 
         elif verb == "TALK" or verb == "ASK":
-             self.player_state["investigation_count"] += 1
-             # Need to restore TALK/ASK because it's in original
-             if not target:
+            self.player_state["investigation_count"] += 1
+            # Need to restore TALK/ASK because it's in original
+            if not target:
                 self.print("Talk to whom?")
                 return
              npc_key, npc_data = self._resolve_object(target, objects)
@@ -1808,11 +1808,16 @@ class Game:
 
     def check_fail_forward_ending(self):
         """Check if investigation limit reached and trigger fail-forward ending."""
-        LIMIT = 25 # Short loop for testing, maybe higher in real game
+        # Prevent infinite loop
+        if "fail_forward_triggered" in self.player_state["event_flags"]:
+            return False
+
+        LIMIT = 50 # End-to-end loop limit
         if self.player_state['investigation_count'] >= LIMIT:
-            self.print(f"\n{'='*60}")
-            self.print(f"  INVESTIGATION LIMIT REACHED ({LIMIT})")
-            self.print(f"{'='*60}\n")
+            if self.debug_mode:
+                self.print(f"\n{'='*60}")
+                self.print(f"  INVESTIGATION LIMIT REACHED ({LIMIT})")
+                self.print(f"{'='*60}\n")
 
             counters = self.player_state['ff_counters']
 
@@ -1842,9 +1847,11 @@ class Game:
                 max_val = counters['annihilation']
                 ending_scene = "ending_annihilation"
 
-            self.print(f"[DEBUG] Counters: {counters} -> Winner: {ending_scene}")
+            if self.debug_mode:
+                self.print(f"[DEBUG] Counters: {counters} -> Winner: {ending_scene}")
 
             # Trigger ending
+            self.player_state["event_flags"].add("fail_forward_triggered")
             self.scene_manager.load_scene(ending_scene)
             return True
         return False
