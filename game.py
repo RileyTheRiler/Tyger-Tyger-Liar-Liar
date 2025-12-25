@@ -1645,7 +1645,16 @@ class Game:
                 self.print(f"You aren't equipping a '{target}'.")
 
         elif verb == "ANALYZE":
+             if self.psych_state.is_failure_active(FailureType.COGNITIVE_OVERLOAD):
+                 self.print("The words swim before your eyes. You can't focus enough to analyze anything.")
+                 return
              self.handle_analyze(target)
+
+        elif verb == "READ":
+             if self.psych_state.is_failure_active(FailureType.COGNITIVE_OVERLOAD):
+                 self.print("The text refuses to hold still.")
+                 return
+             self.print(f"You try to read the {target}...")
 
         elif verb == "COMBINE":
              self.print("You try to combine them, but nothing happens. (Not implemented yet)")
@@ -1686,6 +1695,10 @@ class Game:
             self.print("--------------------------")
 
         elif verb == "TALK" or verb == "ASK":
+             if self.psych_state.is_failure_active(FailureType.SOCIAL_BREAKDOWN):
+                 self.print("You can't bring yourself to speak to them. You know they're listening.")
+                 return
+
              # Need to restore TALK/ASK because it's in original
              if not target:
                 self.print("Talk to whom?")
