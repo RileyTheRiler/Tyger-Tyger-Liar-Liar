@@ -694,12 +694,48 @@ class Game:
                         print(f"  {npc.name} (Trust: {npc.trust})")
                 return "refresh"
 
+            # Clue Commands
+            if clean in ['clues', 'clue']:
+                clues = self.clue_system.get_clues_summary()
+                if not clues:
+                    print("\n[No clues discovered yet]")
+                else:
+                    print("\n=== DISCOVERED CLUES ===")
+                    for c in clues:
+                        analyzed = "[ANALYZED]" if c["analyzed"] else ""
+                        links_str = ""
+                        if c["links"]:
+                            links_str = f" -> {', '.join([l['theory'] for l in c['links']])}"
+                        print(f"  {c['id']}: {c['title']} {analyzed}{links_str}")
+                return "refresh"
+
+            if clean.startswith('linkclue '):
+                # linkclue <clue_id> <theory_id> [supports|contradicts]
+                parts = raw.split()
+                if len(parts) >= 3:
+                    clue_id = parts[1]
+                    theory_id = parts[2]
+                    relation = parts[3] if len(parts) > 3 else "supports"
+                    result = self.clue_system.link_clue_to_theory(clue_id, theory_id, relation)
+                    if result.get("success"):
+                        print(f"[CLUE] {result.get('message', 'Linked successfully')}")
+                        if result.get("sanity_damage", 0) > 0:
+                            self.player_state["sanity"] -= result["sanity_damage"]
+                            print(f"[SANITY -{result['sanity_damage']}]")
+                        if result.get("theory_collapsed"):
+                            print("[WARNING] Theory has collapsed!")
+                    else:
+                        print(f"[ERROR] {result.get('error', 'Failed to link clue')}")
+                else:
+                    print("Usage: linkclue <clue_id> <theory_id> [supports|contradicts]")
+                return "refresh"
+
             # Debug Mode Commands
             if clean == 'debug':
                 self.debug_mode = not self.debug_mode
                 print(f"[DEBUG MODE: {'ON' if self.debug_mode else 'OFF'}]")
                 return "refresh"
-            
+
             # Theory Resolution Commands
             if clean.startswith('prove '):
                 parts = raw.split(maxsplit=1)

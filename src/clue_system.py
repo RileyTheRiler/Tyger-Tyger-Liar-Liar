@@ -155,19 +155,141 @@ class ClueSystem:
 
         return clue
 
-    def _add_clue_to_board(self, clue: Clue):
-        """Add a clue node to the Board and link it."""
-        # This would integrate with the Board system
-        # For now, we'll just print the action
-        print(f"[BOARD] Added clue node: {clue.title}")
+    def _add_clue_to_board(self, clue: Clue) -> dict:
+        """
+        Add a clue to the Board and auto-link to relevant theories.
+        Returns dict with results of linking operations.
+        """
+        results = {
+            "clue_id": clue.id,
+            "clue_title": clue.title,
+            "theories_linked": [],
+            "theories_contradicted": [],
+            "sanity_damage": 0
+        }
 
-        # Auto-link based on theory links
+        if not self.board:
+            return results
+
+        # Auto-link based on theory links defined in the clue
         for link in clue.links_to_theories:
-            print(f"[BOARD] Linked clue to theory '{link.theory_id}' ({link.relation})")
+            theory = self.board.get_theory(link.theory_id)
+            if not theory:
+                continue
 
-        # Auto-link based on tags
-        for tag in clue.tags:
-            print(f"[BOARD] Tagged clue with: {tag}")
+            if link.relation == "supports":
+                # Add as supporting evidence
+                success = self.board.add_evidence_to_theory(link.theory_id, clue.id)
+                if success:
+                    results["theories_linked"].append({
+                        "theory_id": link.theory_id,
+                        "theory_name": theory.name,
+                        "relation": "supports"
+                    })
+
+            elif link.relation == "contradicts":
+                # Add as contradiction - may damage theory health
+                result = self.board.add_contradiction_to_theory(link.theory_id, clue.id)
+                if result.get("success"):
+                    results["theories_contradicted"].append({
+                        "theory_id": link.theory_id,
+                        "theory_name": theory.name,
+                        "message": result.get("message", ""),
+                        "collapsed": result.get("theory_collapsed", False)
+                    })
+                    results["sanity_damage"] += result.get("sanity_damage", 0)
+
+            elif link.relation == "associated":
+                # Generic association - treat as weak supporting evidence
+                success = self.board.add_evidence_to_theory(link.theory_id, clue.id)
+                if success:
+                    results["theories_linked"].append({
+                        "theory_id": link.theory_id,
+                        "theory_name": theory.name,
+                        "relation": "associated"
+                    })
+
+        # Log results
+        if results["theories_linked"]:
+            for link_info in results["theories_linked"]:
+                print(f"[BOARD] Clue '{clue.title}' {link_info['relation']} theory '{link_info['theory_name']}'")
+
+        if results["theories_contradicted"]:
+            for contra_info in results["theories_contradicted"]:
+                if contra_info["collapsed"]:
+                    print(f"[BOARD] {contra_info['message']}")
+                else:
+                    print(f"[BOARD] Clue '{clue.title}' contradicts theory '{contra_info['theory_name']}'")
+
+        return results
+
+    def link_clue_to_theory(self, clue_id: str, theory_id: str, relation: str = "supports") -> dict:
+        """
+        Manually link a clue to a theory.
+        relation: "supports", "contradicts", or "associated"
+        """
+        if clue_id not in self.acquired_clues:
+            return {"success": False, "error": "Clue not acquired"}
+
+        clue = self.get_clue(clue_id)
+        if not clue:
+            return {"success": False, "error": "Clue not found"}
+
+        if not self.board:
+            return {"success": False, "error": "No board available"}
+
+        theory = self.board.get_theory(theory_id)
+        if not theory:
+            return {"success": False, "error": "Theory not found"}
+
+        if relation == "contradicts":
+            result = self.board.add_contradiction_to_theory(theory_id, clue_id)
+            if result.get("success"):
+                # Add to clue's links
+                clue.links_to_theories.append(ClueTheoryLink(theory_id, "contradicts"))
+                return {
+                    "success": True,
+                    "message": result.get("message", f"Linked as contradiction"),
+                    "sanity_damage": result.get("sanity_damage", 0),
+                    "theory_collapsed": result.get("theory_collapsed", False)
+                }
+        else:
+            success = self.board.add_evidence_to_theory(theory_id, clue_id)
+            if success:
+                clue.links_to_theories.append(ClueTheoryLink(theory_id, relation))
+                return {
+                    "success": True,
+                    "message": f"Clue linked to theory as {relation}"
+                }
+
+        return {"success": False, "error": "Failed to link clue"}
+
+    def get_unlinked_clues(self) -> List[Clue]:
+        """Get all acquired clues that aren't linked to any theory."""
+        unlinked = []
+        for clue_id in self.acquired_clues:
+            clue = self.clue_definitions.get(clue_id)
+            if clue and not clue.links_to_theories:
+                unlinked.append(clue)
+        return unlinked
+
+    def get_clues_summary(self) -> List[dict]:
+        """Get summary of all acquired clues for UI display."""
+        summary = []
+        for clue_id in self.acquired_clues:
+            clue = self.clue_definitions.get(clue_id)
+            if clue:
+                links = [{"theory": link.theory_id, "relation": link.relation}
+                         for link in clue.links_to_theories]
+                summary.append({
+                    "id": clue.id,
+                    "title": clue.title,
+                    "analyzed": clue.analyzed,
+                    "reliability": clue.reliability,
+                    "links": links,
+                    "tags": clue.tags
+                })
+        return summary
 
     def evaluate_passive_clues(self, scene_passive_clues: List[dict],
                                 player_state: dict) -> List[Tuple[Clue, str]]:
