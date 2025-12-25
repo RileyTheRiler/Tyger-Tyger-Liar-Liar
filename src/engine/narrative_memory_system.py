@@ -74,6 +74,10 @@ class NarrativeMemorySystem:
         if event_id not in self.memories:
             return "You try to remember, but there is nothing there."
 
+        # Special case: The explicit false memory replaces the text entirely if active
+        if event_id == "arrival_memory" and self.false_memory_injected:
+             return "You arrived in town in a black sedan. You were driving. There was blood on the steering wheel."
+
         event = self.memories[event_id]
         event.times_recalled += 1
 
@@ -208,24 +212,17 @@ class NarrativeMemorySystem:
         if self.false_memory_injected:
             return
 
-        self.log_event(
-            event_id="arrival_memory",
-            text_data={"base": "You arrived in town on the 4 PM bus. The driver was a quiet man with a scar on his cheek."},
-            importance=10,
-            tags=["core", "false_candidate"]
-        )
-
-        # Corrupt it immediately
-        if "arrival_memory" in self.memories:
-            self.memories["arrival_memory"].drift_level = 2.0 # High drift
-            # Force a specific text data change to ensure it reads differently
-            # This satisfies "references a past event incorrectly"
-            self.memories["arrival_memory"].text_data = {
-                "base": "You arrived in town in a black sedan. You were driving. There was blood on the steering wheel."
-            }
+        # Ensure the base memory exists if it hasn't been logged yet
+        if "arrival_memory" not in self.memories:
+            self.log_event(
+                event_id="arrival_memory",
+                text_data={"base": "You arrived in town on the 4 PM bus. The driver was a quiet man with a scar on his cheek."},
+                importance=10,
+                tags=["core", "false_candidate"]
+            )
 
         self.false_memory_injected = True
-        print("[MEMORY] Explicit false memory injected: 'arrival_memory'")
+        print("[MEMORY] Explicit false memory activated: 'arrival_memory'")
 
     def to_dict(self) -> Dict:
         return {

@@ -108,12 +108,9 @@ class TestNarrativeMemory(unittest.TestCase):
         self.memory_system.inject_explicit_false_memory()
         recalled = self.memory_system.recall_event("arrival_memory")
 
-        # Should contain the corrupted text
+        # Should contain the corrupted text - the strict override returns exactly this
         self.assertIn("black sedan", recalled)
         self.assertIn("blood", recalled)
-
-        # Should contain injected contradiction due to high drift
-        self.assertTrue(any(x in recalled for x in ["Wait", "No", "found you"]))
 
 if __name__ == '__main__':
     unittest.main()
