@@ -63,6 +63,20 @@ class AudioSystem {
         osc.start();
         osc.stop(this.ctx.currentTime + 6);
     }
+
+    playKeySound() {
+        // Very short blip for typing
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.frequency.setValueAtTime(800 + Math.random() * 200, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.03);
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.03);
+    }
 }
 
 class TitleScreen {
@@ -80,6 +94,11 @@ class TitleScreen {
 
         this.selectedIndex = 0;
         this.inputBuffer = "";
+
+        // Typewriter queue
+        this.printQueue = [];
+        this.isTyping = false;
+        this.typeSpeed = 10; // ms per char
 
         this.init();
     }
@@ -127,7 +146,7 @@ class TitleScreen {
         });
 
         this.socket.on('game_output', (msg) => {
-            this.appendGameOutput(msg.data);
+            this.queueOutput(msg.data);
         });
 
         this.socket.on('game_started', () => {
@@ -167,13 +186,16 @@ class TitleScreen {
                 this.selectItem();
             }
         } else if (this.state === 'game') {
+            // Speed up typing on key press
+            if (this.isTyping) {
+                this.typeSpeed = 0;
+                return; // Consume key press to just speed up
+            }
+
             // Handle Game Input
             if (e.key === 'Enter') {
                 this.sendInput(this.inputBuffer);
                 this.inputBuffer = "";
-                // Append locally for immediate feedback?
-                // Better wait for echo or handle manually if server doesn't echo input
-                // this.appendGameOutput('> ' + this.inputBuffer + '\n');
             } else if (e.key === 'Backspace') {
                 this.inputBuffer = this.inputBuffer.slice(0, -1);
                 this.updateInputLine();
@@ -193,17 +215,20 @@ class TitleScreen {
              inputLine = div;
         }
         inputLine.innerText = '> ' + this.inputBuffer + '_';
-        // Scroll to bottom
-        this.crtContent.scrollTop = this.crtContent.scrollHeight;
+        this.scrollToBottom();
     }
 
     sendInput(text) {
         if (this.socket) {
             this.socket.emit('player_input', { input: text });
-            // Remove the temporary input line or reset it
+            // Freeze current input line
             const inputLine = document.getElementById('input-line');
-            if (inputLine) inputLine.innerText = '> ' + text; // Freeze it
-            inputLine.id = ''; // remove id so new one is created
+            if (inputLine) {
+                inputLine.innerText = '> ' + text;
+                inputLine.id = ''; // Remove ID
+            }
+            // Add newline locally to separate output
+            // this.queueOutput('\n');
         }
     }
 
@@ -248,7 +273,7 @@ class TitleScreen {
 
         setTimeout(() => {
             this.state = 'game';
-            this.crtContent.innerHTML = ''; // Clear content
+            this.crtContent.innerHTML = '';
             if (this.socket) {
                 this.socket.emit('start_game');
             } else {
@@ -257,15 +282,36 @@ class TitleScreen {
         }, 2000);
     }
 
-    appendGameOutput(text) {
-        // Convert ANSI to HTML
-        const html = this.ansiToHtml(text);
+    queueOutput(text) {
+        const tokens = this.parseAnsi(text);
+        this.printQueue.push(...tokens);
+        if (!this.isTyping) {
+            this.processQueue();
+        }
+    }
 
-        // Append to content
-        // If there's an active input line, insert before it
+    async processQueue() {
+        if (this.printQueue.length === 0) {
+            this.isTyping = false;
+            this.typeSpeed = 10; // Reset speed
+            this.updateInputLine(); // Ensure input line is at bottom
+            return;
+        }
+
+        this.isTyping = true;
+        const token = this.printQueue.shift();
+
+        // Find or create current span
+        // We append to the main container, before the input line
         const inputLine = document.getElementById('input-line');
+
+        // If token has style, create new span, else stick to plain text?
+        // Actually each token is a style block.
+
         const span = document.createElement('span');
-        span.innerHTML = html;
+        if (token.style) {
+            span.style.cssText = token.style;
+        }
 
         if (inputLine) {
             this.crtContent.insertBefore(span, inputLine);
@@ -273,65 +319,73 @@ class TitleScreen {
             this.crtContent.appendChild(span);
         }
 
-        // Scroll
+        // Type out text content
+        for (let char of token.text) {
+            span.textContent += char;
+            this.scrollToBottom();
+
+            // Audio feedback occasionally
+            if (Math.random() > 0.8) this.audio.playKeySound();
+
+            if (this.typeSpeed > 0) {
+                await new Promise(r => setTimeout(r, this.typeSpeed));
+            }
+        }
+
+        // Next token
+        this.processQueue();
+    }
+
+    scrollToBottom() {
         this.crtContent.scrollTop = this.crtContent.scrollHeight;
     }
 
-    ansiToHtml(text) {
-        // Simple ANSI parser for the colors we used
-        // \033[91m -> <span style="color:red">
-        // \033[0m -> </span>
+    parseAnsi(text) {
+        // Returns array of { text: string, style: string }
+        if (!text) return [];
 
-        if (!text) return "";
+        const tokens = [];
+        let currentStyle = "";
 
-        let html = text
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/\n/g, '<br>');
-
-        // Colors from src/interface.py
         const colors = {
-            '91': 'var(--red-term)', // Red
-            '92': 'var(--green-term)', // Green
-            '93': 'yellow', // Yellow
-            '94': '#5050FF', // Blue
-            '95': 'magenta', // Magenta
-            '96': 'cyan', // Cyan
-            '97': 'white', // White
-            '36': 'cyan', // Sanity
-            '35': 'magenta', // Reality
-            '33': 'yellow', // Skill
-            '32': 'var(--green-term)', // Item
-            '1': 'font-weight:bold', // Bold
-            '4': 'text-decoration:underline', // Underline
+            '91': 'var(--red-term)',
+            '92': 'var(--green-term)',
+            '93': 'yellow',
+            '94': '#5050FF',
+            '95': 'magenta',
+            '96': 'cyan',
+            '97': 'white',
+            '36': 'cyan',
+            '35': 'magenta',
+            '33': 'yellow',
+            '32': 'var(--green-term)',
+            '1': 'font-weight:bold',
+            '4': 'text-decoration:underline',
         };
 
-        // Regex for ANSI codes: \033[...m
-        html = html.replace(/\033\[([0-9;]+)m/g, (match, codes) => {
-            const codeList = codes.split(';');
-            let style = "";
-            let reset = false;
+        const parts = text.split(/(\033\[[0-9;]+m)/);
 
-            for (let c of codeList) {
-                if (c === '0') {
-                    reset = true;
-                } else if (colors[c]) {
-                    if (c === '1' || c === '4') {
-                        style += colors[c] + ';';
-                    } else {
-                        style += `color:${colors[c]};`;
+        for (let part of parts) {
+            if (part.startsWith('\033[')) {
+                // Parse code
+                const codes = part.substring(2, part.length - 1).split(';');
+                for (let c of codes) {
+                    if (c === '0') {
+                        currentStyle = "";
+                    } else if (colors[c]) {
+                         if (c === '1' || c === '4') {
+                            currentStyle += colors[c] + ';';
+                        } else {
+                            currentStyle += `color:${colors[c]};`;
+                        }
                     }
                 }
+            } else if (part.length > 0) {
+                tokens.push({ text: part, style: currentStyle });
             }
+        }
 
-            if (reset) {
-                return '</span>';
-            } else {
-                return `<span style="${style}">`;
-            }
-        });
-
-        return html;
+        return tokens;
     }
 }
 
