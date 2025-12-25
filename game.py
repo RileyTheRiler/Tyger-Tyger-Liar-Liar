@@ -228,15 +228,56 @@ class Game:
 
 
     def update_board_effects(self):
-        # Clear old Board modifiers (hacky reset for now)
+        # NOTE: This method is now "update_all_modifiers" effectively
+
+        # 1. Clear old Board modifiers
         for skill in self.skill_system.skills.values():
             skill.set_modifier("Board", 0)
+            skill.set_modifier("Weather", 0) # Clear weather too
             
+        # 2. Apply Board Modifiers
         current_mods = self.board.get_all_modifiers()
         for skill_name, val in current_mods.items():
             skill = self.skill_system.get_skill(skill_name)
             if skill:
                 skill.set_modifier("Board", val)
+
+        # 3. Apply Weather Modifiers
+        weather_cond = self.weather_system.get_current_condition()
+
+        # Perception
+        if weather_cond.visibility_mod != 0:
+            perc = self.skill_system.get_skill("Perception")
+            if perc:
+                 # visibility_mod is e.g. -20. We apply it as modifier.
+                 # The system uses additive ints. A -20 might be huge on 2d6 scale!
+                 # Wait, 2d6 scale usually uses modifiers of like -1, -2.
+                 # My WeatherSystem defines visibility_mod as e.g. -10, -20.
+                 # If these are percentage chances, that's one thing. If they are roll modifiers, -20 is impossible to pass.
+                 # Let's check SkillSystem. It rolls 2d6 + effective_level. Effective level is usually 1-6.
+                 # So a -20 modifier means -20 to the roll.
+                 # The design in WeatherSystem used huge numbers (-10, -20, -50).
+                 # This implies they might be intended as "Attention" or "Percentage" modifiers, OR I need to scale them down.
+                 # Let's assume for Skill Checks (2d6), we scale them down by factor of 10?
+                 # -10 -> -1. -20 -> -2. -50 -> -5.
+
+                 scaled_mod = int(weather_cond.visibility_mod / 10)
+                 if scaled_mod != 0:
+                     perc.set_modifier("Weather", scaled_mod)
+
+        # Stealth (Wind/Noise helps stealth?)
+        if weather_cond.stealth_mod != 0:
+            stealth = self.skill_system.get_skill("Stealth")
+            if stealth:
+                 scaled_mod = int(weather_cond.stealth_mod / 10)
+                 if scaled_mod != 0:
+                     stealth.set_modifier("Weather", scaled_mod)
+
+        # Audio (Perception for hearing?)
+        if weather_cond.audio_mod != 0:
+            # Maybe applied to perception too if it's auditory?
+            # Or "Paranormal Sensitivity"?
+            pass
 
     def start_game(self, start_scene_id="bedroom"):
         self.output.clear()
