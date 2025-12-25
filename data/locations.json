@@ -8,6 +8,9 @@
             },
             "trail": {
                 "travel_minutes": 5
+            },
+            "kaltvik_town_square": {
+                "travel_minutes": 15
             }
         },
         "state": {
@@ -113,5 +116,70 @@
         "scenes": [
             "lake_shore"
         ]
+    },
+    "kaltvik_town_square": {
+        "name": "Kaltvik Town Square",
+        "description": "The frozen heart of the town. Buildings lean inward like rotting teeth.",
+        "connected_to": {
+            "trailhead": {
+                "travel_minutes": 15
+            },
+            "hotel": {
+                "travel_minutes": 5
+            },
+            "police_station": {
+                "travel_minutes": 5
+            },
+            "facility": {
+                "travel_minutes": 20
+            }
+        },
+        "state": {
+            "searched": false
+        },
+        "scenes": ["kaltvik_town_square"],
+        "on_enter_scene": "kaltvik_town_square"
+    },
+    "hotel": {
+        "name": "The Grand Kaltvik Hotel",
+        "description": "A decaying monument to a tourism boom that never happened. The windows are boarded up.",
+        "connected_to": {
+            "kaltvik_town_square": {
+                "travel_minutes": 5
+            }
+        },
+        "state": {
+            "searched": false
+        },
+        "scenes": ["kaltvik_hotel"],
+        "on_enter_scene": "kaltvik_hotel"
+    },
+    "police_station": {
+        "name": "Police Station",
+        "description": "A brutalist concrete block. The lights are flickering inside.",
+        "connected_to": {
+            "kaltvik_town_square": {
+                "travel_minutes": 5
+            }
+        },
+        "state": {
+            "searched": false
+        },
+        "scenes": ["kaltvik_police"],
+        "on_enter_scene": "kaltvik_police"
+    },
+    "facility": {
+        "name": "Abandoned Research Facility",
+        "description": "Razor wire fences surround this rusted industrial complex on the edge of town.",
+        "connected_to": {
+            "kaltvik_town_square": {
+                "travel_minutes": 20
+            }
+        },
+        "state": {
+            "searched": false
+        },
+        "scenes": ["kaltvik_facility"],
+        "on_enter_scene": "kaltvik_facility"
     }
 }

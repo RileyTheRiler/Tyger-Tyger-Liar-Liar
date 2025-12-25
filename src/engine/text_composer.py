@@ -313,6 +313,18 @@ class TextComposer:
             fracture_applied = True
             debug_info["layers"].append("fracture")
 
+        # === LAYER 4.1: DOUBT FILTER (Missing Facts) ===
+        doubt = player_state.get("doubt", 0)
+        if doubt > 50:
+            full_text = self._apply_doubt_filter(full_text, doubt)
+            debug_info["layers"].append("doubt_filter")
+
+        # === LAYER 4.2: STRESS DISTORTION ===
+        stress = player_state.get("stress", 0)
+        if stress > 50:
+            full_text = self._apply_stress_distortion(full_text, stress)
+            debug_info["layers"].append("stress_distortion")
+
         # === LAYER 5: DEVELOPER COMMENTARY ===
         if self.developer_commentary:
             dev_note = text_data.get("dev_note")
@@ -529,6 +541,56 @@ class TextComposer:
             idx = random.randint(0, len(words) - 1)
             words[idx] = " " * len(words[idx])
         return " ".join(words)
+
+    def _apply_doubt_filter(self, text: str, doubt_level: int) -> str:
+        """
+        High Doubt causes facts to disappear or become uncertain.
+        """
+        import random
+        sentences = text.split(". ")
+        new_sentences = []
+
+        chance_to_drop = (doubt_level - 50) / 200.0  # 0% at 50, 25% at 100
+        chance_to_modify = (doubt_level - 40) / 100.0
+
+        modifiers = ["maybe", "perhaps", "it seems", "allegedly", "if you recall correctly"]
+
+        for s in sentences:
+            if random.random() < chance_to_drop:
+                continue # Drop the fact
+
+            if random.random() < chance_to_modify:
+                s = f"{random.choice(modifiers)}, {s[0].lower() + s[1:]}"
+
+            new_sentences.append(s)
+
+        if not new_sentences:
+            return "... [Memory Hazy] ..."
+
+        return ". ".join(new_sentences)
+
+    def _apply_stress_distortion(self, text: str, stress_level: int) -> str:
+        """
+        High Stress causes visual jitter/repetition/caps.
+        """
+        import random
+        if stress_level > 80:
+            # Jitter
+            chars = list(text)
+            for i in range(len(chars)):
+                if random.random() < 0.05:
+                    chars[i] = chars[i].upper()
+            text = "".join(chars)
+
+        if stress_level > 60:
+            # Stutter
+            words = text.split(" ")
+            for i in range(len(words)):
+                if len(words[i]) > 3 and random.random() < 0.05:
+                    words[i] = f"{words[i][0]}-{words[i]}"
+            text = " ".join(words)
+
+        return text
 
 
 class ClueTextComposer:

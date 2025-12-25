@@ -822,10 +822,15 @@ class Game:
         self.print("\n" + "="*60)
         
         # HUD
-        san = self.player_state["sanity"]
-        real = self.player_state["reality"]
-        san_status = "STABLE" if san >= 75 else "UNSETTLED" if san >= 50 else "HYSTERIA" if san >= 25 else "PSYCHOSIS"
-        real_status = "LUCID" if real >= 75 else "DOUBT" if real >= 50 else "DELUSION" if real >= 25 else "BROKEN"
+        # Week 15: Using PsychologicalState for status
+        stress = self.psych_state.stress
+        stability = self.psych_state.stability
+        doubt = self.psych_state.doubt
+        obsession = self.psych_state.obsession
+
+        # Indirect Feedback (Symptoms)
+        stab_desc = self.psych_state.get_stability_description()
+        stress_desc = self.psych_state.get_stress_symptom()
 
         print_separator("=", color=Colors.CYAN, printer=self.print)
         # Lens system calculates based on current skill/board state automatically
@@ -835,15 +840,21 @@ class Game:
         integration_display = self.integration_system.get_status_display()
 
         # Colorize Status
-        san_color = Colors.GREEN if san > 50 else Colors.YELLOW if san > 25 else Colors.RED
-        real_color = Colors.MAGENTA if real > 50 else Colors.YELLOW if real > 25 else Colors.RED
+        stab_color = Colors.GREEN if stability > 50 else Colors.YELLOW if stability > 25 else Colors.RED
 
         self.print(f"{Colors.BOLD}TIME: {self.time_system.get_time_string()}{Colors.RESET} | [LENS: {Colors.CYAN}{lens_str}{Colors.RESET}]")
         if attention_display:
             self.print(f"{Colors.RED}{attention_display}{Colors.RESET}")
         if integration_display:
             self.print(f"{Colors.MAGENTA}{integration_display}{Colors.RESET}")
-        self.print(f"SANITY: {san_color}{san:.0f}% ({san_status}){Colors.RESET} | REALITY: {real_color}{real:.0f}% ({real_status}){Colors.RESET}")
+
+        # Display Mental State (Indirect)
+        self.print(f"MENTAL STATE: {stab_color}{stab_desc}{Colors.RESET} | STRESS: {stress_desc}")
+
+        # Only show advanced stats if heavily affected or debug
+        if doubt > 30 or obsession > 30 or self.debug_mode:
+            self.print(f"DOUBT: {self.psych_state.get_doubt_symptom()} | OBSESSION: {self.psych_state.get_obsession_symptom()}")
+
         print_separator("=", color=Colors.CYAN, printer=self.print)
         
         print_boxed_title(scene.get("name", "Unknown Area"), printer=self.print)
