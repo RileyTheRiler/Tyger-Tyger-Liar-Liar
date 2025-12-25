@@ -1232,10 +1232,13 @@ class Game:
             if len(parts) >= 3:
                 theory_id = parts[1]
                 evidence_id = parts[2]
-                if self.board.add_evidence_to_theory(theory_id, evidence_id):
-                    self.print(f"[Evidence linked to theory]")
+                result = self.board.add_evidence_to_theory(theory_id, evidence_id)
+                if result.get('success'):
+                    self.print(f"[{result['message']}]")
+                    if result.get('evolved'):
+                        self.print(f"  -> EVOLUTION: {result['new_theory']}")
                 else:
-                    self.print(f"[ERROR: Could not link evidence]")
+                    self.print(f"[ERROR: {result.get('message', 'Could not link evidence')}]")
             else:
                 self.print("Usage: evidence <theory_id> <evidence_id>")
             return "refresh"
@@ -1781,9 +1784,19 @@ class Game:
             status_icon = "[OPEN]" if case.status == "open" else "[CLOSED]"
             self.print(f"{status_icon} {case.title} (ID: {cid})")
             self.print(f"  {case.description}")
-            if case.suspects:
-                # TODO: Filter suspects by discovery too?
-                self.print(f"  Suspects: {', '.join(case.suspects)}")
+
+            # Filter suspects by discovery
+            known_suspects = self.case_system.discovered_suspects.get(cid, [])
+            if known_suspects:
+                # Resolve names if NPC system available, else use ID
+                display_suspects = []
+                for s_id in known_suspects:
+                    if self.npc_system:
+                        npc = self.npc_system.get_npc(s_id)
+                        display_suspects.append(npc.name if npc else s_id)
+                    else:
+                        display_suspects.append(s_id)
+                self.print(f"  Suspects: {', '.join(display_suspects)}")
 
             if player_evidence:
                 self.print(f"  Evidence Collected: {len(player_evidence)} / {len(case.evidence_ids)}")

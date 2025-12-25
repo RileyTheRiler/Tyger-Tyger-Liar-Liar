@@ -28,6 +28,7 @@ class BoardUI:
         active_theories = []
         internalizing_theories = []
         degraded_theories = []
+        closed_theories = [] # New: Show closed theories?
         
         for theory_id, theory in self.board.theories.items():
             if theory.status == "active":
@@ -37,6 +38,8 @@ class BoardUI:
                     active_theories.append(theory)
             elif theory.status == "internalizing":
                 internalizing_theories.append(theory)
+            elif theory.status == "closed":
+                 closed_theories.append(theory)
         
         # Display active theories
         for theory in active_theories:
@@ -49,6 +52,13 @@ class BoardUI:
         # Display internalizing theories
         for theory in internalizing_theories:
             lines.extend(self._render_theory(theory, "INTERNALIZING"))
+
+        # Display closed (evolution/collapse) - Limited to recent?
+        # For now, show them if they have significant data
+        for theory in closed_theories:
+             if theory.proven is not None:
+                 status = "PROVEN" if theory.proven else "DISPROVEN"
+                 lines.extend(self._render_theory(theory, status))
         
         # Show conflicts
         if len(active_theories) > 1 or (active_theories and internalizing_theories):
@@ -63,7 +73,12 @@ class BoardUI:
                         base = f"║    '{theory.name}' ⚔ {', '.join(conflict_names[:2])}..."
                         print_len = len(base)
                         padding = 61 - print_len
-                        lines.append(f"{Colors.CYAN}║    {Colors.RED}'{theory.name}' ⚔ {', '.join(conflict_names[:2])}...{Colors.CYAN}" + " " * padding + "║")
+                        if padding < 0:
+                             # Truncate string if too long
+                             truncated = f"'{theory.name}' ⚔ {', '.join(conflict_names[:2])}..."[:58]
+                             lines.append(f"{Colors.CYAN}║    {Colors.RED}{truncated}{Colors.CYAN}║")
+                        else:
+                             lines.append(f"{Colors.CYAN}║    {Colors.RED}'{theory.name}' ⚔ {', '.join(conflict_names[:2])}...{Colors.CYAN}" + " " * padding + "║")
         
         if not active_theories and not internalizing_theories and not degraded_theories:
             lines.append(f"{Colors.CYAN}║  {Colors.WHITE}No theories currently internalized.{Colors.CYAN}                      ║")
@@ -90,19 +105,56 @@ class BoardUI:
         elif status_label == "INTERNALIZING":
             indicator = "○"
             color = Colors.BLUE
+        elif status_label == "PROVEN":
+            indicator = "✓"
+            color = Colors.CYAN
+        elif status_label == "DISPROVEN":
+            indicator = "✗"
+            color = Colors.RED
         else:
             indicator = "◌"
         
         # Theory name and status
         # We construct the visible string to calculate padding, then inject colors
-        visible_part = f"║  [{status_label}] {indicator} {theory.name}"
-        padding = 61 - len(visible_part)
+        # Visible area inside borders is 59 chars.
+        # Format: "║  [STATUS] I Name"
+        # Prefix length
+        prefix = f"║  [{status_label}] {indicator} "
+        available_width = 59 - len(prefix) + 1 # +1 for the ║ char count confusion in previous logic?
+        # Actually board width is 61 (61 chars from ╔ to ╗ inclusive? No.)
+        # Top line: ╔ + 59 chars + ╗ = 61 chars wide total.
+        # Inner width is 59 chars.
 
-        theory_line = f"{Colors.CYAN}║  {color}[{status_label}] {indicator} {theory.name}{Colors.CYAN}" + " " * padding + "║"
+        # Calculate available space for name
+        # "║  " = 3 chars
+        # "[STATUS] " = len(status_label) + 3 chars
+        # "I " = 2 chars
+        # Total prefix len = 3 + len(status_label) + 3 + 2 = 8 + len(status_label)
+
+        display_name = theory.name
+        visible_prefix_len = len(f"║  [{status_label}] {indicator} ")
+        max_name_len = 59 - visible_prefix_len + 1 # +1 accounting for border index 0?
+        # Let's trust the padding logic: padding = 61 - len(visible_part)
+        # We want padding >= 0, so len(visible_part) <= 61.
+        # Wait, the string ends with "║", so visible_part + padding + "║" = 61 chars?
+        # Standard line: "║" + 59 spaces + "║" -> len 61.
+        # visible_part includes the starting "║".
+
+        prefix_str = f"║  [{status_label}] {indicator} "
+        max_name_len = 61 - len(prefix_str) - 1 # -1 for right border
+
+        if len(display_name) > max_name_len:
+            display_name = display_name[:max_name_len-3] + "..."
+
+        visible_part = f"{prefix_str}{display_name}"
+        padding = 61 - len(visible_part) - 1 # -1 because we add the right border manually
+
+        theory_line = f"{Colors.CYAN}║  {color}[{status_label}] {indicator} {display_name}{Colors.CYAN}" + " " * padding + "║"
         lines.append(theory_line)
         
         # Health bar (if active or degraded)
-        if theory.status in ["active", "internalizing"]:
+        if theory.status in ["active", "internalizing", "closed"]:
+             # Show health even if closed (as 0 or final state)
             health_bar = self._create_health_bar(theory.health)
             raw = f"║    Health: {health_bar} {int(theory.health)}%"
             padding = 61 - len(raw)
@@ -114,23 +166,21 @@ class BoardUI:
             padding = 61 - len(raw)
             lines.append(f"{Colors.CYAN}║    {Colors.WHITE}Evidence: {Colors.GREEN}{theory.evidence_count}{Colors.WHITE} | Contradictions: {Colors.RED}{theory.contradictions}{Colors.CYAN}" + " " * padding + "║")
         
+        # Evolution status
+        if theory.evolves_into and theory.status == "closed" and theory.proven:
+            raw = f"║    EVOLVED -> {theory.evolves_into}"
+            padding = 61 - len(raw)
+            lines.append(f"{Colors.CYAN}║    {Colors.MAGENTA}EVOLVED -> {theory.evolves_into}{Colors.CYAN}" + " " * padding + "║")
+
         # Internalization progress
         if theory.status == "internalizing":
             required_minutes = theory.internalize_time_hours * 60
             progress_pct = (theory.internalization_progress_minutes / required_minutes) * 100
             progress_bar = self._create_progress_bar(progress_pct)
-            hours_left = (required_minutes - theory.internalization_progress_minutes) / 60
+            hours_left = max(0, (required_minutes - theory.internalization_progress_minutes) / 60)
             raw = f"║    Progress: {progress_bar} {hours_left:.1f}h remaining"
             padding = 61 - len(raw)
             lines.append(f"{Colors.CYAN}║    {Colors.WHITE}Progress: {Colors.BLUE}{progress_bar} {hours_left:.1f}h remaining{Colors.CYAN}" + " " * padding + "║")
-        
-        # Proven status
-        if theory.proven is not None:
-            status_text = "PROVEN ✓" if theory.proven else "DISPROVEN ✗"
-            status_color = Colors.GREEN if theory.proven else Colors.RED
-            raw = f"║    Status: {status_text}"
-            padding = 61 - len(raw)
-            lines.append(f"{Colors.CYAN}║    {Colors.WHITE}Status: {status_color}{status_text}{Colors.CYAN}" + " " * padding + "║")
         
         lines.append(f"{Colors.CYAN}║                                                           ║{Colors.RESET}")
         
@@ -206,18 +256,13 @@ def demo_board_ui():
     ui = BoardUI(board)
     
     # Discover and internalize some theories
-    board.discover_theory("i_want_to_believe")
-    board.start_internalizing("i_want_to_believe")
-    board.on_time_passed(360)  # Complete internalization
-    
     board.discover_theory("trust_no_one")
     board.start_internalizing("trust_no_one")
     board.on_time_passed(120)  # Partial progress
     
     # Add some evidence and contradictions
-    board.add_evidence_to_theory("i_want_to_believe", "aurora_footage")
-    board.add_contradiction_to_theory("i_want_to_believe", "blood_analysis")
-    board.add_contradiction_to_theory("i_want_to_believe", "witness_testimony")
+    board.add_evidence_to_theory("trust_no_one", "aurora_footage")
+    board.add_contradiction_to_theory("trust_no_one", "blood_analysis")
     
     # Display the board
     print(ui.render())
