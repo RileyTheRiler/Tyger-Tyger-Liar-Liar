@@ -306,8 +306,27 @@ class TextComposer:
                     except (ValueError, IndexError):
                         pass
 
-        # === LAYER 4: FRACTURE EFFECTS ===
+        # === LAYER 4: FRACTURE EFFECTS & SOFT FAILURES ===
         fracture_applied = False
+
+        # Check for active failures
+        active_failures = player_state.get("active_failures", [])
+
+        # Cognitive Overload: Fragment text
+        if "cognitive_overload" in active_failures:
+            full_text = self._apply_overload_fragmentation(full_text)
+            debug_info["layers"].append("cognitive_overload")
+
+        # Social Breakdown: Paranoia
+        if "social_breakdown" in active_failures:
+            full_text = self._apply_paranoia(full_text)
+            debug_info["layers"].append("social_breakdown")
+
+        # Investigative Paralysis: Circular text
+        if "investigative_paralysis" in active_failures:
+            full_text = self._apply_paralysis_loops(full_text)
+            debug_info["layers"].append("investigative_paralysis")
+
         if self._should_apply_fracture(player_state):
             full_text = self._apply_fracture_effect(full_text, player_state)
             fracture_applied = True
@@ -529,6 +548,52 @@ class TextComposer:
             idx = random.randint(0, len(words) - 1)
             words[idx] = " " * len(words[idx])
         return " ".join(words)
+
+    def _apply_overload_fragmentation(self, text: str) -> str:
+        """Simulate cognitive overload by truncating and fragmenting text."""
+        # Split into sentences
+        sentences = text.split(". ")
+        if len(sentences) <= 1: return text
+
+        # Keep only the beginning or random parts
+        import random
+        if random.random() < 0.5:
+            # Just fade out
+            return ". ".join(sentences[:2]) + "... [FOCUS LOST]"
+        else:
+            # Fragmented
+            new_text = ""
+            for s in sentences:
+                if random.random() < 0.5:
+                    new_text += s + ". "
+                else:
+                    new_text += "... "
+            return new_text.strip()
+
+    def _apply_paralysis_loops(self, text: str) -> str:
+        """Simulate analysis paralysis by repeating doubts."""
+        doubt_phrases = [
+            "\n\nBut that can't be right.",
+            "\n\nWait. Is this significant?",
+            "\n\nYou're missing something.",
+            "\n\nReview the data again."
+        ]
+        import random
+        return text + random.choice(doubt_phrases)
+
+    def _apply_paranoia(self, text: str) -> str:
+        """Inject paranoid thoughts for social breakdown."""
+        paranoia_phrases = [
+            " (They are lying to you.)",
+            " (Do not trust them.)",
+            " (They know what you did.)",
+            " (Can you hear them whispering?)"
+        ]
+        import random
+        # Insert randomly into text
+        if random.random() < 0.4:
+            return text + random.choice(paranoia_phrases)
+        return text
 
 
 class ClueTextComposer:
