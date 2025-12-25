@@ -35,7 +35,7 @@ from corkboard_minigame import CorkboardMinigame
 from src.inventory_system import InventoryManager, Item, Evidence
 from src.save_system import EventLog, SaveSystem
 from src.journal_system import JournalManager
-from interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result
+from interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result, Colors
 
 class Game:
     def __init__(self):
@@ -179,8 +179,19 @@ class Game:
     def run(self, start_scene_id):
         # Initial Load
         scene = self.scene_manager.load_scene(start_scene_id)
+
+        # Fallback if specific scene not found
         if not scene:
-            print("Failed to load initial scene.")
+            # Try 'arrival_bus' for vertical slice
+            scene = self.scene_manager.load_scene("arrival_bus")
+            if scene:
+                start_scene_id = "arrival_bus"
+            else:
+                 # Try first available?
+                 pass
+
+        if not scene:
+            print(f"Failed to load initial scene '{start_scene_id}'.")
             return
         
         # Log initial scene entry
@@ -350,17 +361,28 @@ class Game:
         san_status = "STABLE" if san >= 75 else "UNSETTLED" if san >= 50 else "HYSTERIA" if san >= 25 else "PSYCHOSIS"
         real_status = "LUCID" if real >= 75 else "DOUBT" if real >= 50 else "DELUSION" if real >= 25 else "BROKEN"
 
+        print_separator("=", color=Colors.CYAN)
+        # Update Lens System state for Haunted calculation
+        self.lens_system.update_state(
+            attention_level=self.attention_system.attention_level,
+            sanity=san
+        )
         print_separator("=")
         lens_str = self.lens_system.calculate_lens().upper()
         attention_display = self.attention_system.get_status_display()
         integration_display = self.integration_system.get_status_display()
-        print(f"TIME: {self.time_system.get_time_string()} | [LENS: {lens_str}]")
+
+        # Colorize Status
+        san_color = Colors.GREEN if san > 50 else Colors.YELLOW if san > 25 else Colors.RED
+        real_color = Colors.MAGENTA if real > 50 else Colors.YELLOW if real > 25 else Colors.RED
+
+        print(f"{Colors.BOLD}TIME: {self.time_system.get_time_string()}{Colors.RESET} | [LENS: {Colors.CYAN}{lens_str}{Colors.RESET}]")
         if attention_display:
-            print(f"{attention_display}")
+            print(f"{Colors.RED}{attention_display}{Colors.RESET}")
         if integration_display:
-            print(f"{integration_display}")
-        print(f"SANITY: {san:.0f}% ({san_status}) | REALITY: {real:.0f}% ({real_status})")
-        print_separator("=")
+            print(f"{Colors.MAGENTA}{integration_display}{Colors.RESET}")
+        print(f"SANITY: {san_color}{san:.0f}% ({san_status}){Colors.RESET} | REALITY: {real_color}{real:.0f}% ({real_status}){Colors.RESET}")
+        print_separator("=", color=Colors.CYAN)
         
         print_boxed_title(scene.get("name", "Unknown Area"))
         
@@ -368,6 +390,52 @@ class Game:
             media = scene["background_media"]
             print(f"[MEDIA: Loading {media['type']} '{media['src']}']")
         
+        # New Text Composition
+        state = self._get_composer_state()
+
+        # 1. Passive Clue Detection
+        scene_passive = self.scene_manager.current_scene_data.get("passive_clues", [])
+        passive_clues = self.clue_system.evaluate_passive_clues(
+            scene_passive_clues=scene_passive,
+            player_state=state
+        )
+        for clue, text in passive_clues:
+            print(f"\n[PASSIVE: {text}]")
+            # Auto-add clue to board logic is handled by ClueSystem.acquire_clue
+
+        # 2. Text Composition with Lens
+        # Lens is now part of composer logic mostly, but we still pass it for now
+        # Actually TextComposer handles logic, we need to gather variants
+
+        variants = scene.get("variants", {})
+        base_text = scene.get("text", "...")
+
+        # We use the new TextComposer to render
+        # It needs 'archetype' which comes from LensSystem usually, or we pass specific lens
+
+        current_lens = self.lens_system.calculate_lens() # believer, skeptic, balanced
+        # Map lens to Archetype enum if possible, or just string
+        archetype_map = {
+            "believer": Archetype.BELIEVER,
+            "skeptic": Archetype.SKEPTIC,
+            "balanced": Archetype.NEUTRAL,
+            "haunted": Archetype.HAUNTED
+        }
+        arch = archetype_map.get(current_lens, Archetype.NEUTRAL)
+
+        text_data = {
+            "base": base_text,
+            "lens": variants,
+            "inserts": scene.get("inserts", [])
+        }
+
+        result = self.text_composer.compose(
+            text_data,
+            archetype=arch,
+            player_state=state
+        )
+
+        display_text = self.apply_reality_distortion(result.full_text)
         variants = scene.get("variants", {})
         base_text = scene.get("text", "...")
         filtered_text = self.lens_system.filter_text(base_text, variants)

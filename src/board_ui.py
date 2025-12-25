@@ -5,6 +5,7 @@ Displays active theories, their health, connections, and evidence links.
 
 from typing import Dict, List
 from board import Board, Theory
+from interface import Colors
 
 
 class BoardUI:
@@ -18,10 +19,10 @@ class BoardUI:
         lines = []
         
         # Header
-        lines.append("╔═══════════════════════════════════════════════════════════╗")
-        lines.append("║                      THE BOARD                            ║")
+        lines.append(f"{Colors.CYAN}╔═══════════════════════════════════════════════════════════╗")
+        lines.append(f"║                      {Colors.BOLD}THE BOARD{Colors.RESET}{Colors.CYAN}                            ║")
         lines.append("╠═══════════════════════════════════════════════════════════╣")
-        lines.append("║                                                           ║")
+        lines.append(f"║                                                           ║{Colors.RESET}")
         
         # Get theories by status
         active_theories = []
@@ -51,22 +52,26 @@ class BoardUI:
         
         # Show conflicts
         if len(active_theories) > 1 or (active_theories and internalizing_theories):
-            lines.append("║                                                           ║")
-            lines.append("║  CONFLICTS:                                               ║")
+            lines.append(f"{Colors.CYAN}║                                                           ║")
+            lines.append(f"║  {Colors.RED}CONFLICTS:{Colors.CYAN}                                               ║")
             for theory in active_theories + internalizing_theories:
                 if theory.conflicts_with:
                     conflict_names = [self.board.get_theory(cid).name for cid in theory.conflicts_with 
                                     if self.board.get_theory(cid)]
                     if conflict_names:
-                        lines.append(f"║    '{theory.name}' ⚔ {', '.join(conflict_names[:2])}...")
+                        # Need to handle length carefully with colors
+                        base = f"║    '{theory.name}' ⚔ {', '.join(conflict_names[:2])}..."
+                        print_len = len(base)
+                        padding = 61 - print_len
+                        lines.append(f"{Colors.CYAN}║    {Colors.RED}'{theory.name}' ⚔ {', '.join(conflict_names[:2])}...{Colors.CYAN}" + " " * padding + "║")
         
         if not active_theories and not internalizing_theories and not degraded_theories:
-            lines.append("║  No theories currently internalized.                      ║")
-            lines.append("║                                                           ║")
+            lines.append(f"{Colors.CYAN}║  {Colors.WHITE}No theories currently internalized.{Colors.CYAN}                      ║")
+            lines.append(f"║                                                           ║{Colors.RESET}")
         
         # Footer
-        lines.append("║                                                           ║")
-        lines.append("╚═══════════════════════════════════════════════════════════╝")
+        lines.append(f"{Colors.CYAN}║                                                           ║")
+        lines.append(f"╚═══════════════════════════════════════════════════════════╝{Colors.RESET}")
         
         return "\n".join(lines)
     
@@ -75,30 +80,39 @@ class BoardUI:
         lines = []
         
         # Status indicator with color
+        color = Colors.WHITE
         if status_label == "ACTIVE":
-            indicator = "●"  # Green in terminal
+            indicator = "●"
+            color = Colors.GREEN
         elif status_label == "DEGRADED":
-            indicator = "◐"  # Orange/yellow
+            indicator = "◐"
+            color = Colors.YELLOW
         elif status_label == "INTERNALIZING":
-            indicator = "○"  # White/hollow
+            indicator = "○"
+            color = Colors.BLUE
         else:
             indicator = "◌"
         
         # Theory name and status
-        theory_line = f"║  [{status_label}] {indicator} {theory.name}"
-        # Pad to 59 chars (61 - 2 for borders)
-        theory_line = theory_line.ljust(61) + "║"
+        # We construct the visible string to calculate padding, then inject colors
+        visible_part = f"║  [{status_label}] {indicator} {theory.name}"
+        padding = 61 - len(visible_part)
+
+        theory_line = f"{Colors.CYAN}║  {color}[{status_label}] {indicator} {theory.name}{Colors.CYAN}" + " " * padding + "║"
         lines.append(theory_line)
         
         # Health bar (if active or degraded)
         if theory.status in ["active", "internalizing"]:
             health_bar = self._create_health_bar(theory.health)
-            lines.append(f"║    Health: {health_bar} {int(theory.health)}%".ljust(61) + "║")
+            raw = f"║    Health: {health_bar} {int(theory.health)}%"
+            padding = 61 - len(raw)
+            lines.append(f"{Colors.CYAN}║    {Colors.WHITE}Health: {color}{health_bar} {int(theory.health)}%{Colors.CYAN}" + " " * padding + "║")
         
         # Evidence and contradictions
         if theory.evidence_count > 0 or theory.contradictions > 0:
-            evidence_line = f"║    Evidence: {theory.evidence_count} | Contradictions: {theory.contradictions}"
-            lines.append(evidence_line.ljust(61) + "║")
+            raw = f"║    Evidence: {theory.evidence_count} | Contradictions: {theory.contradictions}"
+            padding = 61 - len(raw)
+            lines.append(f"{Colors.CYAN}║    {Colors.WHITE}Evidence: {Colors.GREEN}{theory.evidence_count}{Colors.WHITE} | Contradictions: {Colors.RED}{theory.contradictions}{Colors.CYAN}" + " " * padding + "║")
         
         # Internalization progress
         if theory.status == "internalizing":
@@ -106,14 +120,19 @@ class BoardUI:
             progress_pct = (theory.internalization_progress_minutes / required_minutes) * 100
             progress_bar = self._create_progress_bar(progress_pct)
             hours_left = (required_minutes - theory.internalization_progress_minutes) / 60
-            lines.append(f"║    Progress: {progress_bar} {hours_left:.1f}h remaining".ljust(61) + "║")
+            raw = f"║    Progress: {progress_bar} {hours_left:.1f}h remaining"
+            padding = 61 - len(raw)
+            lines.append(f"{Colors.CYAN}║    {Colors.WHITE}Progress: {Colors.BLUE}{progress_bar} {hours_left:.1f}h remaining{Colors.CYAN}" + " " * padding + "║")
         
         # Proven status
         if theory.proven is not None:
             status_text = "PROVEN ✓" if theory.proven else "DISPROVEN ✗"
-            lines.append(f"║    Status: {status_text}".ljust(61) + "║")
+            status_color = Colors.GREEN if theory.proven else Colors.RED
+            raw = f"║    Status: {status_text}"
+            padding = 61 - len(raw)
+            lines.append(f"{Colors.CYAN}║    {Colors.WHITE}Status: {status_color}{status_text}{Colors.CYAN}" + " " * padding + "║")
         
-        lines.append("║                                                           ║")
+        lines.append(f"{Colors.CYAN}║                                                           ║{Colors.RESET}")
         
         return lines
     
