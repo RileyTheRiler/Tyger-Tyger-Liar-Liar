@@ -204,10 +204,12 @@ class TextComposer:
         lens_text = None
         lens_data = text_data.get("lens", {})
 
-        if archetype != Archetype.NEUTRAL and archetype.value in lens_data:
-            lens_text = lens_data[archetype.value]
-            result_parts.append("\n\n" + lens_text)
-            debug_info["layers"].append(f"lens:{archetype.value}")
+        if archetype != Archetype.NEUTRAL:
+            val = archetype.value if hasattr(archetype, 'value') else str(archetype)
+            if val in lens_data:
+                lens_text = lens_data[val]
+                result_parts.append("\n\n" + lens_text)
+                debug_info["layers"].append(f"lens:{val}")
         elif archetype != Archetype.NEUTRAL:
             # Apply micro-overlay if no full lens text
             # In thermal mode, micro-overlays might be weird, but let's keep for consistency

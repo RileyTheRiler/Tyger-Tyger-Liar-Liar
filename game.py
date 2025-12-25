@@ -58,6 +58,7 @@ from engine.fear_system import FearManager
 from engine.unreliable_narrator import HallucinationEngine
 from npc_system import NPCSystem
 from fracture_system import FractureSystem
+from engine.narrative_memory_system import NarrativeMemorySystem
 
 
 class Game:
@@ -131,6 +132,9 @@ class Game:
         # Initialize Text Composer (Replaces LensSystem eventually)
         self.text_composer = TextComposer(self.skill_system, self.board, self.player_state)
         self.text_composer.developer_commentary = self.config.get("developer_commentary", False)
+
+        # Initialize Narrative Memory System (Recall Drift)
+        self.narrative_memory = NarrativeMemorySystem(self.text_composer)
 
         # Initialize Flashback Manager (Phase 6)
         self.flashback_manager = FlashbackManager(self.skill_system, self.player_state)
@@ -547,6 +551,19 @@ class Game:
         # Log initial scene entry
         self.log_event("scene_entry", scene_id=start_scene_id, scene_name=scene.get("name", "Unknown"))
         
+        # Store Initial Memory (for Drift demonstration)
+        # We capture the text data of the start scene
+        if scene and "text" in scene:
+            # Determine if this is the arrival
+            tags = ["arrival"] if start_scene_id in ["arrival_bus", "trailhead", "bedroom"] else []
+            self.narrative_memory.store_moment(
+                event_id="arrival",
+                text_data=scene["text"] if isinstance(scene["text"], dict) else {"base": scene["text"]},
+                importance=10,
+                timestamp=self.time_system.get_time_string(),
+                tags=tags
+            )
+
         # Initial Music
         if "music" in scene:
             self.current_music = scene["music"]
@@ -1047,6 +1064,21 @@ class Game:
             self.journal.display_journal() # Prints directly
             return "refresh"
         
+        # Narrative Recall (Memory Drift)
+        if clean.startswith('recall '):
+            event_id = clean.replace('recall ', '').strip()
+            self.print(f"\n--- RECALLING MEMORY: {event_id} ---")
+            drifted_text = self.narrative_memory.recall_memory(event_id, self.player_state)
+            self.print(drifted_text)
+            self.print("-----------------------------------")
+            return "refresh"
+
+        if clean == 'memories':
+            self.print("\n=== RECORDED MEMORIES ===")
+            for mid in self.narrative_memory.memories:
+                self.print(f"- {mid}")
+            return "refresh"
+
         # Taboo Actions (Attention System)
         taboo_map = {
             'whistle': 'whistle_at_aurora',
@@ -1935,7 +1967,8 @@ class Game:
                     "attention_system": self.attention_system.to_dict(),
                     "memory_system": self.memory_system.export_state(),
                     "fracture_system": self.fracture_system.to_dict(),
-                    "psychological_system": self.psych_state.to_dict()
+                    "psychological_system": self.psych_state.to_dict(),
+                    "narrative_memory": self.narrative_memory.to_dict()
                 }
             }
             
@@ -2011,6 +2044,8 @@ class Game:
                     self.fracture_system.restore_state(systems["fracture_system"])
                 if "psychological_system" in systems:
                     self.psych_state.restore_state(systems["psychological_system"])
+                if "narrative_memory" in systems:
+                    self.narrative_memory.load_state(systems["narrative_memory"])
             
             print(f"\n✓ Game loaded successfully from '{slot_id}'")
             print(f"   Location: {save_data.get('scene', 'Unknown')}")
