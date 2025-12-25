@@ -192,6 +192,14 @@ class TitleScreen {
                 return; // Consume key press to just speed up
             }
 
+            // Shortcuts
+            if (e.key === 'F1') {
+                e.preventDefault();
+                this.inputBuffer = "feedback ";
+                this.updateInputLine();
+                return;
+            }
+
             // Handle Game Input
             if (e.key === 'Enter') {
                 this.sendInput(this.inputBuffer);
