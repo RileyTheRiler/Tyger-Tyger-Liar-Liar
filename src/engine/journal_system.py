@@ -1,4 +1,5 @@
 import json
+import uuid
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Optional
 from datetime import datetime
@@ -6,10 +7,14 @@ from datetime import datetime
 @dataclass
 class JournalEntry:
     """Narrative or discovery log entry."""
+    id: str
     timestamp: str
     title: str
-    body: str
+    what_happened: str
+    meaning: str
+    confidence: str # "Low", "Medium", "High"
     tags: List[str] = field(default_factory=list)
+    context: Dict = field(default_factory=dict) # To allow retroactive updates based on state
 
 @dataclass
 class Suspect:
@@ -56,13 +61,37 @@ class JournalManager:
         self.annotations: List[Annotation] = []
         self.leads: List[str] = []  # Week 6: Open threads/mystery flags
 
-    def add_entry(self, title: str, body: str, tags: List[str] = None, timestamp: str = None):
+    def add_entry(self, title: str, what_happened: str, meaning: str = "Unclear significance.", confidence: str = "Low", tags: List[str] = None, timestamp: str = None, context: Dict = None):
         """Add a narrative journal entry."""
         if timestamp is None:
             timestamp = datetime.now().isoformat()
-        entry = JournalEntry(timestamp=timestamp, title=title, body=body, tags=tags or [])
+
+        entry_id = str(uuid.uuid4())[:8]
+        entry = JournalEntry(
+            id=entry_id,
+            timestamp=timestamp,
+            title=title,
+            what_happened=what_happened,
+            meaning=meaning,
+            confidence=confidence,
+            tags=tags or [],
+            context=context or {}
+        )
         self.entries.append(entry)
-        print(f"[Journal] Entry added: {title}")
+        # print(f"[Journal] Entry added: {title}")
+        return entry_id
+
+    def update_entry(self, entry_id: str, meaning: str = None, confidence: str = None):
+        """Retroactively update an entry's meaning or confidence."""
+        for entry in self.entries:
+            if entry.id == entry_id:
+                if meaning:
+                    entry.meaning = meaning
+                if confidence:
+                    entry.confidence = confidence
+                # print(f"[Journal] Entry updated: {entry.title}")
+                return True
+        return False
 
     def add_suspect(self, suspect_data: dict):
         """Adds or updates a suspect entry."""
@@ -142,10 +171,12 @@ class JournalManager:
             self.leads.append(lead)
             print(f"[Journal] New lead: {lead}")
     
-    def display_journal(self, limit: int = 10):
-        """Display recent journal entries."""
+    def display_journal(self, limit: int = 5):
+        """Display recent journal entries with new UI."""
+        from ui.interface import Colors
+
         print("\n" + "="*60)
-        print("JOURNAL ENTRIES")
+        print(f"{Colors.BOLD}CASE FILE / JOURNAL{Colors.RESET}")
         print("="*60)
         
         if not self.entries:
@@ -154,11 +185,20 @@ class JournalManager:
         
         recent = self.entries[-limit:]
         for entry in reversed(recent):
-            print(f"\n[{entry.timestamp}] {entry.title}")
-            print(f"  {entry.body}")
+            print(f"\n{Colors.CYAN}REF: {entry.id} | {entry.timestamp}{Colors.RESET}")
+            print(f"{Colors.BOLD}EVENT:{Colors.RESET} {entry.what_happened}")
+
+            # Color code confidence
+            conf_color = Colors.RED
+            if entry.confidence.lower() == "medium": conf_color = Colors.YELLOW
+            elif entry.confidence.lower() == "high": conf_color = Colors.GREEN
+
+            print(f"{Colors.BOLD}INTERPRETATION:{Colors.RESET} {entry.meaning}")
+            print(f"{Colors.BOLD}CONFIDENCE:{Colors.RESET} {conf_color}{entry.confidence.upper()}{Colors.RESET}")
+
             if entry.tags:
-                print(f"  Tags: {', '.join(entry.tags)}")
-        print("="*60)
+                print(f"{Colors.GREY}Tags: {', '.join(entry.tags)}{Colors.RESET}")
+            print("-" * 60)
 
     def export_state(self) -> dict:
         return {

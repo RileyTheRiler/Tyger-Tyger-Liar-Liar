@@ -272,6 +272,9 @@ class Game:
         triggered_events = self.trigger_manager.check_triggers(self.get_game_state())
         for event in triggered_events:
             self.apply_trigger_effects(event)
+
+        # Journal Reassessment (Living Case File)
+        self.reassess_journal()
         
         # Week 15: Psychological Systems
         # Fear Level decay
@@ -1540,6 +1543,7 @@ class Game:
                 self.inventory_system.add_item(new_item)
                 self.print(f"You pick up the {new_item.name}.")
                 self.player_state["event_flags"].add(f"collected_{obj_key}") # Mark as collected
+                self.log_event("evidence_collected", item_name=new_item.name, item_id=new_item.id)
             else:
                 self.print(f"You can't take '{target}'.")
 
@@ -2104,6 +2108,79 @@ class Game:
     def log_event(self, event_type: str, **details):
         """Log a significant game event."""
         self.event_log.add_event(event_type, **details)
+        self.journal_auto_entry(event_type, **details)
+
+    def journal_auto_entry(self, event_type: str, **details):
+        """Auto-generate journal entries based on events."""
+        title = ""
+        what_happened = ""
+        meaning = "Unclear significance."
+        confidence = "Low"
+        context = details.copy()
+        context['type'] = event_type
+
+        if event_type == "scene_entry":
+            scene_name = details.get("scene_name", "Unknown Area")
+            title = f"Entered {scene_name}"
+            what_happened = f"I arrived at {scene_name}."
+            meaning = "A new location to investigate."
+            confidence = "High"
+
+        elif event_type == "evidence_collected":
+            item_name = details.get("item_name", "Unknown Item")
+            title = f"Found {item_name}"
+            what_happened = f"I collected the {item_name}."
+
+            # Simple logic for meaning based on skills
+            logic_score = self.skill_system.get_skill_total("Logic")
+            if logic_score > 4:
+                meaning = "This could be a crucial piece of the puzzle."
+                confidence = "Medium"
+            else:
+                meaning = "Might be useful."
+                confidence = "Low"
+
+        elif event_type == "dialogue_finished":
+            npc = details.get("npc", "Someone")
+            title = f"Spoke with {npc}"
+            what_happened = f"I finished a conversation with {npc}."
+            meaning = "They seem to know more than they are letting on."
+            confidence = "Low"
+
+        elif event_type == "skill_check":
+            # Only log significant successes?
+            if details.get("success"):
+                skill = details.get("skill")
+                title = f"Breakthrough using {skill}"
+                what_happened = f"I successfully applied {skill}."
+                meaning = "I am making progress."
+                confidence = "High"
+
+        if title:
+            self.journal.add_entry(title, what_happened, meaning, confidence, context=context)
+
+    def reassess_journal(self):
+        """Update journal entries based on new knowledge/stats."""
+        # This function is called periodically to simulate the 'living' nature of the case file.
+        sanity = self.player_state.get("sanity", 100)
+
+        for entry in self.journal.entries:
+            ctx = entry.context
+            if not ctx: continue
+
+            # 1. Sanity Impacts (Retroactive Paranoia)
+            if sanity < 30:
+                if ctx.get('type') == 'scene_entry':
+                    self.journal.update_entry(entry.id, meaning="I feel watched here. I shouldn't have come.", confidence="High")
+                elif ctx.get('type') == 'dialogue_finished':
+                     self.journal.update_entry(entry.id, meaning="They were lying. I can feel it.", confidence="High")
+
+            # 2. Logic Impacts (Retroactive Deduction)
+            # If player has gained high logic since the entry was made
+            logic_score = self.skill_system.get_skill_total("Logic")
+            if logic_score >= 8:
+                 if ctx.get('type') == 'evidence_collected' and entry.confidence == "Low":
+                      self.journal.update_entry(entry.id, meaning="This connects directly to the timeline.", confidence="High")
 
     def process_choice(self, choice):
         # Handle Skill Checks
