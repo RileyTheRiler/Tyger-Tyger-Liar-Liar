@@ -101,7 +101,14 @@ class SceneManager:
         # Weather Check
         if "weather" in conditions:
             allowed = conditions["weather"]
-            if self.time_system.weather not in allowed:
+            # Check if time_system has weather_system, otherwise fallback to old string
+            current_weather = "clear"
+            if hasattr(self.time_system, 'weather_system') and self.time_system.weather_system:
+                current_weather = self.time_system.weather_system.current_condition_key
+            elif hasattr(self.time_system, 'weather'):
+                current_weather = self.time_system.weather
+
+            if current_weather not in allowed:
                 return False
 
         # Theory Check (Board)

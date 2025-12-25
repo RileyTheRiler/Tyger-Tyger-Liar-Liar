@@ -36,6 +36,9 @@ from src.io_system import OutputBuffer
 from src.inventory_system import InventoryManager, Item, Evidence
 from src.save_system import EventLog, SaveSystem
 from src.journal_system import JournalManager
+from src.weather_system import WeatherSystem
+from src.environmental_system import EnvironmentalSystem
+from src.ambient_system import AmbientSystem
 from interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result, Colors
 from text_composer import TextComposer, Archetype
 
@@ -64,7 +67,12 @@ class Game:
         }
 
         # Initialize Systems
+        self.weather_system = WeatherSystem()
         self.time_system = TimeSystem()
+        self.time_system.weather_system = self.weather_system # Hack to link for serialization if needed
+        self.environmental_system = EnvironmentalSystem(self.time_system, self.weather_system, self.player_state)
+        self.ambient_system = AmbientSystem(self.weather_system, self.player_state)
+
         self.board = Board()
         self.board_ui = BoardUI(self.board)
         self.skill_system = SkillSystem(resource_path(os.path.join('data', 'skills.json')))
@@ -123,6 +131,45 @@ class Game:
         self.output.print(str(text))
 
     def on_time_passed(self, minutes: int):
+        # Update Weather
+        self.weather_system.update(minutes)
+
+        # Weather Mechanics (Stamina/Sanity Drain)
+        # Only apply if exposed (simplification: all scenes except specific indoor ones?)
+        # For now, we apply to all as per "Environmental Narrative Layers" goal implying constant pressure
+        weather_cond = self.weather_system.get_current_condition()
+
+        # Stamina/Sanity Drain from Weather
+        # We'll use a threshold: every 60 mins of exposure
+        # (This is a simplified implementation; ideally we'd track exposure time)
+        if minutes >= 15: # Only significant time passes
+            hours_passed = minutes / 60.0
+
+            # Constitution check for cold
+            if weather_cond.stamina_drain > 0:
+                # DC = 10 + drain
+                dc = 10 + weather_cond.stamina_drain
+                # Passive check
+                check = self.skill_system.roll_check("Constitution", dc, manual_roll=None)
+                if not check["success"]:
+                     damage = 5 * hours_passed
+                     # We don't have HP, so we hit Sanity or apply Injury?
+                     # Request said "Con check (cold exposure)". Let's say it drains Sanity (misery)
+                     # or maybe adds an injury if severe.
+                     # For safety, let's drain Sanity as "Misery"
+                     self.player_state["sanity"] -= damage
+                     self.print(f"\n[WEATHER] The cold is biting. You feel your resolve stiffen. (Sanity -{damage:.1f})")
+
+        # Check Environmental Triggers
+        # For now, just a generic check, or we need current location type from scene
+        # We can fetch scene data from scene_manager
+        current_scene = self.scene_manager.current_scene_data
+        if current_scene:
+            loc_type = current_scene.get("location_type") # Needs to be added to scenes
+            env_msg = self.environmental_system.check_triggers(loc_type)
+            if env_msg:
+                self.print(f"\n{Colors.CYAN}{env_msg}{Colors.RESET}")
+
         msgs = self.board.on_time_passed(minutes)
         if msgs:
             self.print("\n*** BOARD UPDATE ***")
@@ -405,7 +452,10 @@ class Game:
         real_status = "LUCID" if real >= 75 else "DOUBT" if real >= 50 else "DELUSION" if real >= 25 else "BROKEN"
 
         print_separator("=", color=Colors.CYAN, printer=self.print)
-        # Lens system calculates based on current skill/board state automatically
+
+        # Weather Display
+        self.print(self.weather_system.get_status_string())
+
         print_separator("=", printer=self.print)
         lens_str = self.lens_system.calculate_lens().upper()
         attention_display = self.attention_system.get_status_display()
@@ -462,6 +512,16 @@ class Game:
             if amb.get("sanity_drain_per_min", 0) > 0:
                 self.print("* The atmosphere is oppressive. *")
 
+        # Ambient Loop Text
+        tags = scene.get("tags", [])
+        ambient_text = self.ambient_system.get_ambient_loop(tags)
+        self.print(f"\n{Colors.BLUE}{ambient_text}{Colors.RESET}")
+
+        # Reactive Cue (Random chance)
+        cue = self.ambient_system.check_reactive_cues()
+        if cue:
+            self.print(f"\n{Colors.YELLOW}>> {cue} <<{Colors.RESET}")
+
     def display_choices(self, choices):
         # List Choices (Dialogue Mode or Hybrid)
         if choices:
@@ -502,6 +562,28 @@ class Game:
             self.handle_parser_command("HELP", None)
             return "refresh"
         
+        # Sensory Commands
+        if clean in ['listen', 'sniff', 'feel']:
+            tags = self.scene_manager.current_scene_data.get("tags", [])
+            response = self.ambient_system.get_sensory_response(clean, tags)
+            self.print(f"\n> You {clean}...")
+            self.print(response)
+            return "refresh"
+
+        # Ritual Command
+        if clean in ['ritual', 'perform ritual', 'perform_ritual']:
+            scene = self.scene_manager.current_scene_data
+            loc_type = scene.get("location_type") if scene else None
+            if loc_type:
+                result = self.environmental_system.perform_ritual(loc_type)
+                if result["success"]:
+                    self.print(f"\n{Colors.GREEN}{result['message']}{Colors.RESET}")
+                else:
+                     self.print(f"\n{result['message']}")
+            else:
+                 self.print("\nThere is no ritual to perform here.")
+            return "refresh"
+
         # Inventory & Evidence Commands
         if clean in ['i', 'inventory', 'inv']:
             self.inventory_system.list_inventory() # This prints directly
@@ -585,6 +667,32 @@ class Game:
             return "refresh"
         
         if self.debug_mode:
+            # Debug: Weather
+            if clean.startswith('set_weather'):
+                parts = clean.split()
+                if len(parts) > 1:
+                    cond = parts[1]
+                    self.weather_system._shift_weather(force_condition=cond)
+                    self.print(f"[DEBUG] Weather set to {cond}")
+                return "refresh"
+
+            # Debug: Audio Queue
+            if clean == 'audio_queue':
+                # Show active ambient loop
+                tags = self.scene_manager.current_scene_data.get("tags", [])
+                loop = self.ambient_system.get_ambient_loop(tags)
+                self.print(f"[DEBUG AUDIO] Current Loop: \"{loop}\"")
+                return "refresh"
+
+            # Debug: Trigger Debug
+            if clean == 'trigger_debug':
+                # Show potential triggers for current location
+                scene = self.scene_manager.current_scene_data
+                loc_type = scene.get("location_type") if scene else None
+                triggers = self.environmental_system.location_triggers.get(loc_type, [])
+                self.print(f"[DEBUG TRIGGERS] Location: {loc_type} | Possible: {triggers}")
+                return "refresh"
+
             # Debug: Force Save
             if clean.startswith('forcesave'):
                 parts = clean.split()
