@@ -250,6 +250,8 @@ class Game:
 
             if self.in_dialogue:
                 self.run_dialogue_loop()
+            elif self.input_mode == InputMode.COMBAT:
+                self.run_combat_loop()
             else:
                 self.display_scene()
                 
@@ -497,6 +499,13 @@ class Game:
                 print(f"[DEBUG MODE: {'ON' if self.debug_mode else 'OFF'}]")
                 return "refresh"
             
+            if clean == 'debug_combat':
+                print("[DEBUG] Starting Mock Combat...")
+                enemies = [{"name": "Shadow", "hp": 5, "reflexes": 1, "attack": 2}]
+                self.combat_manager.start_encounter(enemies, "combat")
+                self.input_mode = InputMode.COMBAT
+                return "refresh"
+
             # Theory Resolution Commands
             if clean.startswith('prove '):
                 parts = raw.split(maxsplit=1)
@@ -658,9 +667,61 @@ class Game:
         if self.input_mode == InputMode.DIALOGUE:
             self.input_mode = InputMode.INVESTIGATION
             print("[Switched to INVESTIGATION mode]")
-        else:
+        elif self.input_mode == InputMode.INVESTIGATION:
             self.input_mode = InputMode.DIALOGUE
             print("[Switched to DIALOGUE mode]")
+        else:
+             print("[Cannot switch mode during Combat]")
+
+    def run_combat_loop(self):
+        print("\n" + "!"*60)
+        print("COMBAT ENCOUNTER")
+        print("!"*60)
+
+        # Display Status
+        print(f"Round: {self.combat_manager.round_counter}")
+        print("Enemies:")
+        for e in self.combat_manager.enemies:
+            print(f"  - {e['name']} (HP: {e.get('hp', '?')})")
+
+        print("\nLog:")
+        for log in self.combat_manager.log[-5:]:
+            print(f"  > {log}")
+
+        print("-" * 60)
+        print("ACTIONS: (a)ttack [target], (f)lee, (s)kill [name]")
+
+        raw = input("COMBAT> ").strip()
+        parts = raw.split()
+        if not parts: return
+
+        cmd = parts[0].lower()
+        if cmd in ['a', 'attack']:
+            target = parts[1] if len(parts) > 1 else (self.combat_manager.enemies[0]['name'] if self.combat_manager.enemies else "")
+            res = self.combat_manager.perform_action("attack", target_name=target)
+            print(f"\nResult: {res}")
+
+        elif cmd in ['f', 'flee']:
+            res = self.combat_manager.perform_action("flee")
+            print(f"\nResult: {res}")
+
+        elif cmd in ['s', 'skill']:
+             skill = parts[1] if len(parts) > 1 else "Athletics" # default
+             res = self.combat_manager.perform_action("skill", description=skill)
+             print(f"\nResult: {res}")
+
+        elif cmd == "debug_win":
+            # Cheat to end combat
+            self.combat_manager.end_encounter()
+            print("[DEBUG] Combat Ended Forcefully.")
+
+        else:
+            print("Invalid combat command.")
+
+        # Check if combat ended
+        if not self.combat_manager.active:
+            self.input_mode = InputMode.INVESTIGATION
+            print("\n... returning to investigation ...")
 
     def handle_parser_command(self, verb, target):
         scene = self.scene_manager.current_scene_data
@@ -752,6 +813,10 @@ class Game:
     
     def save_game(self, slot_id: str, auto=False):
         """Save the current game state."""
+        if self.input_mode == InputMode.COMBAT:
+            print("[SAVE BLOCKED] Cannot save during combat.")
+            return False
+
         try:
             # Gather all state data
             state_data = {

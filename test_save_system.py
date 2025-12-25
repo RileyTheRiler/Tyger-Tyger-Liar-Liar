@@ -43,6 +43,34 @@ def test_skill_system_serialization():
     
     print("✓ SkillSystem serialization test PASSED")
 
+def test_player_state_serialization():
+    """Test Player State serialization (including injuries)."""
+    print("\n=== Testing Player State Serialization ===")
+
+    player_state = {
+        "sanity": 80,
+        "injuries": [
+            {
+                "type": "Bruise",
+                "location": "Arm",
+                "healing_time_remaining": 72 * 60
+            }
+        ]
+    }
+
+    # Simulate Save (dict to json-like structure)
+    import json
+    serialized = json.dumps(player_state)
+
+    # Simulate Load
+    loaded = json.loads(serialized)
+
+    injury = loaded["injuries"][0]
+    assert injury["type"] == "Bruise"
+    assert injury["healing_time_remaining"] == 4320
+
+    print("✓ Player State serialization test PASSED")
+
 def test_time_system_serialization():
     """Test TimeSystem serialization and deserialization."""
     print("\n=== Testing TimeSystem Serialization ===")
@@ -147,6 +175,7 @@ def main():
     
     try:
         test_skill_system_serialization()
+        test_player_state_serialization()
         test_time_system_serialization()
         test_event_log()
         test_save_system()

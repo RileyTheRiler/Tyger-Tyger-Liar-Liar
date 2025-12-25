@@ -4,6 +4,7 @@ import re
 class InputMode:
     DIALOGUE = "DIALOGUE"
     INVESTIGATION = "INVESTIGATION"
+    COMBAT = "COMBAT"
 
 class CommandParser:
     def __init__(self):
