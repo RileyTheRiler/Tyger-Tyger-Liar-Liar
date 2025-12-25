@@ -36,6 +36,7 @@ from src.inventory_system import InventoryManager, Item, Evidence
 from src.save_system import EventLog, SaveSystem
 from src.journal_system import JournalManager
 from interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result
+from text_composer import TextComposer, Archetype
 
 class Game:
     def __init__(self):
@@ -60,10 +61,16 @@ class Game:
         # Link Time System to Board
         self.time_system.add_listener(self.on_time_passed)
         
+        # Initialize Text Composer (Replaces LensSystem eventually)
+        self.text_composer = TextComposer(self.skill_system, self.board, self.player_state)
+
         # Player State
         self.player_state = {
             "sanity": 100.0,
             "reality": 100.0,
+            "archetype": Archetype.NEUTRAL,
+            "resonance_count": 347,
+            "thermal_mode": False,
             "inventory": [],
             "thoughts": [],
             "injuries": [],
@@ -368,10 +375,11 @@ class Game:
             media = scene["background_media"]
             print(f"[MEDIA: Loading {media['type']} '{media['src']}']")
         
-        variants = scene.get("variants", {})
-        base_text = scene.get("text", "...")
-        filtered_text = self.lens_system.filter_text(base_text, variants)
-        display_text = self.apply_reality_distortion(filtered_text)
+        # Use TextComposer for "Bad Blood" dynamic narrative
+        archetype = self.player_state.get("archetype", Archetype.NEUTRAL)
+        composed_result = self.text_composer.compose(scene, archetype, self.player_state)
+        
+        display_text = self.apply_reality_distortion(composed_result.full_text)
         print("\n" + display_text + "\n")
         
         # Show specific ambient indicators
@@ -412,6 +420,9 @@ class Game:
                 return "refresh"
             if clean in ['switch', 'swap']:
                 self.toggle_mode()
+                return "refresh"
+            if clean in ['thermal', 'toggle_thermal']:
+                self.toggle_thermal()
                 return "refresh"
             if clean in ['h', 'help', '?']:
                 self.handle_parser_command("HELP", None)
@@ -662,6 +673,11 @@ class Game:
             self.input_mode = InputMode.DIALOGUE
             print("[Switched to DIALOGUE mode]")
 
+    def toggle_thermal(self):
+        self.player_state["thermal_mode"] = not self.player_state["thermal_mode"]
+        state = "ON" if self.player_state["thermal_mode"] else "OFF"
+        print(f"[THERMAL OPTICS: {state}]")
+
     def handle_parser_command(self, verb, target):
         scene = self.scene_manager.current_scene_data
         objects = scene.get("objects", {})
@@ -686,6 +702,20 @@ class Game:
             
             if obj_data:
                 desc = obj_data.get("description", "You see nothing special.")
+                
+                # Thermal Mode Override
+                if self.player_state.get("thermal_mode", False):
+                    # Get temperature from object data or default to ambient
+                    temp = obj_data.get("temperature", 70.0)
+                    print(f"[THERMAL READING: {temp:.1f}°F]")
+                    
+                    if temp > 99.1:
+                        print(">> ANOMALOUS HEAT DETECTED <<")
+                        # Passive Medicine Check
+                        check = self.skill_system.roll_check("Medicine", 10, manual_roll=None)
+                        if check["success"]:
+                            print("[MEDICINE] This heat isn't natural. It's radiating from the inside out.")
+                    
                 print(f"{desc}")
                 
                 # Passive Checks

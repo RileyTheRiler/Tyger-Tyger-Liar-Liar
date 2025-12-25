@@ -1,0 +1,55 @@
+{
+    "id": "thermo_test",
+    "name": "The Cold Storage",
+    "base": "You stand in a walk-in freezer. Rows of metal shelves hold frost-covered crates.",
+    "lens": {
+        "believer": "The frost grows in fractals that look uncomfortably like maps of the coastline. The cold isn't just physical; it's a presence.",
+        "skeptic": "Standard industrial freezer unit. The compressor is rattling slightly. Needs maintenance.",
+        "haunted": "It's cold. Just like it was that night. The shelves loom like ribs of a giant beast."
+    },
+    "inserts": [
+        {
+            "id": "logic_compressor",
+            "condition": {
+                "skill_gte": {
+                    "Logic": 3
+                }
+            },
+            "text": "The compressor isn't just rattling. It's cycling in a prime number sequence. 2... 3... 5... 7...",
+            "insert_at": "AFTER_BASE"
+        },
+        {
+            "id": "shivers_cold",
+            "condition": {
+                "skill_gte": {
+                    "Perception": 4
+                }
+            },
+            "text": "A draft touches your neck, but the door is sealed tight.",
+            "insert_at": "AFTER_LENS"
+        }
+    ],
+    "objects": {
+        "crate": {
+            "description": "A wooden crate marked 'PERISHABLE'.",
+            "temperature": 102.4,
+            "passive_checks": [
+                {
+                    "skill": "Logic",
+                    "difficulty": 8,
+                    "success_text": "Wooden crates in a freezer shouldn't generate their own heat."
+                }
+            ]
+        },
+        "ice": {
+            "description": "A patch of black ice on the floor.",
+            "temperature": 15.0
+        }
+    },
+    "choices": [
+        {
+            "text": "Leave correctly",
+            "next": "bedroom"
+        }
+    ]
+}

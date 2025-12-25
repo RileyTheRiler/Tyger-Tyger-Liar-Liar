@@ -16,6 +16,7 @@ class Item:
         self.usable_in = usable_in or []
         self.limited_use = limited_use
         self.uses = uses
+        self.temperature = effects.get("temperature", 70.0) if effects else 70.0
 
     def use(self) -> bool:
         if self.limited_use:
