@@ -1,0 +1,290 @@
+[
+  {
+    "id": "enc_forest_presence",
+    "intro_text": {
+      "base": "The forest edge looms before you. Between the black pines, something moves. Not quite in sync with the wind. You catch a glimpse of pale skin, wrong angles. It knows you're watching.",
+      "lens": {
+        "believer": "The Entity manifests. The aurora flickers overhead, and in its green light, you see faces in the darkness between the trees. Hungry. Waiting.",
+        "skeptic": "Someone is out there. Possibly armed. The cold plays tricks, but those are human movements. Someone else is investigating. Or hunting.",
+        "haunted": "You've seen this before. In Blackwood. In your nightmares. The shape resolving from shadows. It always comes for you."
+      }
+    },
+    "initial_state": {
+      "environment": {
+        "visibility": "dim",
+        "temperature": "freezing",
+        "escape_route_open": true,
+        "aurora_active": true
+      },
+      "player_resources": {
+        "flashlight_battery": 80
+      },
+      "threat_state": {
+        "distance": "medium",
+        "awareness": "alerted"
+      },
+      "custom_flags": {
+        "made_eye_contact": false,
+        "spoke_to_it": false
+      }
+    },
+    "turn_structure": {
+      "order": ["player", "threat", "environment"],
+      "max_turns": 8
+    },
+    "options": [
+      {
+        "id": "option_retreat",
+        "label": "Back away slowly",
+        "description": "Don't run. Don't break eye contact. Just... step back.",
+        "skill": "Composure",
+        "dc": 9,
+        "outcomes": {
+          "success": {
+            "text": "You keep your breathing steady. One step back. Two. The shape doesn't follow. It tilts its head, curious, but lets you go. This time.",
+            "state_changes": {"threat_distance": "far"},
+            "effects": [{"type": "modify_attention", "value": 5}]
+          },
+          "failure": {
+            "text": "Your foot catches a root. You stumble. In that moment of weakness, it surges forward.",
+            "state_changes": {"threat_distance": "close", "threat_awareness": "hunting"},
+            "effects": [{"type": "add_condition", "target": "cond_shaken"}]
+          },
+          "partial": {
+            "text": "You manage to back away, but something in the way it watches you... it learned something. About you. About your fear.",
+            "state_changes": {"threat_distance": "medium"},
+            "effects": [{"type": "modify_attention", "value": 10}]
+          }
+        }
+      },
+      {
+        "id": "option_run",
+        "label": "Run for town",
+        "description": "Forget caution. Get back to the lights.",
+        "skill": "Athletics",
+        "dc": 9,
+        "available_when": {
+          "state_flags": {"escape_route_open": true}
+        },
+        "outcomes": {
+          "success": {
+            "text": "You sprint through the snow, lungs burning with cold air. The street lights of Kaltvik appear ahead. You don't look back.",
+            "ends_encounter": true,
+            "next_scene": "scene_street_night",
+            "effects": [{"type": "modify_attention", "value": 8}]
+          },
+          "failure": {
+            "text": "The snow is deep here. Your legs burn. You hear it behind you, matching your pace. Playing with you.",
+            "state_changes": {"threat_distance": "close", "escape_route_open": false},
+            "effects": [{"type": "add_condition", "target": "cond_sprained_ankle"}]
+          },
+          "partial": {
+            "text": "You make it to the road, gasping, but something cold brushes your neck as you flee. A touch. A claim.",
+            "ends_encounter": true,
+            "next_scene": "scene_street_night",
+            "effects": [
+              {"type": "modify_attention", "value": 15},
+              {"type": "modify_sanity", "value": -5}
+            ]
+          }
+        }
+      },
+      {
+        "id": "option_shine_light",
+        "label": "Use flashlight",
+        "description": "Light reveals truth. Or so you hope.",
+        "skill": "Perception",
+        "dc": 7,
+        "costs": {
+          "flashlight_battery": 20
+        },
+        "outcomes": {
+          "success": {
+            "text": "The beam catches... nothing. No, wait. Footprints in the snow. Human footprints. Leading deeper into the forest. Whatever was here, it's gone now. Or hiding.",
+            "state_changes": {"threat_distance": "far", "threat_awareness": "unaware"},
+            "effects": [{"type": "set_flag", "target": "saw_footprints_forest", "value": true}]
+          },
+          "failure": {
+            "text": "The light flickers, batteries fading in the cold. In the strobe effect, you see it clearly for one terrible instant. Then darkness.",
+            "state_changes": {"visibility": "dark"},
+            "effects": [
+              {"type": "modify_sanity", "value": -10},
+              {"type": "modify_attention", "value": 5}
+            ]
+          },
+          "partial": {
+            "text": "The light holds, but it doesn't dispel the presence. It illuminates instead: a face, pale and wrong, watching from between the trees. Then it's gone. You saw too much.",
+            "state_changes": {"made_eye_contact": true},
+            "effects": [
+              {"type": "modify_sanity", "value": -5},
+              {"type": "set_flag", "target": "saw_the_face", "value": true}
+            ]
+          }
+        }
+      },
+      {
+        "id": "option_speak",
+        "label": "Call out to it",
+        "description": "Maybe it's human. Maybe it needs help. Maybe you can reason with it.",
+        "skill": "Charm",
+        "dc": 11,
+        "outcomes": {
+          "success": {
+            "text": "\"Hello?\" Your voice cracks in the cold. Silence. Then, distant: \"...help me.\" A woman's voice. Human. Lost in the forest. The presence fades.",
+            "state_changes": {"spoke_to_it": true, "threat_awareness": "unaware"},
+            "effects": [
+              {"type": "set_flag", "target": "heard_voice_forest", "value": true}
+            ]
+          },
+          "failure": {
+            "text": "Your voice echoes. Nothing responds. But you feel its attention sharpen. You've invited it. You've acknowledged it.",
+            "state_changes": {"threat_awareness": "hunting", "threat_distance": "close"},
+            "effects": [
+              {"type": "modify_attention", "value": 12},
+              {"type": "modify_sanity", "value": -3}
+            ]
+          },
+          "partial": {
+            "text": "It answers. Not in words. In sensation: cold fingers tracing your spine, though nothing touches you. It understood. It responded.",
+            "state_changes": {"spoke_to_it": true},
+            "effects": [
+              {"type": "modify_attention", "value": 8},
+              {"type": "modify_sanity", "value": -5}
+            ]
+          }
+        }
+      },
+      {
+        "id": "option_hide",
+        "label": "Find cover",
+        "description": "Crouch behind a snowdrift. Don't move. Don't breathe.",
+        "skill": "Stealth",
+        "dc": 11,
+        "outcomes": {
+          "success": {
+            "text": "You press into the snow, ice crystals burning your skin. Minutes pass. The presence drifts past, searching, then moves deeper into the forest. Gone. For now.",
+            "state_changes": {"threat_awareness": "searching", "threat_distance": "far"}
+          },
+          "failure": {
+            "text": "The snow shifts. You sink. A branch snaps. It knows. It's coming.",
+            "state_changes": {"threat_distance": "adjacent", "threat_awareness": "engaged"},
+            "effects": [{"type": "add_condition", "target": "cond_hypothermia_mild"}]
+          },
+          "partial": {
+            "text": "You're hidden, but trapped. It circles your position, not seeing you but knowing. You'll have to wait until it loses interest. The cold bites deep.",
+            "state_changes": {"escape_route_open": false},
+            "effects": [{"type": "add_condition", "target": "cond_hypothermia_mild"}]
+          }
+        }
+      }
+    ],
+    "threat_behavior": [
+      {
+        "condition": {"distance": "far", "awareness": "searching"},
+        "action": {
+          "text": "The shape moves between the trees, methodical, patient. Searching. Each moment brings it closer to finding you.",
+          "state_changes": {"threat_distance": "medium"}
+        }
+      },
+      {
+        "condition": {"distance": "medium", "awareness": "alerted"},
+        "action": {
+          "text": "It stops. Turns toward you. Though you can't see eyes, you feel its gaze. Then it begins walking. Toward you.",
+          "state_changes": {"threat_distance": "close", "threat_awareness": "hunting"}
+        }
+      },
+      {
+        "condition": {"distance": "medium", "awareness": "hunting"},
+        "action": {
+          "text": "It doesn't walk. It glides. The snow doesn't crunch under its feet. The distance shrinks impossibly fast.",
+          "state_changes": {"threat_distance": "close"}
+        }
+      },
+      {
+        "condition": {"distance": "close", "awareness": "hunting"},
+        "action": {
+          "text": "It's here. Right here. You smell frost and something else. Something organic. Rotting. A hand—if it is a hand—reaches toward your face.",
+          "state_changes": {"threat_distance": "adjacent"},
+          "player_effects": [
+            {"type": "modify_sanity", "value": -8},
+            {"type": "modify_attention", "value": 10}
+          ]
+        }
+      },
+      {
+        "condition": {"distance": "adjacent", "awareness": "engaged"},
+        "action": {
+          "text": "Contact. Cold beyond cold. Your vision whites out. When it clears, you're on the ground. It's gone. But something is different. Something is missing. You can't remember what.",
+          "player_effects": [
+            {"type": "modify_sanity", "value": -15},
+            {"type": "modify_reality", "value": -10},
+            {"type": "set_flag", "target": "touched_by_entity", "value": true}
+          ],
+          "ends_encounter": true,
+          "next_scene": "scene_hotel_room"
+        }
+      }
+    ],
+    "environment_tick": {
+      "cold_exposure": {
+        "condition": {"temperature": "freezing"},
+        "effect": {
+          "text": "The arctic cold seeps through your clothing. Your extremities are going numb.",
+          "effects": [{"type": "skill_penalty", "skill": "Firearms", "value": -1}]
+        }
+      },
+      "visibility_changes": [
+        {
+          "turn": 4,
+          "effect": {
+            "text": "The aurora flares overhead. For a moment, the world is painted in shifting green. In that light, you see more shapes in the forest. Many more.",
+            "state_changes": {"visibility": "obscured"}
+          }
+        }
+      ],
+      "attention_gain": 3
+    },
+    "exit_conditions": [
+      {
+        "id": "escape_to_town",
+        "condition": {"player_escaped": true},
+        "result": {
+          "type": "escape",
+          "text": "You made it back to Kaltvik. The street lights feel like sanctuary. But the memory of what you saw will not fade.",
+          "next_scene": "scene_street_night"
+        }
+      },
+      {
+        "id": "survived_encounter",
+        "condition": {"turns_survived": 8},
+        "result": {
+          "type": "draw",
+          "text": "Dawn is coming. The shapes withdraw into the deeper forest, as if the approaching light burns them. You survive the night.",
+          "next_scene": "scene_hotel_exterior",
+          "effects": [{"type": "set_flag", "target": "survived_forest_night", "value": true}]
+        }
+      },
+      {
+        "id": "threat_dispersed",
+        "condition": {"threat_distance": "far", "threat_awareness": "unaware"},
+        "result": {
+          "type": "victory",
+          "text": "The presence fades. Whether you drove it away or it simply lost interest, you're alone again. The forest is just a forest. Almost.",
+          "effects": [{"type": "set_flag", "target": "dispersed_forest_entity", "value": true}]
+        }
+      }
+    ],
+    "defeat_condition": {
+      "condition": {"threat_distance": "adjacent", "threat_awareness": "engaged"},
+      "result": {
+        "text": "The touch of the Entity. Reality fractures. When you wake, you're somewhere else. Somewhere... other.",
+        "next_scene": "scene_hotel_room",
+        "effects": [
+          {"type": "set_flag", "target": "taken_by_entity", "value": true},
+          {"type": "modify_sanity", "value": -20}
+        ],
+        "game_over": false
+      }
+    }
+  }
+]

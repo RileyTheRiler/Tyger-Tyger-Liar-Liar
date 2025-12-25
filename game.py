@@ -45,6 +45,7 @@ from src.clue_system import ClueSystem
 from src.text_composer import TextComposer, Archetype
 from src.fracture_system import FractureSystem, UnsafeMenu
 from src.dice import DiceSystem
+from src.encounter_system import EncounterSystem
 
 class Game:
     def __init__(self):
@@ -145,6 +146,11 @@ class Game:
 
         # Enhanced Dice System - Manual roll and partial success
         self.dice_system = DiceSystem()
+
+        # Encounter System - Turn-based tactical encounters
+        encounters_dir = resource_path(os.path.join('data', 'encounters'))
+        self.encounter_system = EncounterSystem(encounters_dir)
+        self.in_encounter = False
 
         # Current player archetype (for text composition)
         self.player_archetype = Archetype.NEUTRAL
@@ -319,6 +325,10 @@ class Game:
                 self.player_state["reality"] = 10
                 self.log_event("breakdown", breakdown_type="reality")
                 # Ideally move to fracture scene
+                continue
+
+            if self.in_encounter:
+                self.run_encounter_loop()
                 continue
 
             if self.in_dialogue:
@@ -758,6 +768,7 @@ class Game:
                     print("  dblens <lens>             - Force lens (believer/skeptic/haunted)")
                     print("  dbtheory <theory_id>      - Unlock and internalize theory")
                     print("  dbstatus                  - Show all system states")
+                    print("  dbencounter <enc_id>      - Start an encounter")
                     return "refresh"
 
                 # Set Skill Level
@@ -914,6 +925,21 @@ class Game:
                     print(f"Acquired Clues: {len(self.clue_system.acquired_clues)}")
                     active_theories = [t.name for t in self.board.theories.values() if t.status == 'active']
                     print(f"Active Theories: {active_theories}")
+                    print(f"In Encounter: {self.in_encounter}")
+                    return "refresh"
+
+                # Start Encounter
+                if clean.startswith('dbencounter '):
+                    parts = raw.split(maxsplit=1)
+                    if len(parts) > 1:
+                        enc_id = parts[1].strip()
+                        result = self.start_encounter(enc_id)
+                        if result:
+                            return "encounter"
+                    else:
+                        print("Available encounters:")
+                        for enc_id in self.encounter_system.encounters:
+                            print(f"  - {enc_id}")
                     return "refresh"
 
             # Theory Resolution Commands
@@ -1201,7 +1227,9 @@ class Game:
                 "clue_system": self.clue_system.to_dict(),
                 "fracture_system": self.fracture_system.to_dict(),
                 "lens_system": self.lens_system.to_dict(),
-                "player_archetype": self.player_archetype.value if self.player_archetype else "neutral"
+                "player_archetype": self.player_archetype.value if self.player_archetype else "neutral",
+                "in_encounter": self.in_encounter,
+                "encounter_state": self.encounter_system.current_runner.to_dict() if self.encounter_system.current_runner else None
             }
             
             success = self.save_system.save_game(slot_id, state_data)
@@ -1293,6 +1321,15 @@ class Game:
             # Convert event_flags back to set
             if "event_flags" in self.player_state and isinstance(self.player_state["event_flags"], list):
                 self.player_state["event_flags"] = set(self.player_state["event_flags"])
+
+            # Restore Encounter State
+            if "in_encounter" in save_data:
+                self.in_encounter = save_data["in_encounter"]
+                # Note: Encounter runner state would need to be reconstructed if we
+                # wanted to resume mid-encounter. For now, we reset to not in encounter.
+                if self.in_encounter:
+                    print("[WARNING] Save was mid-encounter. Encounter reset.")
+                    self.in_encounter = False
 
             # Restore scene
             if "scene" in save_data:
@@ -1457,6 +1494,159 @@ class Game:
             self.in_dialogue = True
         else:
             print("Failed to start dialogue.")
+
+    def start_encounter(self, encounter_id: str) -> bool:
+        """Start a tactical encounter."""
+        runner = self.encounter_system.start_encounter(
+            encounter_id=encounter_id,
+            dice_system=self.dice_system,
+            skill_system=self.skill_system,
+            condition_system=self.condition_system,
+            attention_system=self.attention_system,
+            npc_system=self.npc_system,
+            player_state=self.player_state
+        )
+
+        if runner:
+            self.in_encounter = True
+            # Display intro
+            lens = self.lens_system.calculate_lens()
+            print("\n" + "=" * 50)
+            print("=== ENCOUNTER ===")
+            print("=" * 50)
+            print(runner.get_intro(lens))
+            print("=" * 50 + "\n")
+            return True
+        else:
+            print(f"[ERROR] Could not start encounter: {encounter_id}")
+            return False
+
+    def run_encounter_loop(self):
+        """Run the encounter game loop until completion."""
+        runner = self.encounter_system.get_current_runner()
+        if not runner or not runner.state.active:
+            self.in_encounter = False
+            return
+
+        lens = self.lens_system.calculate_lens()
+
+        # Display available actions
+        print("\n--- Your Actions ---")
+        options = runner.get_available_options()
+        for idx, opt in enumerate(options):
+            print(f"{idx + 1}. {opt.label}")
+            print(f"   [{opt.skill} DC {opt.dc}] {opt.description}")
+        print("\n(Enter number to act, 'status' to see state, 'flee' to escape)")
+
+        raw = input("E> ").strip()
+
+        if raw.lower() == 'status':
+            state = runner.get_state_summary()
+            print(f"\n--- Encounter Status (Turn {state['turn']}) ---")
+            print(f"Environment: {state['environment']}")
+            print(f"Threat: {state['threat']}")
+            print(f"Resources: {state['resources']}")
+            return
+
+        if raw.lower() == 'flee':
+            # Try to escape using the escape option if available
+            escape_opt = None
+            for opt in options:
+                if 'run' in opt.id.lower() or 'escape' in opt.id.lower() or 'retreat' in opt.id.lower():
+                    escape_opt = opt
+                    break
+            if escape_opt:
+                raw = str(options.index(escape_opt) + 1)
+            else:
+                print("No escape route available!")
+                return
+
+        try:
+            choice = int(raw) - 1
+            if 0 <= choice < len(options):
+                selected = options[choice]
+
+                # Execute the action
+                print(f"\n>>> {selected.label}...")
+                result = runner.execute_option(selected.id)
+
+                # Show roll result
+                if result.get('roll_result'):
+                    roll = result['roll_result']
+                    print(self.dice_system.format_roll_result(roll))
+
+                # Show narrative result
+                print(f"\n{result['text']}")
+
+                # Show any effects
+                for effect in result.get('effects', []):
+                    if effect.get('type') == 'add_condition':
+                        print(f"  [CONDITION: {effect.get('condition')}]")
+                    elif effect.get('type') == 'modify_attention':
+                        print(f"  [ATTENTION +{effect.get('attention_change')}]")
+                    elif effect.get('type') == 'modify_sanity':
+                        change = effect.get('sanity_change', 0)
+                        print(f"  [SANITY {'+' if change > 0 else ''}{change}]")
+
+                # Check for encounter end
+                if result.get('ends_encounter'):
+                    print("\n=== Encounter Ends ===")
+                    self._end_encounter(result.get('next_scene'))
+                    return
+
+                # Advance turn (threat and environment act)
+                print("\n--- The situation develops... ---")
+                turn_result = runner.advance_turn()
+
+                # Show threat action
+                if turn_result.get('threat_action'):
+                    threat = turn_result['threat_action']
+                    print(f"\n{threat['text']}")
+                    for effect in threat.get('effects', []):
+                        if effect.get('type') == 'modify_sanity':
+                            print(f"  [SANITY {effect.get('sanity_change')}]")
+
+                # Show environment effects
+                for env_effect in turn_result.get('environment_effects', []):
+                    print(f"\n{env_effect['text']}")
+
+                # Check for exit/defeat
+                if turn_result.get('exit_result'):
+                    exit_result = turn_result['exit_result']
+                    print(f"\n=== {exit_result['type'].value.upper()} ===")
+                    print(exit_result['text'])
+                    self._end_encounter(exit_result.get('next_scene'))
+                    return
+
+                if turn_result.get('defeat_result'):
+                    defeat = turn_result['defeat_result']
+                    print(f"\n=== DEFEAT ===")
+                    print(defeat['text'])
+                    if defeat.get('game_over'):
+                        print("\n*** GAME OVER ***")
+                    self._end_encounter(defeat.get('next_scene'))
+                    return
+
+            else:
+                print("Invalid choice.")
+        except ValueError:
+            print("Enter a number or command.")
+
+    def _end_encounter(self, next_scene: str = None):
+        """Clean up after encounter ends."""
+        result = self.encounter_system.end_encounter()
+        self.in_encounter = False
+
+        # Log the encounter result
+        if result:
+            self.log_event("encounter_ended",
+                           result_type=result.get('type', 'unknown'),
+                           text=result.get('text', '')[:100])
+
+        # Transition to next scene if specified
+        if next_scene:
+            print(f"\n... Transitioning to {next_scene} ...")
+            self.scene_manager.enter_scene(next_scene, self.player_state)
 
     def run_dialogue_loop(self):
         data = self.dialogue_manager.get_render_data()
