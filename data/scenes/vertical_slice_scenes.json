@@ -43,6 +43,91 @@
     "connected_scenes": ["scene_hotel_exterior", "scene_sheriff_office_exterior", "scene_town_sign"]
   },
   {
+    "id": "scene_town_sign",
+    "title": "The Town Sign",
+    "location_id": "loc_town_entrance",
+    "time_cost": 5,
+    "text": {
+      "base": "You approach the wooden sign. 'KALTVIK - Est. 1952'. The population counter below reads 347, but the '7' has been scraped off and someone has written '3' in its place with what looks like dried blood—or rust. A faded image of the aurora decorates the corner.",
+      "lens": {
+        "believer": "The aurora on the sign seems to pulse faintly in the dim light. A trick of your eyes, surely. But the blood on the number... that feels deliberate. A message.",
+        "skeptic": "Vandalism combined with rust staining. The '3' is probably just rust-colored paint. Small towns attract these acts of petty nihilism.",
+        "haunted": "You've seen numbers like this before. Countdowns to something. In another town, another life. The memory slips away before you can grasp it."
+      },
+      "inserts": [
+        {
+          "id": "insert_forensics_blood",
+          "condition": {"skill_gte": {"Forensics": 2}},
+          "text": "That's not rust. The metallic tang in the cold air confirms it. Blood. Relatively fresh—within the last week.",
+          "insert_at": "AFTER_LENS"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "Take a sample of the stain",
+        "check": {
+          "skill": "Forensics",
+          "dc": 8,
+          "success_effects": [{"type": "add_item", "item_id": "item_blood_sample"}],
+          "failure_text": "Your collection attempt contaminates the sample."
+        }
+      },
+      {
+        "label": "Head to the hotel",
+        "next_scene": "scene_hotel_exterior"
+      },
+      {
+        "label": "Continue to the town center",
+        "next_scene": "scene_street_night"
+      }
+    ],
+    "passive_clues": [
+      {
+        "clue_id": "clue_sign_blood",
+        "visible_when": {"skill_gte": {"Forensics": 2}},
+        "reveal_text": "The blood on the sign is fresh—someone bled here within the week. And they took the time to write a message."
+      }
+    ]
+  },
+  {
+    "id": "scene_hotel_exterior",
+    "title": "Hotel Kaltvik - Exterior",
+    "location_id": "loc_hotel_exterior",
+    "time_cost": 5,
+    "text": {
+      "base": "The Hotel Kaltvik is a three-story wooden building, paint peeling from decades of Arctic weather. A neon sign flickers 'VACANCY', though half the letters are dark. Frost creeps up the lower windows. Through the ground floor windows, you can see a dim lobby. The building looms against the permanent darkness.",
+      "lens": {
+        "believer": "The building leans slightly. Or maybe that's the darkness around it, pressing. The flickering sign spells out letters in the gaps—V-A-C-A-N-C-Y... no, something else. A pattern you can't quite read.",
+        "skeptic": "Classic Arctic hotel architecture. The tilt is probably from permafrost subsidence—common in these regions. The maintenance is poor, but that's economics, not anything sinister.",
+        "haunted": "You remember a hotel like this. The smell of it. Old wood and old secrets. Someone was crying in the room above yours. Every night for a week."
+      },
+      "inserts": [
+        {
+          "id": "insert_attention_watching",
+          "condition": {"attention_gte": 40},
+          "text": "You feel it again. That sensation of being watched from somewhere high above. When you look up, there's only darkness. But the darkness seems to have depth.",
+          "insert_at": "AFTER_LENS"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "Enter the hotel",
+        "next_scene": "scene_hotel_lobby"
+      },
+      {
+        "label": "Circle around to check the back",
+        "next_scene": "scene_hotel_back",
+        "effects": [{"type": "add_time", "value": 10}]
+      },
+      {
+        "label": "Return to the main street",
+        "next_scene": "scene_street_night"
+      }
+    ]
+  },
+  {
     "id": "scene_hotel_lobby",
     "title": "Hotel Kaltvik - Lobby",
     "location_id": "loc_hotel_lobby",
@@ -71,13 +156,14 @@
     },
     "choices": [
       {
-        "label": "Approach the front desk",
-        "next_scene": "scene_hotel_desk"
-      },
-      {
         "label": "Talk to the manager",
         "dialogue_id": "dialogue_elsa_first_meeting",
         "visible_if": {"flag_not_set": "met_elsa"}
+      },
+      {
+        "label": "Ask Elsa about the disappearances",
+        "dialogue_id": "dialogue_elsa_disappearances",
+        "visible_if": {"flag_set": "met_elsa"}
       },
       {
         "label": "Examine the lobby more closely",
@@ -110,7 +196,189 @@
     "ambient_effects": {
       "reality_drain_per_min": 0.1
     },
-    "connected_scenes": ["scene_hotel_desk", "scene_hotel_room", "scene_street_night"]
+    "connected_scenes": ["scene_hotel_room", "scene_street_night", "scene_hotel_lobby_search"]
+  },
+  {
+    "id": "scene_hotel_lobby_search",
+    "title": "Searching the Lobby",
+    "location_id": "loc_hotel_lobby",
+    "time_cost": 15,
+    "text": {
+      "base": "You take your time examining the lobby. The guest register shows sparse entries—few visitors this time of year. The furniture is worn but clean. Behind the desk, a door leads to what must be the manager's office. A staircase creaks upward into shadow.",
+      "lens": {
+        "believer": "The entries in the register end abruptly two weeks ago. Since then, nothing. As if the hotel itself is holding its breath.",
+        "skeptic": "The register pattern suggests seasonal visitors. The gap is unusual but could indicate a booking lull or simple neglect in maintaining records.",
+        "haunted": "You've seen registers like this. Names that would never check out. You trace your finger down the list, half-expecting to find your own."
+      },
+      "inserts": [
+        {
+          "id": "insert_research_names",
+          "condition": {"skill_gte": {"Research": 4}},
+          "text": "Cross-referencing the names with the missing persons reports... three of the recent guests match. They checked in. They never checked out.",
+          "insert_at": "AFTER_LENS"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "[Investigation] Search behind the desk",
+        "check": {
+          "skill": "Investigation",
+          "dc": 10,
+          "success_scene": "scene_hotel_desk_secrets"
+        }
+      },
+      {
+        "label": "Look under the carpet",
+        "check": {
+          "skill": "Perception",
+          "dc": 9,
+          "success_effects": [{"type": "acquire_clue", "clue_id": "clue_carpet_stains"}]
+        }
+      },
+      {
+        "label": "Return to the main lobby",
+        "next_scene": "scene_hotel_lobby"
+      }
+    ],
+    "passive_clues": [
+      {
+        "clue_id": "clue_register_gaps",
+        "visible_when": {"skill_gte": {"Research": 3}},
+        "reveal_text": "Pages are missing from the register. The cuts are clean—done with a blade, not torn in haste."
+      }
+    ]
+  },
+  {
+    "id": "scene_hotel_room",
+    "title": "Your Hotel Room",
+    "location_id": "loc_hotel_room",
+    "time_cost": 0,
+    "text": {
+      "base": "Room 7. A small bed with faded sheets, a window overlooking the street, a nightstand with a lamp that flickers when the wind howls. The radiator clanks and hisses. Through the window, you can see the aurora beginning to rise above the horizon—green and purple lights dancing in the darkness.",
+      "lens": {
+        "believer": "The aurora pulses like a heartbeat. As you watch, patterns seem to emerge in the light. Shapes. Almost like words.",
+        "skeptic": "Charged particles from the sun interacting with the atmosphere. Beautiful physics. The patterns are random—any 'meaning' is just your brain trying to impose order on chaos.",
+        "haunted": "You watched the lights once before. From a hospital window. They told you what to do then. Or was that a dream?"
+      },
+      "inserts": [
+        {
+          "id": "insert_fracture_room",
+          "condition": {"flag_set": "trigger_fracture"},
+          "text": "For a moment, the room is different. Older. The bed is occupied. Someone is watching you from under the covers. Then you blink, and it's just an empty bed again.",
+          "insert_at": "AFTER_LENS"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "Sleep (advance 8 hours)",
+        "next_scene": "scene_hotel_room_morning",
+        "effects": [{"type": "add_time", "value": 480}, {"type": "sanity", "value": 15}]
+      },
+      {
+        "label": "Review your notes",
+        "next_scene": "scene_journal_review"
+      },
+      {
+        "label": "Look out the window at the aurora",
+        "next_scene": "scene_aurora_watching",
+        "effects": [{"type": "add_attention", "value": 5}]
+      },
+      {
+        "label": "Leave the room",
+        "next_scene": "scene_hotel_lobby"
+      }
+    ],
+    "ambient_effects": {
+      "sanity_regen_per_min": 0.5
+    }
+  },
+  {
+    "id": "scene_street_night",
+    "title": "Main Street - Night",
+    "location_id": "loc_main_street",
+    "time_cost": 5,
+    "text": {
+      "base": "The main street of Kaltvik stretches before you, lit by scattered streetlamps that create pools of amber in the darkness. Most shops are closed—a general store, a hardware shop, a closed café. The diner at the end of the street still has lights on. Your breath crystallizes in the air. The cold is a physical presence.",
+      "lens": {
+        "believer": "The spaces between the lights feel deeper than they should. Things move in the darkness—or seem to. The town is holding its breath.",
+        "skeptic": "A small Arctic town in winter. Low foot traffic is expected. The isolation would explain the suspicious attitudes. Nothing supernatural about economic decline.",
+        "haunted": "Main Street. Every town has one. You've walked down dozens of them in the dark. This one feels the same. But also different. More final."
+      },
+      "inserts": [
+        {
+          "id": "insert_perception_footsteps",
+          "condition": {"skill_gte": {"Perception": 4}},
+          "text": "Footsteps. Behind you. But when you turn, the street is empty. The sound stops when you stop walking.",
+          "insert_at": "AFTER_LENS"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "Go to the diner",
+        "next_scene": "scene_diner"
+      },
+      {
+        "label": "Visit the hotel",
+        "next_scene": "scene_hotel_exterior"
+      },
+      {
+        "label": "Head to the sheriff's office",
+        "next_scene": "scene_sheriff_office_exterior"
+      },
+      {
+        "label": "Walk toward the forest edge",
+        "next_scene": "scene_forest_edge",
+        "effects": [{"type": "add_time", "value": 20}]
+      }
+    ],
+    "connected_scenes": ["scene_diner", "scene_hotel_exterior", "scene_sheriff_office_exterior", "scene_forest_edge"]
+  },
+  {
+    "id": "scene_sheriff_office_exterior",
+    "title": "Sheriff's Office - Exterior",
+    "location_id": "loc_sheriff_office_exterior",
+    "time_cost": 5,
+    "text": {
+      "base": "A squat brick building with 'KALTVIK SHERIFF' painted on the window. A patrol car sits in the small lot, covered in frost. Light spills from inside—someone's working late. A notice board by the door is covered in flyers. Missing persons. So many missing persons.",
+      "lens": {
+        "believer": "Fourteen faces on the board. Fourteen names. The pattern of their disappearances traces a shape you can almost see. A constellation made of absences.",
+        "skeptic": "Missing persons in an isolated community. Harsh climate, limited resources, possibly substance abuse issues. Tragic but not mysterious.",
+        "haunted": "You know these faces. Not specifically, but the type. The resigned smile of someone who knew they weren't coming back."
+      },
+      "inserts": [
+        {
+          "id": "insert_pattern_dates",
+          "condition": {"skill_gte": {"Pattern Recognition": 3}},
+          "text": "The dates. They accelerate. Each disappearance comes faster than the last. The intervals form a sequence. Decreasing.",
+          "insert_at": "AFTER_LENS"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "Enter the sheriff's office",
+        "next_scene": "scene_sheriff_office"
+      },
+      {
+        "label": "Study the missing persons board",
+        "next_scene": "scene_missing_persons_board",
+        "effects": [{"type": "add_time", "value": 10}]
+      },
+      {
+        "label": "Return to Main Street",
+        "next_scene": "scene_street_night"
+      }
+    ],
+    "passive_clues": [
+      {
+        "clue_id": "clue_pattern_dates",
+        "visible_when": {"skill_gte": {"Pattern Recognition": 3}},
+        "reveal_text": "The disappearances follow an accelerating pattern. Whatever is happening, it's speeding up."
+      }
+    ]
   },
   {
     "id": "scene_sheriff_office",
@@ -142,7 +410,7 @@
       {
         "label": "Ask about the case files",
         "dialogue_id": "dialogue_bergman_cases",
-        "visible_if": {"flag_set": "met_bergman"}
+        "visible_if": {"flag_set": "met_bergman", "trust_gte": {"bergman": 30}}
       },
       {
         "label": "[Authority] Demand to see the files",
@@ -150,7 +418,7 @@
           "skill": "Authority",
           "dc": 11,
           "success_scene": "scene_case_files_revealed",
-          "failure_scene": "scene_bergman_refuses"
+          "failure_effects": [{"type": "npc_trust", "npc": "bergman", "value": -10}]
         },
         "visible_if": {"flag_set": "met_bergman"}
       },
@@ -161,7 +429,7 @@
       },
       {
         "label": "Leave",
-        "next_scene": "scene_street_twilight"
+        "next_scene": "scene_street_night"
       }
     ],
     "passive_clues": [
@@ -169,7 +437,7 @@
         "clue_id": "clue_case_files",
         "visible_when": {
           "skill_gte": {"Research": 3},
-          "flag_set": "bergman_trust_60"
+          "trust_gte": {"bergman": 60}
         },
         "reveal_text": "Bergman's guard is down. You notice a folder on his desk—'ACTIVE CASES: AURORA CORRELATION'. He sees you looking and quickly covers it."
       }
@@ -177,6 +445,174 @@
     "on_entry_effects": [
       {"type": "set_flag", "target": "visited_sheriff_office", "value": true}
     ],
-    "connected_scenes": ["scene_investigation_map", "scene_street_twilight"]
+    "connected_scenes": ["scene_investigation_map", "scene_street_night"]
+  },
+  {
+    "id": "scene_diner",
+    "title": "Helga's Diner",
+    "location_id": "loc_diner",
+    "time_cost": 5,
+    "text": {
+      "base": "The diner is a haven of warmth and light. The smell of coffee and frying food cuts through the cold you've been carrying. A few locals sit at the counter, conversation dying as you enter. A heavyset woman behind the counter—Helga, presumably—watches you with guarded eyes. The jukebox plays something old and scratchy.",
+      "lens": {
+        "believer": "Their eyes follow you. Not with hostility, but with fear. They know something. All of them. The secret hangs in the air like the cigarette smoke.",
+        "skeptic": "Suspicious of outsiders. Common in small, isolated communities. They've probably been dealing with journalists and curiosity-seekers since the disappearances started.",
+        "haunted": "You've seen this room before. Not this exact one. But the faces are the same. Waiting for you to say something. Waiting for you to help them."
+      },
+      "inserts": [
+        {
+          "id": "insert_empathy_fear",
+          "condition": {"skill_gte": {"Empathy": 3}},
+          "text": "They're afraid. Not of you—of what you represent. An outsider asking questions. Someone who might stir up what they've tried to bury.",
+          "insert_at": "AFTER_LENS"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "Order coffee and listen",
+        "next_scene": "scene_diner_eavesdrop",
+        "effects": [{"type": "add_time", "value": 20}]
+      },
+      {
+        "label": "Approach the counter and ask about the town",
+        "dialogue_id": "dialogue_helga_intro"
+      },
+      {
+        "label": "Talk to the old man in the corner booth",
+        "dialogue_id": "dialogue_old_timer",
+        "visible_if": {"flag_set": "noticed_old_timer"}
+      },
+      {
+        "label": "Leave",
+        "next_scene": "scene_street_night"
+      }
+    ],
+    "passive_clues": [
+      {
+        "clue_id": "clue_old_timer",
+        "visible_when": {"skill_gte": {"Perception": 2}},
+        "reveal_text": "An old man sits alone in the corner booth, nursing a coffee. He's been watching you since you came in. Unlike the others, he doesn't look away."
+      }
+    ],
+    "on_entry_effects": [
+      {"type": "set_flag", "target": "visited_diner", "value": true}
+    ],
+    "ambient_effects": {
+      "sanity_regen_per_min": 0.2
+    }
+  },
+  {
+    "id": "scene_forest_edge",
+    "title": "Edge of the Forest",
+    "location_id": "loc_forest_edge",
+    "time_cost": 10,
+    "text": {
+      "base": "The tree line begins here, dark pines standing like sentinels against the darker sky. The aurora ripples overhead, casting shifting green light through the branches. The forest is utterly silent. No wind. No animals. Nothing moves except the lights above. A worn path leads deeper into the trees.",
+      "lens": {
+        "believer": "The trees are watching. You can feel their attention. Something in there knows you've arrived. It's been waiting.",
+        "skeptic": "Boreal forest in winter. The silence is normal—most animals are dormant or have migrated. The aurora's reflection creates optical illusions in the branches.",
+        "haunted": "The forest remembers. You've walked into woods like this before. You walked out alone. Or did you walk out at all?"
+      },
+      "inserts": [
+        {
+          "id": "insert_high_attention_calling",
+          "condition": {"attention_gte": 60},
+          "text": "There. Deep in the forest. A light that isn't the aurora. It pulses. Like breathing. Like a heartbeat. Calling.",
+          "insert_at": "AFTER_LENS"
+        },
+        {
+          "id": "insert_paranormal_sense",
+          "condition": {"skill_gte": {"Paranormal Sensitivity": 4}},
+          "text": "The veil is thin here. You can feel it—the boundary between what is and what shouldn't be. Something is pressing against it from the other side.",
+          "insert_at": "AFTER_LENS"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "Enter the forest",
+        "next_scene": "scene_forest_path",
+        "visible_if": {"flag_set": "has_flashlight"},
+        "effects": [{"type": "add_attention", "value": 10}]
+      },
+      {
+        "label": "Examine the ground at the tree line",
+        "check": {
+          "skill": "Tracking",
+          "dc": 10,
+          "success_effects": [{"type": "acquire_clue", "clue_id": "clue_forest_tracks"}]
+        }
+      },
+      {
+        "label": "Return to town",
+        "next_scene": "scene_street_night"
+      }
+    ],
+    "passive_clues": [
+      {
+        "clue_id": "clue_forest_silence",
+        "visible_when": {"skill_gte": {"Paranormal Sensitivity": 2}},
+        "reveal_text": "The silence isn't natural. It's enforced. Something here doesn't want to be heard—or is listening too intently to make sound."
+      }
+    ],
+    "ambient_effects": {
+      "reality_drain_per_min": 0.3,
+      "attention_gain_per_min": 0.2
+    }
+  },
+  {
+    "id": "scene_dew_line_station",
+    "title": "Abandoned DEW Line Station",
+    "location_id": "loc_dew_station",
+    "time_cost": 30,
+    "text": {
+      "base": "The old radar station squats on the hill like a dead animal. Built during the Cold War to watch for Soviet bombers, now it watches nothing. The dome is cracked, antenna arrays rusted. Warning signs—faded and snow-covered—forbid entry. The door hangs open, swinging in a wind you can't feel.",
+      "lens": {
+        "believer": "They built this to watch the sky. But something else was watching back. The equipment is dead, but the attention lingers. Like a ghost of surveillance.",
+        "skeptic": "Military surplus, abandoned when the threat changed. Probably stripped of useful equipment. A liability, really—these old Cold War relics are environmental hazards.",
+        "haunted": "Your father told you about these places. The men who worked here. What they saw in the long nights. What they became."
+      },
+      "inserts": [
+        {
+          "id": "insert_technology_readings",
+          "condition": {"skill_gte": {"Technology": 3}},
+          "text": "Some of the equipment inside is still powered. You can hear it humming. But the building has no electrical connection. No generator.",
+          "insert_at": "AFTER_LENS"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "Enter the station",
+        "next_scene": "scene_dew_interior",
+        "effects": [{"type": "add_time", "value": 15}, {"type": "add_attention", "value": 15}]
+      },
+      {
+        "label": "Search the exterior",
+        "check": {
+          "skill": "Investigation",
+          "dc": 9,
+          "success_effects": [{"type": "acquire_clue", "clue_id": "clue_dew_exterior"}]
+        }
+      },
+      {
+        "label": "Return to town",
+        "next_scene": "scene_street_night",
+        "effects": [{"type": "add_time", "value": 30}]
+      }
+    ],
+    "passive_clues": [
+      {
+        "clue_id": "clue_dew_activity",
+        "visible_when": {"skill_gte": {"Technology": 2}},
+        "reveal_text": "Fresh tire tracks in the snow. Someone has been here recently. Multiple trips, judging by the overlapping patterns."
+      }
+    ],
+    "ambient_effects": {
+      "sanity_drain_per_min": 0.2,
+      "attention_gain_per_min": 0.5
+    },
+    "weather_sensitive": true
   }
 ]

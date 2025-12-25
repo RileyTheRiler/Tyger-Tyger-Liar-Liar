@@ -1,5 +1,24 @@
 [
   {
+    "id": "clue_sign_blood",
+    "title": "Blood on the Town Sign",
+    "text": {
+      "base": "Fresh blood used to alter the population sign from 347 to 343. Someone bled here recently, and they used that blood as ink.",
+      "lens": {
+        "believer": "A message. A countdown. The blood speaks of sacrifice, of numbers that matter to something beyond our understanding.",
+        "skeptic": "Self-harm combined with vandalism. Mental illness manifesting as symbolic violence. Deeply concerning, but human.",
+        "haunted": "You've written in blood before. Or dreamed you did. The memory is slippery, like trying to hold water."
+      }
+    },
+    "source_scene_id": "scene_town_sign",
+    "tags": ["physical", "population", "entry"],
+    "reliability": 0.9,
+    "links_to_theories": [
+      {"theory_id": "347_resonance", "relation": "supports"}
+    ],
+    "analysis_skills": ["Forensics", "Medicine"]
+  },
+  {
     "id": "clue_case_files",
     "title": "Sheriff's Case Files",
     "text": {
@@ -19,6 +38,126 @@
     ],
     "related_npcs": ["npc_sheriff_bergman"],
     "analysis_skills": ["Research", "Pattern Recognition"]
+  },
+  {
+    "id": "clue_pattern_dates",
+    "title": "Accelerating Disappearances",
+    "text": {
+      "base": "The intervals between disappearances are decreasing. First one every three weeks, then every two weeks, now every few days. The pattern is accelerating.",
+      "lens": {
+        "believer": "Whatever is feeding is getting hungrier. Or closer. The spiral is tightening toward its center.",
+        "skeptic": "Confirmation bias combined with actual danger. As panic spreads, people take more risks. Self-fulfilling prophecy.",
+        "haunted": "You've seen patterns like this in cases before. The countdown to something. You never found out what."
+      }
+    },
+    "source_scene_id": "scene_sheriff_office_exterior",
+    "tags": ["pattern", "missing", "timeline"],
+    "reliability": 0.9,
+    "links_to_theories": [
+      {"theory_id": "the_missing_are_connected", "relation": "supports"},
+      {"theory_id": "347_resonance", "relation": "associated"}
+    ],
+    "analysis_skills": ["Pattern Recognition", "Research"]
+  },
+  {
+    "id": "clue_blood_stain_lobby",
+    "title": "Cleaned Bloodstain",
+    "text": {
+      "base": "Under UV light, the carpet near the front desk tells a story someone tried to erase. A large stain, roughly human-shaped, and smaller droplets leading toward the exit.",
+      "lens": {
+        "believer": "They dragged someone out of here. Or something dragged someone out. The trail leads toward the forest.",
+        "skeptic": "A nosebleed, maybe. An accident. Someone cut themselves and walked to their car. There are explanations.",
+        "haunted": "You've seen bloodstains like this before. You've left bloodstains like this before."
+      }
+    },
+    "source_scene_id": "scene_hotel_lobby",
+    "tags": ["physical", "medical", "missing"],
+    "reliability": 0.9,
+    "links_to_theories": [
+      {"theory_id": "the_missing_are_connected", "relation": "supports"}
+    ],
+    "related_locations": ["loc_hotel_lobby", "loc_forest_edge"],
+    "analysis_skills": ["Forensics", "Medicine"]
+  },
+  {
+    "id": "clue_register_gaps",
+    "title": "Missing Register Pages",
+    "text": {
+      "base": "Pages have been carefully cut from the hotel guest register. The cuts are surgical, deliberate—someone didn't want these names to be found.",
+      "lens": {
+        "believer": "Evidence destroyed. Someone is covering up who stayed here and when. The removed dates match the disappearances.",
+        "skeptic": "Could be innocent—old pages removed for records. But the precision suggests intentional concealment.",
+        "haunted": "Your name might have been on those pages. You stayed somewhere like this once. Didn't you?"
+      }
+    },
+    "source_scene_id": "scene_hotel_lobby_search",
+    "tags": ["document", "hotel", "coverup"],
+    "reliability": 0.7,
+    "links_to_theories": [
+      {"theory_id": "government_coverup", "relation": "supports"},
+      {"theory_id": "the_missing_are_connected", "relation": "associated"}
+    ],
+    "related_npcs": ["npc_hotel_manager_elsa"],
+    "analysis_skills": ["Research", "Investigation"]
+  },
+  {
+    "id": "clue_old_timer",
+    "title": "The Old Timer's Interest",
+    "text": {
+      "base": "An elderly man in the diner has been watching you since you arrived. Unlike the other locals, he doesn't look away. He seems to be waiting for something.",
+      "lens": {
+        "believer": "He knows something. The old-timers always do. The ones who survive this long have learned the rules.",
+        "skeptic": "Curiosity about outsiders. Natural in a community this isolated. He probably wants to know why you're here.",
+        "haunted": "He looks like someone you knew. Someone you failed. But that's impossible. Isn't it?"
+      }
+    },
+    "source_scene_id": "scene_diner",
+    "tags": ["person", "testimony", "local"],
+    "reliability": 0.5,
+    "links_to_theories": [],
+    "related_npcs": ["npc_old_timer"],
+    "analysis_skills": ["Empathy", "Psychology"]
+  },
+  {
+    "id": "clue_forest_silence",
+    "title": "Unnatural Silence",
+    "text": {
+      "base": "The forest at the town's edge is completely silent. No birds, no wind, no creaking branches. It's as if sound itself has been forbidden here.",
+      "lens": {
+        "believer": "Something in there doesn't want to be heard. Or is listening too intently to allow any other sound.",
+        "skeptic": "Extreme cold can suppress wildlife activity. The lack of wind is atmospheric. Eerie but explainable.",
+        "haunted": "The last forest you entered was silent too. Before the screaming started."
+      }
+    },
+    "source_scene_id": "scene_forest_edge",
+    "tags": ["environmental", "forest", "anomaly"],
+    "reliability": 0.6,
+    "links_to_theories": [
+      {"theory_id": "aurora_rules", "relation": "associated"}
+    ],
+    "related_locations": ["loc_forest_edge"],
+    "analysis_skills": ["Paranormal Sensitivity", "Perception"]
+  },
+  {
+    "id": "clue_dew_activity",
+    "title": "Recent Activity at DEW Station",
+    "text": {
+      "base": "Fresh tire tracks in the snow around the abandoned radar station. Multiple trips over several days. Someone is using this supposedly-abandoned facility.",
+      "lens": {
+        "believer": "They're still watching the sky. The official shutdown was a cover. Something never stopped.",
+        "skeptic": "Military equipment scavengers or urban explorers. Old installations attract trespassers.",
+        "haunted": "Your father talked about secret installations. Places where they did things that shouldn't be done."
+      }
+    },
+    "source_scene_id": "scene_dew_line_station",
+    "tags": ["physical", "dewline", "government"],
+    "reliability": 0.8,
+    "links_to_theories": [
+      {"theory_id": "government_coverup", "relation": "supports"},
+      {"theory_id": "aurora_rules", "relation": "associated"}
+    ],
+    "related_locations": ["loc_dew_station"],
+    "analysis_skills": ["Investigation", "Technology"]
   },
   {
     "id": "clue_aurora_photograph",
@@ -62,26 +201,6 @@
     "analysis_skills": ["Research", "Occult Knowledge"]
   },
   {
-    "id": "clue_blood_stain_lobby",
-    "title": "Cleaned Bloodstain",
-    "text": {
-      "base": "Under UV light, the carpet near the front desk tells a story someone tried to erase. A large stain, roughly human-shaped, and smaller droplets leading toward the exit.",
-      "lens": {
-        "believer": "They dragged someone out of here. Or something dragged someone out. The trail leads toward the forest.",
-        "skeptic": "A nosebleed, maybe. An accident. Someone cut themselves and walked to their car. There are explanations.",
-        "haunted": "You've seen bloodstains like this before. You've left bloodstains like this before."
-      }
-    },
-    "source_scene_id": "scene_hotel_lobby",
-    "tags": ["physical", "medical", "missing"],
-    "reliability": 0.9,
-    "links_to_theories": [
-      {"theory_id": "the_missing_are_connected", "relation": "supports"}
-    ],
-    "related_locations": ["loc_hotel_lobby", "loc_forest_edge"],
-    "analysis_skills": ["Forensics", "Medicine"]
-  },
-  {
     "id": "clue_folklore_warning",
     "title": "The Old Warning",
     "text": {
@@ -100,5 +219,25 @@
     ],
     "related_npcs": ["npc_hotel_manager_elsa"],
     "analysis_skills": ["Occult Knowledge", "Research"]
+  },
+  {
+    "id": "clue_carpet_stains",
+    "title": "Stains Under the Carpet",
+    "text": {
+      "base": "Pulling back the lobby carpet reveals more stains—old ones, partially cleaned, layered over years. This isn't the first time blood has been shed here.",
+      "lens": {
+        "believer": "A pattern of violence spanning decades. This hotel has been a hunting ground for a long time.",
+        "skeptic": "Old building, many accidents. Without proper analysis, these stains could be anything—wine, rust, actual blood from minor injuries.",
+        "haunted": "How many? You start counting the stains. You stop when you reach twelve."
+      }
+    },
+    "source_scene_id": "scene_hotel_lobby_search",
+    "tags": ["physical", "hotel", "history"],
+    "reliability": 0.7,
+    "links_to_theories": [
+      {"theory_id": "the_missing_are_connected", "relation": "supports"}
+    ],
+    "related_locations": ["loc_hotel_lobby"],
+    "analysis_skills": ["Forensics", "Investigation"]
   }
 ]
