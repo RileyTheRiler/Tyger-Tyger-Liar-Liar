@@ -31,7 +31,7 @@ class Character:
     def get_skill_level(self, skill_name: str) -> int:
         """
         Calculates effective skill level:
-        Base Skill + Parent Attribute Value + Modifiers (TODO)
+        Base Skill + Parent Attribute Value + Modifiers
         """
         # Find parent attribute
         parent_attr = None
@@ -46,9 +46,33 @@ class Character:
         attr_val = self.attributes[parent_attr]
         base_val = self.skills.get(skill_name, 0)
         
-        # TODO: Add item/thought modifiers here
+        modifier_val = 0
         
-        return attr_val + base_val
+        # Item modifiers
+        for item in self.inventory:
+            # Check if item has get_skill_modifier method (e.g. Item class from src.inventory_system)
+            if hasattr(item, 'get_skill_modifier'):
+                modifier_val += item.get_skill_modifier(skill_name)
+            # Fallback for dict-like items or simplified objects
+            elif hasattr(item, 'effects') and isinstance(item.effects, dict):
+                mods = item.effects.get("skill_modifiers", {})
+                modifier_val += mods.get(skill_name, 0)
+
+        # Thought modifiers
+        for thought in self.thoughts:
+            # Check thought state (e.g. Thought class from src.thoughts)
+            is_active = getattr(thought, 'is_active', False)
+            is_internalized = getattr(thought, 'is_internalized', False)
+
+            if is_active:
+                temp_effects = getattr(thought, 'temporary_effects', {})
+                modifier_val += temp_effects.get(skill_name, 0)
+
+            if is_internalized:
+                perm_effects = getattr(thought, 'permanent_effects', {})
+                modifier_val += perm_effects.get(skill_name, 0)
+
+        return attr_val + base_val + modifier_val
 
     def modify_sanity(self, amount: int):
         self.sanity = max(0, min(MAX_SANITY, self.sanity + amount))
