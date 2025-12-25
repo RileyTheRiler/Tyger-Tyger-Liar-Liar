@@ -35,7 +35,7 @@ from corkboard_minigame import CorkboardMinigame
 from src.inventory_system import InventoryManager, Item, Evidence
 from src.save_system import EventLog, SaveSystem
 from src.journal_system import JournalManager
-from interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result
+from interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result, Colors
 
 # New GDD-aligned systems
 from src.npc_system import NPCSystem
@@ -411,7 +411,7 @@ class Game:
         san_status = "STABLE" if san >= 75 else "UNSETTLED" if san >= 50 else "HYSTERIA" if san >= 25 else "PSYCHOSIS"
         real_status = "LUCID" if real >= 75 else "DOUBT" if real >= 50 else "DELUSION" if real >= 25 else "BROKEN"
 
-        print_separator("=")
+        print_separator("=", color=Colors.CYAN)
         # Update Lens System state for Haunted calculation
         self.lens_system.update_state(
             attention_level=self.attention_system.attention_level,
@@ -420,13 +420,18 @@ class Game:
         lens_str = self.lens_system.calculate_lens().upper()
         attention_display = self.attention_system.get_status_display()
         integration_display = self.integration_system.get_status_display()
-        print(f"TIME: {self.time_system.get_time_string()} | [LENS: {lens_str}]")
+
+        # Colorize Status
+        san_color = Colors.GREEN if san > 50 else Colors.YELLOW if san > 25 else Colors.RED
+        real_color = Colors.MAGENTA if real > 50 else Colors.YELLOW if real > 25 else Colors.RED
+
+        print(f"{Colors.BOLD}TIME: {self.time_system.get_time_string()}{Colors.RESET} | [LENS: {Colors.CYAN}{lens_str}{Colors.RESET}]")
         if attention_display:
-            print(f"{attention_display}")
+            print(f"{Colors.RED}{attention_display}{Colors.RESET}")
         if integration_display:
-            print(f"{integration_display}")
-        print(f"SANITY: {san:.0f}% ({san_status}) | REALITY: {real:.0f}% ({real_status})")
-        print_separator("=")
+            print(f"{Colors.MAGENTA}{integration_display}{Colors.RESET}")
+        print(f"SANITY: {san_color}{san:.0f}% ({san_status}){Colors.RESET} | REALITY: {real_color}{real:.0f}% ({real_status}){Colors.RESET}")
+        print_separator("=", color=Colors.CYAN)
         
         print_boxed_title(scene.get("name", "Unknown Area"))
         
