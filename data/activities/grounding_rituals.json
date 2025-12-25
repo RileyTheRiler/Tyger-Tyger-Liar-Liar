@@ -1,0 +1,90 @@
+{
+    "rituals": [
+        {
+            "id": "deep_breathing",
+            "name": "Deep Breathing Exercise",
+            "description": "Focus on your breath. In for four counts, hold for four, out for four. Ground yourself in the physical.",
+            "time_cost_minutes": 5,
+            "mental_load_reduction": 10,
+            "requirements": {},
+            "success_text": "Your breathing steadies. The fog in your mind clears slightly. You feel more present.",
+            "failure_text": "You try to focus on your breath, but intrusive thoughts keep breaking through."
+        },
+        {
+            "id": "review_notes",
+            "name": "Review Case Notes",
+            "description": "Go through your evidence and notes methodically. Facts. Data. Concrete reality.",
+            "time_cost_minutes": 15,
+            "mental_load_reduction": 20,
+            "requirements": {
+                "has_evidence": true
+            },
+            "success_text": "The familiar process of reviewing evidence grounds you. Facts are solid. Facts are real. You can trust facts.",
+            "failure_text": "The notes don't make sense. The connections you thought you saw are gone. This isn't helping."
+        },
+        {
+            "id": "physical_grounding",
+            "name": "Physical Grounding Technique",
+            "description": "Name five things you can see, four you can touch, three you can hear, two you can smell, one you can taste.",
+            "time_cost_minutes": 3,
+            "mental_load_reduction": 8,
+            "requirements": {},
+            "success_text": "The sensory inventory pulls you back into your body. You are here. This is real. You are real.",
+            "failure_text": "You try to focus on your senses, but they feel unreliable. Can you trust what you see? What you hear?"
+        },
+        {
+            "id": "cold_water",
+            "name": "Cold Water Shock",
+            "description": "Splash cold water on your face. The shock of it can cut through dissociation.",
+            "time_cost_minutes": 2,
+            "mental_load_reduction": 12,
+            "requirements": {
+                "location_has_water": true
+            },
+            "success_text": "The cold water is a slap of reality. Sharp. Immediate. Undeniable. Your mind clears.",
+            "failure_text": "The water feels wrong. Too thick. Too warm. Even this simple act feels corrupted."
+        },
+        {
+            "id": "count_backwards",
+            "name": "Count Backwards from 100",
+            "description": "A simple cognitive task to interrupt spiraling thoughts. Focus on the numbers.",
+            "time_cost_minutes": 5,
+            "mental_load_reduction": 15,
+            "requirements": {},
+            "success_text": "The rhythm of counting is meditative. Each number a step back toward clarity. You reach zero feeling more centered.",
+            "failure_text": "You lose track of the numbers. Was that 73 or 37? The sequence breaks apart in your mind."
+        },
+        {
+            "id": "write_affirmations",
+            "name": "Write Reality Affirmations",
+            "description": "Write down concrete facts about yourself and your situation. Anchor yourself in truth.",
+            "time_cost_minutes": 10,
+            "mental_load_reduction": 18,
+            "requirements": {
+                "has_notebook": true
+            },
+            "success_text": "Seeing the words in your own handwriting makes them more real. 'I am here. I am investigating. I am in control.'",
+            "failure_text": "The words look foreign on the page. Are these even your thoughts? Your handwriting looks wrong."
+        },
+        {
+            "id": "tactical_breathing",
+            "name": "Tactical Breathing (Box Breathing)",
+            "description": "The breathing technique used by soldiers and first responders. Inhale 4, hold 4, exhale 4, hold 4.",
+            "time_cost_minutes": 8,
+            "mental_load_reduction": 22,
+            "requirements": {},
+            "success_text": "The structured breathing pattern cuts through the chaos. Your heart rate slows. Your thoughts sharpen. You're back in control.",
+            "failure_text": "You can't maintain the rhythm. Your breathing becomes erratic. The technique isn't working."
+        },
+        {
+            "id": "progressive_relaxation",
+            "name": "Progressive Muscle Relaxation",
+            "description": "Systematically tense and release muscle groups. Start with your toes, work up to your head.",
+            "time_cost_minutes": 12,
+            "mental_load_reduction": 25,
+            "requirements": {},
+            "success_text": "The physical release mirrors a mental one. Tension drains from your body. Your mind follows, becoming clearer and calmer.",
+            "failure_text": "Your muscles won't cooperate. The tension won't release. You feel more wound up than before."
+        }
+    ]
+}

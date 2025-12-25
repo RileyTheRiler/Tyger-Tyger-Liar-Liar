@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import VHSEffect from './VHSEffect';
+import Datamosh from './Datamosh';
 import './Layout.css';
+import './CRTEffect.css';
 
 const Layout = ({ children, uiState }) => {
     // Extract psych stats safely, defaulting if missing
@@ -11,7 +13,23 @@ const Layout = ({ children, uiState }) => {
     // Calculate intensity of effects based on Sanity (lower = higher intensity)
     // Sanity 100 -> 0 intensity
     // Sanity 0 -> 1 intensity
+    // Calculate intensity of effects based on Sanity (lower = higher intensity)
+    // Sanity 100 -> 0 intensity
+    // Sanity 0 -> 1 intensity
     const panicLevel = Math.max(0, (100 - sanity) / 100);
+
+    // Heartbeat for Pulse Effect (High Panic / Low Sanity)
+    const [pulse, setPulse] = useState(1);
+    useEffect(() => {
+        if (panicLevel > 0.6) { // Active only when stressed
+            const interval = setInterval(() => {
+                setPulse(prev => (prev === 1 ? 1.02 : 1));
+            }, 800 - (panicLevel * 400)); // Faster heartbeat with more panic
+            return () => clearInterval(interval);
+        } else {
+            setPulse(1);
+        }
+    }, [panicLevel]);
 
     // Reality distortion (lower reality = more chromatic aberration/glitching)
     const glitchLevel = Math.max(0, (100 - reality) / 100);
@@ -75,6 +93,17 @@ const Layout = ({ children, uiState }) => {
 
             {/* VHS Overlay Effect */}
             <VHSEffect active={isTransitioning} />
+
+            {/* Datamosh Effect (Triggers on extreme low reality or specific flags) */}
+            <Datamosh active={reality < 15} />
+
+            {/* CRT Monitor Effects */}
+            <div className="crt-container" style={{ transform: `scale(${pulse})` }}>
+                <div className="crt-overlay" />
+                <div className="crt-mesh" />
+                <div className="crt-flicker" />
+                <div className="crt-bezel" />
+            </div>
 
             {/* Optional: Add scanline overlay here if not in body */}
             <div className="scanlines" />

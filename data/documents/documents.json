@@ -1,0 +1,42 @@
+[
+    {
+        "id": "dew_report_104",
+        "title": "DEW Line Site Report: Barter Island",
+        "type": "report",
+        "classification": "TOP SECRET",
+        "author": "Lt. Cmdr. H. Vance",
+        "date": "1958-11-04",
+        "text": "Atmospheric interference continues to plague Sector 4. Radar signatures show impossible velocities? Objects appearing at 80,000ft, then vanishing before interceptors can scramble. Men are reporting headaches and auditory hallucinations. Requesting psych eval for Station C personnel.",
+        "related_theory": "the_entity_is_hostile"
+    },
+    {
+        "id": "dew_report_105",
+        "title": "DEW Line Site Report: Point Lay",
+        "type": "report",
+        "classification": "TOP SECRET",
+        "author": "Sgt. J. Miller",
+        "date": "1958-11-12",
+        "text": "We lost contact with the survey team for 4 hours. When they returned, their watches were all stopped at exactly 03:00. Corporal Hicks is catatonic. Local Iñupiaq guide refuses to go near the install site anymore. Mentions 'The Hungry Sky'.",
+        "related_theory": "trust_no_one"
+    },
+    {
+        "id": "med_file_patient_x",
+        "title": "Patient Evaluation: Unknown Male",
+        "type": "medical_record",
+        "classification": "CONFIDENTIAL",
+        "author": "Dr. A. Kharitonov",
+        "date": "1972-03-21",
+        "text": "Patient exhibits severe temporal disorientation. Keeps referring to events that haven't happened yet. MRI shows abnormal neural density in the frontal cortex, similar to prion disease but organized. He keeps asking about 'The Liar'.",
+        "related_theory": "kaltvik_is_a_prison"
+    },
+    {
+        "id": "weather_log_dec24",
+        "title": "Kaltvik Weather Station Log",
+        "type": "log",
+        "classification": "UNCLASSIFIED",
+        "author": "Automated Station 4",
+        "date": "1999-12-24",
+        "text": "Temperature: -34F. Wind: N 45mph. Barometric Pressure: FLUCTUATING RAPIDLY. Note: Manual override engaged. Sensor error code 999: 'Impossible Value'.",
+        "related_theory": "there_is_a_rational_explanation"
+    }
+]

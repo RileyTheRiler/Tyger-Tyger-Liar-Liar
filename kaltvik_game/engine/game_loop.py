@@ -4,6 +4,8 @@ from engine.input_handler import get_player_input
 from engine.character_sheet import show_character_sheet
 from engine.skill_check import roll_skill_check
 from engine.board_system import show_board, internalize_theory, advance_theory_timers, abandon_theory
+from engine.combat_system import resolve_turn, enemy_turn, start_combat
+from engine.injury_system import heal_injury
 import sys
 
 def run_game_loop(state):
@@ -27,6 +29,38 @@ def run_game_loop(state):
                 print(f"{i+1}. {opt['label']}")
 
             action_type, payload = get_player_input(scene, objects)
+
+            # --- COMBAT FLOW ---
+            if state.combat_state:
+                # If we are in combat, intercept invalid or non-combat movements?
+                # For now, we allow checking inventory/stats, but movement might need blocking.
+                if action_type == "movement": # If we had movement
+                   print("You cannot leave while in combat! (Use 'run')")
+                   continue
+                
+                # Combat actions
+                if action_type == "combat_action":
+                    verb = payload
+                    # Player Turn
+                    outcome = resolve_turn(state, verb)
+                    
+                    if outcome == "victory" or outcome == "escaped":
+                        # Combat ended, loop will refresh and handle clean state
+                        input("\nPress Enter to continue...")
+                        continue
+                        
+                    # Enemy Turn (if still fighting)
+                    enemy_turn(state)
+                    # Check for death/collapse automatically happens inside injury logic/combat logic?
+                    # If we collapsed, state.current_scene is already updated to hospital.
+                    input("\nPress Enter to continue...")
+                    continue
+                
+                # Allow other actions like 'medicate' or 'check' but warn?
+                if action_type not in ["combat_action", "roll", "check", "injuries", "action", "medicate"]:
+                    print("You are in combat! Options: fight, dodge, run, talk.")
+
+            # --- NORMAL FLOW ---
 
             if action_type == "choice":
                 state.current_scene = scene["options"][payload]["next"]
@@ -99,6 +133,35 @@ def run_game_loop(state):
                 skill_name = payload
                 val = state.skills.get(skill_name, "Unknown")
                 print(f"\n[DEBUG] {skill_name} level: {val}")
+                input("\nPress Enter to continue...")
+
+            elif action_type == "combat_action":
+                if not state.combat_state:
+                    print("There is no one to fight here.")
+                input("\nPress Enter to continue...")
+
+            elif action_type == "injuries":
+                print("\n[PHYSICAL STATUS]")
+                if not state.injuries:
+                    print("You are healthy.")
+                else:
+                    for inj in state.injuries:
+                        print(f"- {inj['severity'].upper()} {inj['location']} injury ({inj['effect']})")
+                input("\nPress Enter to continue...")
+            
+            elif action_type == "medicate":
+                # Check for medkit item? For prototype, just heal first injury.
+                heal_injury(state)
+                input("\nPress Enter to continue...")
+
+            elif action_type == "rest":
+                print("\nYou rest for a while...")
+                if state.combat_state:
+                    print("It's too dangerous to rest now!")
+                else:
+                    advance_theory_timers(state, 8)
+                    # Heals
+                    heal_injury(state)
                 input("\nPress Enter to continue...")
 
             elif action_type == "action":

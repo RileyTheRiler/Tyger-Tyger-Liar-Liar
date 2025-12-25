@@ -4,12 +4,14 @@
   "title": "Scene",
   "description": "A game scene with narrative text, choices, and effects",
   "type": "object",
-  "required": ["id", "text"],
+  "required": [
+    "id",
+    "text"
+  ],
   "properties": {
     "id": {
       "type": "string",
-      "description": "Unique identifier for the scene",
-      "pattern": "^[a-z][a-z0-9_]*$"
+      "description": "Unique identifier for the scene"
     },
     "title": {
       "type": "string",
@@ -20,96 +22,110 @@
       "description": "Reference to location where this scene takes place"
     },
     "time_cost": {
-      "oneOf": [
-        {"type": "integer", "minimum": 0, "description": "Time cost in minutes"},
-        {"type": "string", "enum": ["block", "half_block"], "description": "Time cost in time blocks"}
-      ]
+      "type": [
+        "integer",
+        "string"
+      ],
+      "description": "Minutes or 'blocks'"
     },
     "prereqs": {
       "type": "object",
-      "description": "Prerequisites to access this scene",
+      "description": "Flags, items, previous scenes",
       "properties": {
         "flags": {
           "type": "array",
-          "items": {"type": "string"},
-          "description": "Required flags to be set"
+          "items": {
+            "type": "string"
+          }
         },
         "items": {
           "type": "array",
-          "items": {"type": "string"},
-          "description": "Required inventory items"
+          "items": {
+            "type": "string"
+          }
         },
-        "scenes_visited": {
+        "previous_scenes": {
           "type": "array",
-          "items": {"type": "string"},
-          "description": "Scenes that must have been visited"
-        },
-        "theories_active": {
-          "type": "array",
-          "items": {"type": "string"},
-          "description": "Theories that must be internalized"
-        },
-        "min_trust": {
-          "type": "object",
-          "additionalProperties": {"type": "integer"},
-          "description": "Minimum trust required with NPCs (npc_id: value)"
-        },
-        "time_block": {
-          "type": "array",
-          "items": {"type": "string", "enum": ["night", "twilight", "dawn"]},
-          "description": "Valid time blocks for this scene"
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
     "text": {
       "type": "object",
-      "required": ["base"],
+      "required": [
+        "base"
+      ],
       "properties": {
         "base": {
           "type": "string",
-          "description": "Objective anchor text - minimal, factual"
+          "description": "Base narrative text"
         },
         "lens": {
           "type": "object",
+          "description": "believer/skeptic/haunted variants",
           "properties": {
-            "believer": {"type": "string", "description": "Believer archetype interpretation"},
-            "skeptic": {"type": "string", "description": "Skeptic archetype interpretation"},
-            "haunted": {"type": "string", "description": "Haunted archetype interpretation"}
+            "believer": {
+              "type": "string"
+            },
+            "skeptic": {
+              "type": "string"
+            },
+            "haunted": {
+              "type": "string"
+            }
           }
         },
         "inserts": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["condition", "text"],
+            "required": [
+              "when",
+              "text",
+              "insert_at"
+            ],
             "properties": {
-              "condition": {
+              "when": {
                 "type": "object",
-                "description": "Condition for insert to appear",
-                "properties": {
-                  "skill_gte": {
-                    "type": "object",
-                    "additionalProperties": {"type": "integer"},
-                    "description": "Skill must be >= value"
-                  },
-                  "flag_set": {"type": "string"},
-                  "theory_active": {"type": "string"},
-                  "trust_gte": {
-                    "type": "object",
-                    "additionalProperties": {"type": "integer"}
-                  },
-                  "attention_gte": {"type": "integer"},
-                  "equipment": {"type": "string"}
-                }
+                "description": "Conditions for insert"
               },
-              "text": {"type": "string", "description": "Text to insert"},
+              "text": {
+                "type": "string"
+              },
               "insert_at": {
                 "type": "string",
-                "enum": ["BEFORE_CHOICES", "AFTER_BASE", "AFTER_LENS", "MID_PARAGRAPH"],
-                "default": "AFTER_LENS"
+                "description": "BEFORE_CHOICES, AFTER_PARAGRAPH:n, AFTER_BASE"
               }
             }
           }
+        }
+      }
+    },
+    "effects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "value"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "flag",
+              "trust",
+              "time",
+              "attention",
+              "population"
+            ]
+          },
+          "target": {
+            "type": "string"
+          },
+          "value": {}
         }
       }
     },
@@ -117,51 +133,52 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["label"],
+        "required": [
+          "label",
+          "next_scene"
+        ],
         "properties": {
-          "label": {"type": "string", "description": "Choice text shown to player"},
-          "next_scene": {"type": "string", "description": "Scene ID to transition to"},
-          "dialogue_id": {"type": "string", "description": "Dialogue tree to start"},
+          "label": {
+            "type": "string"
+          },
+          "next_scene": {
+            "type": "string"
+          },
           "check": {
             "type": "object",
             "properties": {
-              "skill": {"type": "string"},
-              "dc": {"type": "integer", "minimum": 2},
-              "check_type": {"type": "string", "enum": ["white", "red"], "default": "white"},
-              "success_scene": {"type": "string"},
-              "failure_scene": {"type": "string"},
-              "partial_scene": {"type": "string", "description": "Scene for partial success (fail by 1-2)"}
-            },
-            "required": ["skill", "dc"]
+              "skill": {
+                "type": "string"
+              },
+              "dc": {
+                "type": "integer"
+              }
+            }
           },
           "effects": {
             "type": "array",
             "items": {
               "type": "object",
+              "required": [
+                "type",
+                "value"
+              ],
               "properties": {
                 "type": {
                   "type": "string",
-                  "enum": ["set_flag", "clear_flag", "modify_trust", "modify_attention",
-                           "modify_sanity", "modify_reality", "add_time", "add_injury",
-                           "add_item", "remove_item", "add_clue", "modify_population",
-                           "start_encounter", "trigger_fracture"]
+                  "enum": [
+                    "flag",
+                    "trust",
+                    "time",
+                    "attention",
+                    "population"
+                  ]
                 },
-                "target": {"type": "string"},
+                "target": {
+                  "type": "string"
+                },
                 "value": {}
-              },
-              "required": ["type"]
-            }
-          },
-          "visible_if": {
-            "type": "object",
-            "description": "Condition for choice visibility",
-            "properties": {
-              "flag_set": {"type": "string"},
-              "flag_not_set": {"type": "string"},
-              "skill_gte": {"type": "object", "additionalProperties": {"type": "integer"}},
-              "trust_gte": {"type": "object", "additionalProperties": {"type": "integer"}},
-              "has_item": {"type": "string"},
-              "theory_active": {"type": "string"}
+              }
             }
           }
         }
@@ -169,52 +186,25 @@
     },
     "passive_clues": {
       "type": "array",
-      "description": "Clues revealed by passive perception",
       "items": {
         "type": "object",
-        "required": ["clue_id", "visible_when"],
+        "required": [
+          "clue_id",
+          "visible_when"
+        ],
         "properties": {
-          "clue_id": {"type": "string"},
+          "clue_id": {
+            "type": "string"
+          },
           "visible_when": {
             "type": "object",
-            "properties": {
-              "skill_gte": {"type": "object", "additionalProperties": {"type": "integer"}},
-              "equipment": {"type": "string"},
-              "theory_active": {"type": "string"},
-              "flag_set": {"type": "string"}
-            }
-          },
-          "reveal_text": {"type": "string", "description": "Text to append when clue is revealed"}
+            "description": "Conditions for visibility"
+          }
         }
       }
     },
-    "on_entry_effects": {
-      "type": "array",
-      "items": {"$ref": "#/properties/choices/items/properties/effects/items"}
-    },
-    "ambient_effects": {
-      "type": "object",
-      "properties": {
-        "sanity_drain_per_min": {"type": "number", "minimum": 0},
-        "reality_drain_per_min": {"type": "number", "minimum": 0},
-        "attention_gain_per_min": {"type": "number", "minimum": 0}
-      }
-    },
     "encounter_id": {
-      "type": "string",
-      "description": "If set, entering this scene triggers an encounter"
-    },
-    "connected_scenes": {
-      "type": "array",
-      "items": {"type": "string"},
-      "description": "Scenes reachable from this scene via navigation"
-    },
-    "background_media": {
-      "type": "object",
-      "properties": {
-        "type": {"type": "string", "enum": ["image", "audio"]},
-        "src": {"type": "string"}
-      }
+      "type": "string"
     }
   }
 }

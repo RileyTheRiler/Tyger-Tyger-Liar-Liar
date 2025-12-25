@@ -8,19 +8,37 @@ import ChoiceGrid from './components/ChoiceGrid'
 import GlitchText from './components/GlitchText'
 import BootSequence from './components/BootSequence'
 import MindMap from './components/MindMap'
+import TitleScreen from './components/TitleScreen'
+import AudioManager from './components/AudioManager'
 import './App.css'
 
 function App() {
-  const [booting, setBooting] = useState(true)
+  const [showTitle, setShowTitle] = useState(true)
+  const [booting, setBooting] = useState(false)
   const [history, setHistory] = useState([])
   const [uiState, setUiState] = useState(null)
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [showBoard, setShowBoard] = useState(false)
 
+  const handleStartGame = () => {
+    setShowTitle(false)
+    setBooting(true)
+  }
+
+  const handleTitleExit = async () => {
+    await shutdownGame()
+    setTimeout(() => {
+      window.close()
+      document.body.innerHTML = "<div style='background:black;color:red;height:100vh;display:flex;align-items:center;justify-content:center;font-family:monospace'>NO_SIGNAL</div>"
+    }, 500)
+  }
+
   useEffect(() => {
-    initGame()
-  }, [])
+    if (!showTitle && !booting) {
+      initGame()
+    }
+  }, [showTitle, booting])
 
   const initGame = async () => {
     setLoading(true)
@@ -63,6 +81,10 @@ function App() {
       // If script can't close, show offline state
       document.body.innerHTML = "<div style='background:black;color:red;height:100vh;display:flex;align-items:center;justify-content:center;font-family:monospace'>NO_SIGNAL</div>"
     }, 1000)
+  }
+
+  if (showTitle) {
+    return <TitleScreen onStart={handleStartGame} onExit={handleTitleExit} />
   }
 
   if (booting) {
@@ -115,6 +137,12 @@ function App() {
           onClose={() => setShowBoard(false)}
         />
       )}
+
+      {/* Audio System */}
+      <AudioManager
+        music={uiState?.music}
+        sfxQueue={uiState?.sfx_queue}
+      />
     </Layout>
   )
 }

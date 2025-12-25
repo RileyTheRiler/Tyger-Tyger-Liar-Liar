@@ -1,0 +1,68 @@
+{
+    "drifts": [
+        {
+            "id": "false_meeting",
+            "contexts": [
+                "npc",
+                "dialogue",
+                "investigation"
+            ],
+            "text": "Wait. Didn't you already talk to them? Yesterday? Or was that a dream? The conversation feels familiar, but the details are slipping away."
+        },
+        {
+            "id": "invented_evidence",
+            "contexts": [
+                "evidence",
+                "investigation"
+            ],
+            "text": "You remember finding a crucial piece of evidence. You can picture it clearly. But when you check your notes, there's no record of it. Did you imagine it?"
+        },
+        {
+            "id": "false_death",
+            "contexts": [
+                "npc",
+                "investigation"
+            ],
+            "text": "You could swear they died. You remember the body. The blood. But here they are, alive and talking. Were you wrong? Or is this wrong?"
+        },
+        {
+            "id": "timeline_confusion",
+            "contexts": [
+                "investigation",
+                "time"
+            ],
+            "text": "How long have you been here? Days? Weeks? The timeline doesn't add up. Events are out of order in your memory."
+        },
+        {
+            "id": "false_confession",
+            "contexts": [
+                "dialogue",
+                "investigation"
+            ],
+            "text": "You remember them confessing. The words are clear in your mind. But they're denying it now. Did they really say it, or did you want them to?"
+        },
+        {
+            "id": "invented_location",
+            "contexts": [
+                "location",
+                "investigation"
+            ],
+            "text": "There was a room here. You're certain of it. But now there's just a wall. Has it always been a wall?"
+        },
+        {
+            "id": "false_relationship",
+            "contexts": [
+                "npc",
+                "dialogue"
+            ],
+            "text": "They're treating you like a stranger. But you remember shared moments, conversations, trust. Were those memories real?"
+        },
+        {
+            "id": "mission_confusion",
+            "contexts": [
+                "investigation"
+            ],
+            "text": "Why are you here again? The reason feels distant, foggy. You know it was important, but the details are slipping through your fingers like water."
+        }
+    ]
+}

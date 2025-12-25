@@ -1,0 +1,18 @@
+{
+    "id": "isolation_dread",
+    "name": "Crushing Isolation",
+    "description": "The weight of being alone in a dying town",
+    "trigger_conditions": {
+        "location_type": "indoor",
+        "time_of_day": "night",
+        "chance": 0.25
+    },
+    "effects": {
+        "fear_level": 10,
+        "sanity": -3,
+        "mental_load": 8,
+        "text_overlay": "The silence is too complete. No wind, no creaking wood, no distant sounds of life. Just you and the empty spaces where people used to be. How many are left? How many were ever real?",
+        "audio_cue": "silence_ambience.wav"
+    },
+    "cooldown_minutes": 45
+}

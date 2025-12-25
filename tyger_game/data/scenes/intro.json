@@ -9,5 +9,6 @@
         "mirror": "You look terrible. One eye is bloodshot. You don't remember your name.",
         "clothes": "A chaotic heap of fabrics. A tie, a sock, a disco shirt.",
         "bed": "It smells of sweat and cheap liquor."
-    }
+    },
+    "music": "main_theme.mp3"
 }

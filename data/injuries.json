@@ -1,0 +1,194 @@
+{
+    "gunshot_leg": {
+        "name": "Gunshot Wound (Leg)",
+        "location": "leg",
+        "severity": "severe",
+        "effects": {
+            "Athletics": -3,
+            "Stealth": -2,
+            "Reflexes": -2
+        },
+        "healing_time_hours": 168,
+        "treatment_required": true,
+        "treatment_skill": "Medicine",
+        "treatment_dc": 12,
+        "equipment_needed": [
+            "trauma_kit"
+        ],
+        "permanent_risk": 0.2,
+        "description": "A bullet wound in your left thigh. You limp heavily.",
+        "worsening_threshold_hours": 24
+    },
+    "gunshot_arm": {
+        "name": "Gunshot Wound (Arm)",
+        "location": "arm",
+        "severity": "severe",
+        "effects": {
+            "Firearms": -3,
+            "Hand-to-Hand Combat": -3,
+            "Reflexes": -1
+        },
+        "healing_time_hours": 168,
+        "treatment_required": true,
+        "treatment_skill": "Medicine",
+        "treatment_dc": 12,
+        "equipment_needed": [
+            "trauma_kit"
+        ],
+        "permanent_risk": 0.15,
+        "description": "A bullet wound in your right arm. Your grip is weak.",
+        "worsening_threshold_hours": 24
+    },
+    "gunshot_torso": {
+        "name": "Gunshot Wound (Torso)",
+        "location": "torso",
+        "severity": "critical",
+        "effects": {
+            "Endurance": -4,
+            "Fortitude": -3,
+            "Athletics": -2,
+            "All": -1
+        },
+        "healing_time_hours": 336,
+        "treatment_required": true,
+        "treatment_skill": "Medicine",
+        "treatment_dc": 14,
+        "equipment_needed": [
+            "trauma_kit",
+            "antibiotics"
+        ],
+        "permanent_risk": 0.4,
+        "description": "A bullet wound in your chest. Every breath is agony.",
+        "worsening_threshold_hours": 12
+    },
+    "blunt_force_head": {
+        "name": "Head Trauma",
+        "location": "head",
+        "severity": "moderate",
+        "effects": {
+            "Perception": -2,
+            "Logic": -1,
+            "Composure": -1
+        },
+        "healing_time_hours": 72,
+        "treatment_required": false,
+        "treatment_skill": "Medicine",
+        "treatment_dc": 10,
+        "equipment_needed": [],
+        "permanent_risk": 0.05,
+        "description": "A nasty blow to the head. Your vision swims.",
+        "worsening_threshold_hours": 48
+    },
+    "laceration_deep": {
+        "name": "Deep Laceration",
+        "location": "general",
+        "severity": "moderate",
+        "effects": {
+            "Endurance": -2,
+            "All": -1
+        },
+        "healing_time_hours": 72,
+        "treatment_required": true,
+        "treatment_skill": "Medicine",
+        "treatment_dc": 10,
+        "equipment_needed": [
+            "trauma_kit"
+        ],
+        "permanent_risk": 0.1,
+        "description": "A deep cut that won't stop bleeding.",
+        "worsening_threshold_hours": 36
+    },
+    "broken_bone_leg": {
+        "name": "Broken Leg",
+        "location": "leg",
+        "severity": "critical",
+        "effects": {
+            "Athletics": -4,
+            "Stealth": -3,
+            "Reflexes": -2
+        },
+        "healing_time_hours": 504,
+        "treatment_required": true,
+        "treatment_skill": "Medicine",
+        "treatment_dc": 13,
+        "equipment_needed": [
+            "trauma_kit"
+        ],
+        "permanent_risk": 0.25,
+        "description": "Your leg is broken. You can barely stand.",
+        "worsening_threshold_hours": 24
+    },
+    "burn_severe": {
+        "name": "Severe Burns",
+        "location": "general",
+        "severity": "severe",
+        "effects": {
+            "Endurance": -3,
+            "Composure": -2,
+            "All": -1
+        },
+        "healing_time_hours": 240,
+        "treatment_required": true,
+        "treatment_skill": "Medicine",
+        "treatment_dc": 12,
+        "equipment_needed": [
+            "trauma_kit",
+            "painkillers"
+        ],
+        "permanent_risk": 0.3,
+        "description": "Severe burns cover your skin. The pain is overwhelming.",
+        "worsening_threshold_hours": 12
+    },
+    "bruised_ribs": {
+        "name": "Bruised Ribs",
+        "location": "torso",
+        "severity": "minor",
+        "effects": {
+            "Endurance": -1,
+            "Athletics": -1
+        },
+        "healing_time_hours": 48,
+        "treatment_required": false,
+        "treatment_skill": "Medicine",
+        "treatment_dc": 8,
+        "equipment_needed": [],
+        "permanent_risk": 0.0,
+        "description": "Your ribs are bruised. Breathing hurts.",
+        "worsening_threshold_hours": 72
+    },
+    "sprained_ankle": {
+        "name": "Sprained Ankle",
+        "location": "leg",
+        "severity": "minor",
+        "effects": {
+            "Athletics": -1,
+            "Stealth": -1
+        },
+        "healing_time_hours": 24,
+        "treatment_required": false,
+        "treatment_skill": "Medicine",
+        "treatment_dc": 8,
+        "equipment_needed": [],
+        "permanent_risk": 0.0,
+        "description": "Your ankle is swollen and painful.",
+        "worsening_threshold_hours": 48
+    },
+    "concussion": {
+        "name": "Concussion",
+        "location": "head",
+        "severity": "moderate",
+        "effects": {
+            "Perception": -2,
+            "Logic": -2,
+            "Composure": -1
+        },
+        "healing_time_hours": 96,
+        "treatment_required": true,
+        "treatment_skill": "Medicine",
+        "treatment_dc": 11,
+        "equipment_needed": [],
+        "permanent_risk": 0.1,
+        "description": "Your head throbs. Thoughts come slowly.",
+        "worsening_threshold_hours": 24
+    }
+}

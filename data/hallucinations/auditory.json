@@ -1,0 +1,105 @@
+{
+    "hallucinations": [
+        {
+            "id": "whispers_name",
+            "min_tier": 0,
+            "max_tier": 2,
+            "contexts": [
+                "indoor",
+                "outdoor",
+                "investigation"
+            ],
+            "text": "You hear your name whispered. Soft, insistent. Coming from everywhere and nowhere."
+        },
+        {
+            "id": "static_voices",
+            "min_tier": 0,
+            "max_tier": 2,
+            "contexts": [
+                "indoor",
+                "investigation"
+            ],
+            "text": "Voices emerge from the static. They're speaking in a language you almost recognize. Almost understand."
+        },
+        {
+            "id": "footsteps_behind",
+            "min_tier": 0,
+            "max_tier": 2,
+            "contexts": [
+                "indoor",
+                "outdoor",
+                "investigation"
+            ],
+            "text": "Footsteps behind you. Heavy. Deliberate. You turn around. Nothing. The footsteps stop when you stop."
+        },
+        {
+            "id": "child_crying",
+            "min_tier": 0,
+            "max_tier": 2,
+            "contexts": [
+                "indoor",
+                "outdoor"
+            ],
+            "text": "A child is crying somewhere nearby. The sound is muffled, distant. You can't tell which direction it's coming from."
+        },
+        {
+            "id": "radio_dead_voices",
+            "min_tier": 0,
+            "max_tier": 2,
+            "contexts": [
+                "indoor",
+                "investigation"
+            ],
+            "text": "The radio crackles to life even though it's off. Dead voices speaking in overlapping fragments. 'Help us.' 'Too late.' 'It's here.'"
+        },
+        {
+            "id": "breathing_walls",
+            "min_tier": 0,
+            "max_tier": 2,
+            "contexts": [
+                "indoor"
+            ],
+            "text": "You hear breathing. Slow, wet, labored. It's coming from inside the walls."
+        },
+        {
+            "id": "aurora_singing",
+            "min_tier": 0,
+            "max_tier": 2,
+            "contexts": [
+                "outdoor",
+                "aurora"
+            ],
+            "text": "The aurora is singing. High, crystalline notes that make your bones vibrate. Beautiful and terrible."
+        },
+        {
+            "id": "scratching_door",
+            "min_tier": 0,
+            "max_tier": 2,
+            "contexts": [
+                "indoor"
+            ],
+            "text": "Something is scratching at the door. Slow, methodical. Like it's trying to remember how doors work."
+        },
+        {
+            "id": "own_voice_calling",
+            "min_tier": 0,
+            "max_tier": 1,
+            "contexts": [
+                "indoor",
+                "outdoor"
+            ],
+            "text": "You hear your own voice calling out from another room. But you're here. You didn't say anything."
+        },
+        {
+            "id": "entity_hum",
+            "min_tier": 0,
+            "max_tier": 1,
+            "contexts": [
+                "outdoor",
+                "aurora",
+                "night"
+            ],
+            "text": "A deep, subsonic hum that you feel more than hear. It resonates in your chest cavity. The Entity is near."
+        }
+    ]
+}

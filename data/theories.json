@@ -1,0 +1,321 @@
+{
+    "trust_no_one": {
+        "name": "Trust No One",
+        "category": "conspiracy",
+        "description": "You've uncovered patterns of surveillance. No one is clean. The watchers are everywhere.",
+        "requirements": {
+            "clues_required": [],
+            "flags_required": [],
+            "scenes_visited": [],
+            "theories_active": [],
+            "min_skill": {}
+        },
+        "internalize_time_hours": 6,
+        "effects": {
+            "Perception": 1,
+            "Wits": 2,
+            "Empathy": -2,
+            "Composure": -1
+        },
+        "hidden_effects": false,
+        "conflicts_with": [
+            "protect_innocent"
+        ],
+        "auto_locks": [],
+        "on_internalize_effects": [
+            {
+                "type": "set_flag",
+                "target": "worldview_paranoid",
+                "value": true
+            },
+            {
+                "type": "modify_attention",
+                "value": 10
+            },
+            {
+                "type": "modify_sanity",
+                "value": -5
+            }
+        ],
+        "unlocks": {
+            "dialogue_options": [
+                "confront_surveillance"
+            ],
+            "scene_inserts": [
+                "paranoid_observation"
+            ],
+            "check_bonuses": {
+                "Skepticism": 1
+            }
+        },
+        "lens_bias": "skeptic",
+        "active_case": false,
+        "critical_for_endgame": true,
+        "degradation_rate": 15,
+        "status": "available"
+    },
+    "protect_innocent": {
+        "name": "Protect The Innocent",
+        "category": "philosophical",
+        "description": "You've seen suffering. Some still deserve saving. You can make a difference.",
+        "requirements": {
+            "clues_required": [],
+            "flags_required": [],
+            "scenes_visited": [],
+            "theories_active": [],
+            "min_skill": {}
+        },
+        "internalize_time_hours": 4,
+        "effects": {
+            "Empathy": 2,
+            "Authority": 1,
+            "Skepticism": -1
+        },
+        "hidden_effects": false,
+        "conflicts_with": [
+            "trust_no_one",
+            "we_are_too_late"
+        ],
+        "auto_locks": [],
+        "on_internalize_effects": [
+            {
+                "type": "set_flag",
+                "target": "worldview_protector",
+                "value": true
+            },
+            {
+                "type": "modify_sanity",
+                "value": 5
+            }
+        ],
+        "unlocks": {
+            "dialogue_options": [
+                "offer_protection",
+                "promise_justice"
+            ],
+            "scene_inserts": [
+                "protective_instinct"
+            ],
+            "check_bonuses": {
+                "Composure": 1
+            }
+        },
+        "lens_bias": "believer",
+        "active_case": false,
+        "critical_for_endgame": true,
+        "degradation_rate": 10,
+        "status": "available"
+    },
+    "missing_connected": {
+        "name": "The Missing Are Connected",
+        "category": "case",
+        "description": "Victim profiles match. Shared dream accounts. This isn't random.",
+        "requirements": {
+            "clues_required": [],
+            "flags_required": [],
+            "scenes_visited": [],
+            "theories_active": [],
+            "min_skill": {
+                "Pattern Recognition": 2
+            }
+        },
+        "internalize_time_hours": 4,
+        "effects": {
+            "Pattern Recognition": 2,
+            "Research": 1
+        },
+        "hidden_effects": false,
+        "conflicts_with": [],
+        "auto_locks": [],
+        "on_internalize_effects": [
+            {
+                "type": "set_flag",
+                "target": "theory_pattern_active",
+                "value": true
+            }
+        ],
+        "unlocks": {
+            "dialogue_options": [
+                "ask_about_dreams",
+                "compare_victims"
+            ],
+            "scene_inserts": [
+                "pattern_insight"
+            ],
+            "check_bonuses": {
+                "Research": 1
+            }
+        },
+        "lens_bias": "neutral",
+        "active_case": true,
+        "critical_for_endgame": false,
+        "degradation_rate": 10,
+        "status": "available"
+    },
+    "entity_is_real": {
+        "name": "The Entity Is Real",
+        "category": "supernatural",
+        "description": "The static, the dreams, the disappearances. Something beyond comprehension is here.",
+        "requirements": {
+            "clues_required": [],
+            "flags_required": [],
+            "scenes_visited": [],
+            "theories_active": [],
+            "min_skill": {
+                "Paranormal Sensitivity": 3
+            }
+        },
+        "internalize_time_hours": 8,
+        "effects": {
+            "Paranormal Sensitivity": 2,
+            "Occult Knowledge": 1,
+            "Logic": -2,
+            "Skepticism": -3
+        },
+        "hidden_effects": false,
+        "conflicts_with": [
+            "rational_explanation"
+        ],
+        "auto_locks": [
+            "rational_explanation"
+        ],
+        "on_internalize_effects": [
+            {
+                "type": "set_flag",
+                "target": "worldview_believer",
+                "value": true
+            },
+            {
+                "type": "modify_reality",
+                "value": -10
+            },
+            {
+                "type": "modify_sanity",
+                "value": -10
+            }
+        ],
+        "unlocks": {
+            "dialogue_options": [
+                "discuss_entity",
+                "warn_about_danger"
+            ],
+            "scene_inserts": [
+                "entity_presence"
+            ],
+            "check_bonuses": {
+                "Paranormal Sensitivity": 2
+            }
+        },
+        "lens_bias": "believer",
+        "active_case": true,
+        "critical_for_endgame": true,
+        "degradation_rate": 20,
+        "status": "locked"
+    },
+    "rational_explanation": {
+        "name": "There's A Rational Explanation",
+        "category": "skeptical",
+        "description": "Mass hysteria. Environmental factors. Human trafficking. The truth is mundane.",
+        "requirements": {
+            "clues_required": [],
+            "flags_required": [],
+            "scenes_visited": [],
+            "theories_active": [],
+            "min_skill": {
+                "Logic": 3
+            }
+        },
+        "internalize_time_hours": 5,
+        "effects": {
+            "Logic": 2,
+            "Skepticism": 2,
+            "Paranormal Sensitivity": -2
+        },
+        "hidden_effects": false,
+        "conflicts_with": [
+            "entity_is_real"
+        ],
+        "auto_locks": [
+            "entity_is_real"
+        ],
+        "on_internalize_effects": [
+            {
+                "type": "set_flag",
+                "target": "worldview_skeptic",
+                "value": true
+            },
+            {
+                "type": "modify_reality",
+                "value": 5
+            }
+        ],
+        "unlocks": {
+            "dialogue_options": [
+                "debunk_supernatural",
+                "focus_on_facts"
+            ],
+            "scene_inserts": [
+                "rational_analysis"
+            ],
+            "check_bonuses": {
+                "Forensics": 1
+            }
+        },
+        "lens_bias": "skeptic",
+        "active_case": true,
+        "critical_for_endgame": true,
+        "degradation_rate": 10,
+        "status": "locked"
+    },
+    "we_are_too_late": {
+        "name": "We're Already Too Late",
+        "category": "nihilistic",
+        "description": "The pattern is complete. The missing are gone. Nothing you do matters now.",
+        "requirements": {
+            "clues_required": [],
+            "flags_required": [
+                "discovered_mass_grave"
+            ],
+            "scenes_visited": [],
+            "theories_active": [],
+            "min_skill": {}
+        },
+        "internalize_time_hours": 3,
+        "effects": {
+            "Composure": -2,
+            "Empathy": -1,
+            "Fortitude": 1
+        },
+        "hidden_effects": false,
+        "conflicts_with": [
+            "protect_innocent"
+        ],
+        "auto_locks": [],
+        "on_internalize_effects": [
+            {
+                "type": "set_flag",
+                "target": "worldview_nihilist",
+                "value": true
+            },
+            {
+                "type": "modify_sanity",
+                "value": -15
+            }
+        ],
+        "unlocks": {
+            "dialogue_options": [
+                "accept_defeat",
+                "dark_humor"
+            ],
+            "scene_inserts": [
+                "nihilistic_observation"
+            ],
+            "check_bonuses": {}
+        },
+        "lens_bias": "haunted",
+        "active_case": false,
+        "critical_for_endgame": true,
+        "degradation_rate": 5,
+        "status": "locked"
+    }
+}

@@ -39,3 +39,9 @@ class GameState:
             "rejected": []  # manually removed: ["theory_id"]
         }
 
+        # Combat & Trauma
+        self.combat_state = None  # None or Dict: {"enemy_id": str, "enemy_hp": int, "turn": "player"|"enemy"}
+        self.injuries = []  # List of dicts: {"location": str, "severity": str, "effect": dict}
+        self.trauma_points = 0
+
+

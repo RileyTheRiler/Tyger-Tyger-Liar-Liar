@@ -1,0 +1,91 @@
+/* Datamosh.css */
+.datamosh-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9997;
+    /* Below CRT */
+    mix-blend-mode: exclusion;
+    opacity: 0.8;
+    display: none;
+    /* Active only when triggered */
+}
+
+.datamosh-container.active {
+    display: block;
+}
+
+.mosh-slice {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    /* Tries to grab bg, but in React we mimic by cloning or overlaying */
+    background: linear-gradient(90deg, transparent 50%, rgba(255, 0, 255, 0.2) 50%);
+    /* Simplified visual for "data smear" since we can't easily grab DOM pixels without canvas */
+    border: 1px solid rgba(0, 255, 0, 0.5);
+}
+
+/* Animations for slicing */
+.mosh-slice:nth-child(1) {
+    clip-path: inset(10% 0 80% 0);
+    animation: slice1 0.2s infinite steps(2);
+    filter: invert(1);
+}
+
+.mosh-slice:nth-child(2) {
+    clip-path: inset(40% 0 40% 0);
+    animation: slice2 0.3s infinite steps(4);
+    transform: translateX(-10px);
+    background: rgba(255, 0, 0, 0.2);
+}
+
+.mosh-slice:nth-child(3) {
+    clip-path: inset(80% 0 5% 0);
+    animation: slice3 0.1s infinite linear;
+    transform: translateX(20px);
+    background: rgba(0, 0, 255, 0.2);
+}
+
+@keyframes slice1 {
+    0% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(50px);
+    }
+
+    100% {
+        transform: translateX(-20px);
+    }
+}
+
+@keyframes slice2 {
+    0% {
+        transform: scaleY(1.2) translateX(-10px);
+    }
+
+    100% {
+        transform: scaleY(0.8) translateX(30px);
+    }
+}
+
+@keyframes slice3 {
+    0% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}

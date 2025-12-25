@@ -1,0 +1,22 @@
+{
+    "theory_intentional_crash": {
+        "skill": "LOGIC",
+        "text": "The physics of the turn... it wasn't an accident. It was a precise, calculated descent.",
+        "color": "blue"
+    },
+    "theory_supernatural_residue": {
+        "skill": "PARANORMAL SENSITIVITY",
+        "text": "The residue is humming. It's not just a stain; it's a beacon.",
+        "color": "purple"
+    },
+    "theory_ghost_machine": {
+        "skill": "TECHNOLOGY",
+        "text": "The static in the room isn't white noise. It's a conversation you aren't part of.",
+        "color": "blue"
+    },
+    "theory_nightmares_mean_something": {
+        "skill": "SUBCONSCIOUS",
+        "text": "Teeth. The way the wood is splintered... it looks like teeth.",
+        "color": "purple"
+    }
+}

@@ -1,0 +1,110 @@
+{
+    "hallucinations": [
+        {
+            "id": "shadow_figure",
+            "min_tier": 0,
+            "max_tier": 1,
+            "contexts": [
+                "indoor",
+                "outdoor",
+                "investigation"
+            ],
+            "text": "A figure stands in your peripheral vision. When you turn to look directly, it's gone. But you can still feel its gaze on the back of your neck."
+        },
+        {
+            "id": "blue_fluid_pooling",
+            "min_tier": 0,
+            "max_tier": 1,
+            "contexts": [
+                "indoor",
+                "investigation",
+                "evidence"
+            ],
+            "text": "Blue fluid pools in the corner of the room, luminescent and wrong. It pulses like a living thing. You blink and it's gone, but the floor is still wet."
+        },
+        {
+            "id": "corpse_movement",
+            "min_tier": 0,
+            "max_tier": 1,
+            "contexts": [
+                "autopsy",
+                "evidence",
+                "investigation"
+            ],
+            "text": "The body's fingers twitch. Just once. You're certain you saw it move. The dead don't move. The dead don't move. The dead don't—"
+        },
+        {
+            "id": "mirror_wrong_reflection",
+            "min_tier": 0,
+            "max_tier": 1,
+            "contexts": [
+                "indoor",
+                "bathroom"
+            ],
+            "text": "Your reflection in the mirror is wrong. The eyes are too dark, the smile too wide. It moves a fraction of a second after you do."
+        },
+        {
+            "id": "walls_breathing",
+            "min_tier": 0,
+            "max_tier": 1,
+            "contexts": [
+                "indoor",
+                "investigation"
+            ],
+            "text": "The walls are breathing. Slow, rhythmic expansion and contraction. You can see the paint flex with each inhale. The room is alive."
+        },
+        {
+            "id": "text_crawling",
+            "min_tier": 0,
+            "max_tier": 1,
+            "contexts": [
+                "reading",
+                "evidence",
+                "documents"
+            ],
+            "text": "The words on the page are crawling like insects. They rearrange themselves when you're not looking directly at them. What did this say a moment ago?"
+        },
+        {
+            "id": "aurora_faces",
+            "min_tier": 0,
+            "max_tier": 1,
+            "contexts": [
+                "outdoor",
+                "aurora"
+            ],
+            "text": "Faces form in the aurora's curtains of light. Familiar faces. Dead faces. They mouth words you can't hear but somehow understand: 'Join us.'"
+        },
+        {
+            "id": "blood_trail",
+            "min_tier": 0,
+            "max_tier": 1,
+            "contexts": [
+                "indoor",
+                "outdoor",
+                "investigation"
+            ],
+            "text": "A trail of blood leads away from where you're standing. Fresh. Wet. You follow it with your eyes and it disappears. When you look back, it's gone entirely."
+        },
+        {
+            "id": "entity_silhouette",
+            "min_tier": 0,
+            "max_tier": 0,
+            "contexts": [
+                "outdoor",
+                "aurora",
+                "night"
+            ],
+            "text": "Something massive moves behind the aurora. A silhouette that shouldn't exist, vast and patient. It turns what might be a head toward you. You feel its attention like a physical weight."
+        },
+        {
+            "id": "own_corpse",
+            "min_tier": 0,
+            "max_tier": 0,
+            "contexts": [
+                "investigation",
+                "evidence"
+            ],
+            "text": "You see your own body lying on the ground. Eyes open, staring at nothing. You're looking at yourself from above. How can you be in two places? Which one is real?"
+        }
+    ]
+}

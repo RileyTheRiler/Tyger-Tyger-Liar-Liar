@@ -1,0 +1,12 @@
+{
+    "id": "hospital_discharge",
+    "name": "The Cold Street",
+    "text": "You are discharged with a bill you can't pay and a bottle of pills. The air outside is sharper than you remember.\n\nThe investigation has grown colder in your absence.",
+    "options": [
+        {
+            "label": "Return to the Station.",
+            "next": "intro_scene"
+        }
+    ],
+    "objects": {}
+}

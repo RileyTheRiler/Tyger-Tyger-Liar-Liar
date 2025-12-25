@@ -1,1 +1,147 @@
-{"Empathy": {"test_dialogue": "Interruption text."}}
+{
+    "Logic": [
+        "The variables don't align. There's a missing constant in this equation.",
+        "Cause and effect, detective. Every action leaves a residue.",
+        "It's a logical impossibility. You're looking at a paradox."
+    ],
+    "Forensics": [
+        "The blood pattern suggests a different velocity than the witness described.",
+        "That bruise... it's exactly the shape of a heavy ring.",
+        "The temperature of the liver indicates he's been dead for exactly four hours."
+    ],
+    "Research": [
+        "You recall a similar case in the 1924 Kaltvik Archives. The details are... unsettling.",
+        "The font on this document was discontinued in 1982. This is a forgery.",
+        "You read about this in 'The History of Northern Pacts'. It never ends well."
+    ],
+    "Skepticism": [
+        "They're lying. Everyone is lying. Even the walls.",
+        "It's too convenient. A trap disguised as a clue.",
+        "Your own eyes are failing you. Don't believe the hallucination."
+    ],
+    "Medicine": [
+        "The pallor of her skin isn't just fear; it's systemic failure.",
+        "A steady hand, detective. You know exactly where the carotid is.",
+        "That scent... the sweet rot of untreated infection."
+    ],
+    "Technology": [
+        "The hum from the computer isn't a fan. It's a broadcast.",
+        "Signals overlap in the static. Someone is watching through the wire.",
+        "The circuit is closed, but the power is coming from nowhere."
+    ],
+    "Occult Knowledge": [
+        "The geometry of this room violates the laws of Euclid.",
+        "A Sigil of the Third Circle. You shouldn't even be looking at it.",
+        "The shadows have weight here. They shouldn't have weight."
+    ],
+    "Pattern Recognition": [
+        "Three scratches on the door, three stains on the rug, three birds on the wire. It's a sequence.",
+        "The wallpaper repeats a face that wasn't there a second ago.",
+        "The silence between his words is perfectly timed. A coded rhythm."
+    ],
+    "Paranormal Sensitivity": [
+        "Something just walked through you. It was cold and very, very old.",
+        "The air is vibrating at a frequency that shouldn't exist in nature.",
+        "Don't look up. Something is hanging from the ceiling."
+    ],
+    "Profiling": [
+        "He's sweating from the upper lip. He's more afraid of the person behind him than you.",
+        "Look at her hands. She's been digging. Recently.",
+        "The way he avoids eye contact... he's rehearsed this entire conversation."
+    ],
+    "Instinct": [
+        "RUN. RUN NOW.",
+        "Your hair is standing up. There's a predator in the room.",
+        "Don't eat that. It smells like copper and death."
+    ],
+    "Subconscious": [
+        "You've dreamed of this place. The ending was always the same.",
+        "Deep down, you know exactly who did it. You're just afraid to say the name.",
+        "The darkness inside you is reaching out to the darkness in the corner."
+    ],
+    "Manipulation": [
+        "Say the word 'mother'. Watch how his face collapses.",
+        "If you give them a small secret, they'll give you a big one.",
+        "They want to be found. Use that need."
+    ],
+    "Perception": [
+        "A single blonde hair on the black coat. Out of place.",
+        "The dust on the windowsill has been disturbed by four fingers.",
+        "A faint glimmer under the floorboard. Gold?"
+    ],
+    "Endurance": [
+        "Your lungs are burning, but you can go for another ten miles.",
+        "Ignore the scream in your muscles. They serve you.",
+        "The cold is just a sensation. You are a furnace."
+    ],
+    "Fortitude": [
+        "This horror cannot break you. You are iron.",
+        "Let them stare. Your mind is a vault.",
+        "Pressure makes diamonds, detective. You are becoming very hard."
+    ],
+    "Firearms": [
+        "The safety is off. He's ready to fire.",
+        "Wind is 5mph to the west. Aim slightly right.",
+        "A clean shot through the glass. No resistance."
+    ],
+    "Athletics": [
+        "You could make that jump. It's only twelve feet.",
+        "Keep your weight on the balls of your feet. Be ready to move.",
+        "The climb is steep, but your grip is sure."
+    ],
+    "Stealth": [
+        "The floorboards here are solid. Walk on the edges.",
+        "Stay in the shadow of the pillar. They haven't seen you yet.",
+        "Breath slow. Sync it with the wind."
+    ],
+    "Reflexes": [
+        "DUCK.",
+        "His hand moved. He's reaching for something.",
+        "Catch it before it hits the floor. Now."
+    ],
+    "Survival": [
+        "The moss grows on the north side. You're heading the wrong way.",
+        "That water is stagnant. Find a moving stream.",
+        "Berries with white stems are poison. Always."
+    ],
+    "Hand-to-Hand Combat": [
+        "His stance is wide. Go for the knees.",
+        "Shield your face. He's going for a haymaker.",
+        "Wrap your fingers around his windpipe. End it."
+    ],
+    "Authority": [
+        "Make them bow. You represent the Law.",
+        "Don't ask. Command.",
+        "The room is yours. Everything else is just furniture."
+    ],
+    "Charm": [
+        "A smile opens doors. You can wrap people around your finger with a few choice words.",
+        "Your voice is honey. They want more.",
+        "They aren't just listening; they're mesmerized."
+    ],
+    "Wits": [
+        "A devastating comeback is right on the tip of your tongue.",
+        "They're walking into your verbal trap. Don't stop now.",
+        "Sharp as a razor. You've already won the argument."
+    ],
+    "Composure": [
+        "Heart rate: 60 bpm. You are a statue.",
+        "The panic is a wave. Let it break against you.",
+        "Steady. Don't blink."
+    ],
+    "Empathy": [
+        "You can feel the grief radiating off him like heat.",
+        "She's not angry; she's terrified of being alone.",
+        "Their pain is your pain. It's almost too much to bear."
+    ],
+    "Interrogation": [
+        "The lie is brittle. One more push and it breaks.",
+        "Keep the light in their eyes. Don't let them look away.",
+        "The truth is a wound. Open it up."
+    ],
+    "Deception": [
+        "A perfect lie. Even you almost believe it.",
+        "The truth is what you say it is.",
+        "Give them a scapegoat. They're hungry for one."
+    ]
+}

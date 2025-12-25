@@ -1,0 +1,30 @@
+{
+    "id": "hello",
+    "title": "Hello Scene",
+    "text": {
+        "base": "Welcome to Tyger Tyger Liar Liar. The project skeleton is running.",
+        "lens": {
+            "believer": "The air hums with a frequency you recognize. You are not alone.",
+            "skeptic": "Everything seems to be in order. Just a routine initialization.",
+            "haunted": "You've seen this start before. It always begins with a hello."
+        },
+        "inserts": [
+            {
+                "id": "perception_check",
+                "condition": {
+                    "skill_gte": {
+                        "Perception": 1
+                    }
+                },
+                "text": "You notice the code is clean and the structure is solid.",
+                "insert_at": "AFTER_LENS"
+            }
+        ]
+    },
+    "choices": [
+        {
+            "label": "Begin investigation",
+            "next_scene": "arrival_bus"
+        }
+    ]
+}

@@ -1,0 +1,45 @@
+{
+    "unknown_assailant": {
+        "name": "Unknown Assailant",
+        "hp": 8,
+        "skills": {
+            "Hand-to-Hand Combat": 4,
+            "Reflexes": 3,
+            "Athletics": 3
+        },
+        "damage": "1d6",
+        "traits": [
+            "erratic",
+            "paranoid"
+        ],
+        "description": "A shadowy figure with a knife, their movements jerky and unpredictable."
+    },
+    "cornered_thug": {
+        "name": "Cornered Thug",
+        "hp": 6,
+        "skills": {
+            "Hand-to-Hand Combat": 3,
+            "Reflexes": 2,
+            "Athletics": 2
+        },
+        "damage": "1d4",
+        "traits": [
+            "desperate"
+        ],
+        "description": "He looks more scared than you, which makes him dangerous."
+    },
+    "hallucination": {
+        "name": "Shadow Self",
+        "hp": 5,
+        "skills": {
+            "Volition": 5,
+            "Empathy": 4
+        },
+        "damage": "1d4",
+        "type": "mental",
+        "traits": [
+            "intangible"
+        ],
+        "description": "A dark reflection of yourself, whispering your failures."
+    }
+}

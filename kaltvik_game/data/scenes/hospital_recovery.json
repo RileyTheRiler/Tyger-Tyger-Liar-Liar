@@ -1,0 +1,20 @@
+{
+    "id": "hospital_recovery",
+    "name": "Kaltvik General Hospital",
+    "text": "You wake up to the rhythm of a beeping monitor. The ceiling tiles are stained water-yellow. Your body feels distant, cotton-wrapped. \n\nA nurse checks your charts. 'You're lucky to be alive,' she mutters. 'Whatever hit you... it wasn't human.'\n\nYou've lost time. The world has moved on while you slept.",
+    "options": [
+        {
+            "label": "Ask what day it is.",
+            "next": "hospital_discharge"
+        },
+        {
+            "label": "Try to leave immediately.",
+            "next": "hospital_discharge"
+        }
+    ],
+    "objects": {
+        "monitor": "It pulses with a green line. Evidence that you are still here.",
+        "shrine": "A small collection of withered flowers on the bedside table. No card."
+    },
+    "music": "ambient_drone"
+}

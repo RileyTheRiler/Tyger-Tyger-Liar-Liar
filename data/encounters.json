@@ -1,0 +1,86 @@
+{
+    "armed_assailant": {
+        "name": "Armed Figure",
+        "description": "A shadowy figure steps from the darkness, raising a pistol in your direction.",
+        "hp": 3,
+        "reflexes": 3,
+        "attack": 2,
+        "skills": {
+            "Firearms": 4,
+            "Hand-to-Hand Combat": 2,
+            "Athletics": 3,
+            "Reflexes": 3
+        },
+        "damage": "1d6",
+        "tactics": [
+            "shoot",
+            "advance",
+            "take_cover"
+        ],
+        "dialogue_options": [
+            "intimidate",
+            "reason",
+            "distract"
+        ]
+    },
+    "hostile_local": {
+        "name": "Hostile Local",
+        "description": "A burly figure blocks your path, fists clenched.",
+        "hp": 4,
+        "reflexes": 2,
+        "attack": 3,
+        "skills": {
+            "Hand-to-Hand Combat": 4,
+            "Athletics": 3,
+            "Endurance": 4
+        },
+        "damage": "1d4+1",
+        "tactics": [
+            "grapple",
+            "punch",
+            "intimidate"
+        ],
+        "dialogue_options": [
+            "reason",
+            "intimidate",
+            "bribe"
+        ]
+    },
+    "entity_manifestation": {
+        "name": "Manifestation",
+        "description": "Something that shouldn't exist coalesces before you. Reality bends around it.",
+        "hp": 5,
+        "reflexes": 4,
+        "attack": 4,
+        "skills": {
+            "Paranormal": 6,
+            "Reflexes": 4
+        },
+        "damage": "2d4",
+        "tactics": [
+            "reality_distortion",
+            "psychic_assault"
+        ],
+        "dialogue_options": [],
+        "special": "Triggers Fortitude check each round (DC 12)"
+    },
+    "wild_animal": {
+        "name": "Aggressive Wolf",
+        "description": "A gaunt wolf, eyes gleaming with hunger, snarls at you.",
+        "hp": 2,
+        "reflexes": 4,
+        "attack": 3,
+        "skills": {
+            "Hand-to-Hand Combat": 3,
+            "Reflexes": 4,
+            "Perception": 5
+        },
+        "damage": "1d4",
+        "tactics": [
+            "lunge",
+            "circle",
+            "flee_if_injured"
+        ],
+        "dialogue_options": []
+    }
+}

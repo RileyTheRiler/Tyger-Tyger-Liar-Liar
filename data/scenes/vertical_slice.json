@@ -1,0 +1,206 @@
+[
+    {
+        "id": "arrival_cliff",
+        "title": "The Edge of the World",
+        "location_id": "cliffside",
+        "time_cost": 5,
+        "text": {
+            "base": "You stand at the edge of the Kaltvik cliffs. Below, the sea churns like black oil. A car lies crumpled at the base, its headlights still flickering.",
+            "lens": {
+                "believer": "The flickering lights feel like a signal. A call from the depths that you can't ignore.",
+                "skeptic": "The safety railing is sheared clean. High-speed impact. No skid marks. Likely deliberate.",
+                "haunted": "The cold wind carries a familiar scent—lavender and burnt rubber. It makes your teeth ache."
+            }
+        },
+        "passive_clues": [
+            {
+                "clue_id": "clue_missing_railing",
+                "visible_when": {
+                    "skill_gte": {
+                        "Perception": 3
+                    }
+                }
+            }
+        ],
+        "choices": [
+            {
+                "label": "Climb down to the wreck",
+                "next_scene": "wreck_base",
+                "check": {
+                    "skill": "Athletics",
+                    "dc": 7
+                },
+                "effects": [
+                    {
+                        "type": "time",
+                        "value": 15
+                    }
+                ]
+            },
+            {
+                "label": "Examine the tire tracks",
+                "next_scene": "tire_tracks",
+                "check": {
+                    "skill": "Forensics",
+                    "dc": 5
+                }
+            }
+        ]
+    },
+    {
+        "id": "wreck_base",
+        "title": "The Wreckage",
+        "location_id": "beach",
+        "text": {
+            "base": "The smell of gasoline is overpowering. The car—a silver sedan—is twisted around a jagged rock. The driver's door is open, swinging in the wind.",
+            "lens": {
+                "believer": "The interior is glowing with a faint, pulsing blue light. It's not electricity. It's something else.",
+                "skeptic": "The airbag deployed but is covered in a dark, viscous fluid. Not blood. Oil? Or something more corrosive?",
+                "haunted": "The radio is static-hissing a melody you haven't heard since childhood. Your mother used to hum it."
+            },
+            "inserts": [
+                {
+                    "id": "logic_blood",
+                    "insert_at": "AFTER_LENS",
+                    "condition": {
+                        "skill_gte": {
+                            "Logic": 4
+                        }
+                    },
+                    "text": "The angle of the door suggests the driver didn't fall out. They jumped."
+                }
+            ]
+        },
+        "choices": [
+            {
+                "label": "Search the glovebox",
+                "next_scene": "search_glovebox"
+            },
+            {
+                "label": "Follow the trail into the cave",
+                "next_scene": "encounter_cave_entry"
+            }
+        ]
+    },
+    {
+        "id": "tire_tracks",
+        "title": "The Skid Marks",
+        "location_id": "cliffside",
+        "text": {
+            "base": "Four parallel lines of rubber scorched into the asphalt. They don't point toward the cliff. They point away, then loop back.",
+            "lens": {
+                "skeptic": "Test driving? Some kind of high-speed maneuver before the final plunge."
+            }
+        },
+        "choices": [
+            {
+                "label": "Return to the edge",
+                "next_scene": "arrival_cliff"
+            }
+        ]
+    },
+    {
+        "id": "search_glovebox",
+        "title": "The Glovebox",
+        "location_id": "beach",
+        "text": {
+            "base": "You pry open the glovebox. Inside is a single envelope, sealed with red wax. The name 'Kaltvik' is written on the front in a shaking hand.",
+            "lens": {
+                "skeptic": "Looks like a standard legal document. Or a confession.",
+                "believer": "The wax is warm. It feels like it's holding something... alive... inside."
+            }
+        },
+        "choices": [
+            {
+                "label": "Open the envelope",
+                "next_scene": "read_letter",
+                "effects": [
+                    {
+                        "type": "flag",
+                        "target": "read_confession",
+                        "value": true
+                    }
+                ]
+            },
+            {
+                "label": "Leave it and keep searching",
+                "next_scene": "wreck_base"
+            }
+        ]
+    },
+    {
+        "id": "read_letter",
+        "title": "The Confession",
+        "location_id": "beach",
+        "text": {
+            "base": "'If you're reading this, the integration has already begun. Don't look for me. I'm already part of the static.' The ink is still wet.",
+            "lens": {
+                "haunted": "This is your handwriting. You know it is."
+            }
+        },
+        "choices": [
+            {
+                "label": "Tuck the letter into your coat",
+                "next_scene": "wreck_base",
+                "effects": [
+                    {
+                        "type": "flag",
+                        "target": "has_confession",
+                        "value": true
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "cave_inside",
+        "title": "Deep in the Cave",
+        "location_id": "cave",
+        "text": {
+            "base": "The walls are covered in a bioluminescent lichen. It pulses in time with the hum. In the center of the chamber is a pedestal made of the same silver metal as the car.",
+            "lens": {
+                "believer": "It's an altar. They were sacrificing more than just a car here."
+            }
+        },
+        "choices": [
+            {
+                "label": "Examine the pedestal",
+                "next_scene": "cliffhanger",
+                "check": {
+                    "skill": "Occult Knowledge",
+                    "dc": 11
+                }
+            },
+            {
+                "label": "Turn back",
+                "next_scene": "wreck_base"
+            }
+        ]
+    },
+    {
+        "id": "cliffhanger",
+        "title": "The Revelation",
+        "location_id": "cave",
+        "text": {
+            "base": "As you touch the metal, the lichen turns from blue to a blinding white. The hum becomes a scream. You see a face in the metal—not the driver's, but your own.",
+            "lens": {
+                "haunted": "You remember now. You didn't arrive today. You've been here for months."
+            }
+        },
+        "choices": [
+            {
+                "label": "TO BE CONTINUED...",
+                "next_scene": "end_of_slice"
+            }
+        ]
+    },
+    {
+        "id": "end_of_slice",
+        "title": "Vertical Slice Complete",
+        "location_id": "meta",
+        "text": {
+            "base": "Thank you for playing the Tyger Tyger Liar Liar Vertical Slice. The investigation continues soon."
+        },
+        "choices": []
+    }
+]

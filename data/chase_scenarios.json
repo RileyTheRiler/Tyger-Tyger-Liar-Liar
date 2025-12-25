@@ -1,0 +1,165 @@
+{
+    "alley_pursuit": {
+        "name": "Alley Chase",
+        "description": "You sprint down the narrow alley, boots slapping wet asphalt. A dark figure follows.",
+        "terrain": "urban",
+        "obstacles": [
+            {
+                "type": "chain-link fence",
+                "skill": "Athletics",
+                "dc": 10
+            },
+            {
+                "type": "dumpster",
+                "skill": "Reflexes",
+                "dc": 8
+            },
+            {
+                "type": "crowd of people",
+                "skill": "Stealth",
+                "dc": 12
+            }
+        ],
+        "environmental_modifiers": {
+            "rain": {
+                "Perception": -1,
+                "Reflexes": -1
+            },
+            "night": {
+                "Perception": -2
+            }
+        },
+        "pursuer_speed": 3,
+        "escape_threshold": 5
+    },
+    "forest_escape": {
+        "name": "Forest Pursuit",
+        "description": "You crash through the undergrowth, branches tearing at your clothes. Something hunts you.",
+        "terrain": "forest",
+        "obstacles": [
+            {
+                "type": "fallen log",
+                "skill": "Athletics",
+                "dc": 9
+            },
+            {
+                "type": "dense thicket",
+                "skill": "Endurance",
+                "dc": 10
+            },
+            {
+                "type": "steep ravine",
+                "skill": "Athletics",
+                "dc": 12
+            }
+        ],
+        "environmental_modifiers": {
+            "night": {
+                "Perception": -3,
+                "Athletics": -1
+            },
+            "fog": {
+                "Perception": -2
+            }
+        },
+        "pursuer_speed": 2,
+        "escape_threshold": 6
+    },
+    "building_interior": {
+        "name": "Building Escape",
+        "description": "You race through the abandoned building, footsteps echoing behind you.",
+        "terrain": "indoor",
+        "obstacles": [
+            {
+                "type": "locked door",
+                "skill": "Hand-to-Hand Combat",
+                "dc": 10
+            },
+            {
+                "type": "debris pile",
+                "skill": "Athletics",
+                "dc": 9
+            },
+            {
+                "type": "narrow window",
+                "skill": "Reflexes",
+                "dc": 11
+            }
+        ],
+        "environmental_modifiers": {
+            "darkness": {
+                "Perception": -2,
+                "Reflexes": -1
+            }
+        },
+        "pursuer_speed": 3,
+        "escape_threshold": 4
+    },
+    "ice_field": {
+        "name": "Ice Field Chase",
+        "description": "You slip and slide across the frozen landscape, pursued relentlessly.",
+        "terrain": "ice",
+        "obstacles": [
+            {
+                "type": "ice crack",
+                "skill": "Perception",
+                "dc": 11
+            },
+            {
+                "type": "snow drift",
+                "skill": "Athletics",
+                "dc": 10
+            },
+            {
+                "type": "frozen stream",
+                "skill": "Reflexes",
+                "dc": 12
+            }
+        ],
+        "environmental_modifiers": {
+            "ice": {
+                "Reflexes": -2,
+                "Athletics": -1
+            },
+            "blizzard": {
+                "Perception": -3,
+                "Endurance": -1
+            }
+        },
+        "pursuer_speed": 2,
+        "escape_threshold": 6
+    },
+    "rooftop_chase": {
+        "name": "Rooftop Pursuit",
+        "description": "You leap from rooftop to rooftop, the ground far below.",
+        "terrain": "rooftop",
+        "obstacles": [
+            {
+                "type": "gap between buildings",
+                "skill": "Athletics",
+                "dc": 12
+            },
+            {
+                "type": "ventilation shaft",
+                "skill": "Reflexes",
+                "dc": 10
+            },
+            {
+                "type": "sloped roof",
+                "skill": "Athletics",
+                "dc": 11
+            }
+        ],
+        "environmental_modifiers": {
+            "rain": {
+                "Reflexes": -2,
+                "Athletics": -1
+            },
+            "night": {
+                "Perception": -1
+            }
+        },
+        "pursuer_speed": 3,
+        "escape_threshold": 5
+    }
+}

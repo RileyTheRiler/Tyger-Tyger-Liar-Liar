@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import SubliminalText from './SubliminalText';
 import './StatusHUD.css';
 
 const StatusHUD = ({ uiState }) => {
@@ -14,8 +15,12 @@ const StatusHUD = ({ uiState }) => {
     return (
         <div className="hud-container">
             <div className="hud-header">
-                <span className="hud-title">BIO_MONITOR</span>
-                <span className="hud-status blink">ACTIVE</span>
+                <span className="hud-title">
+                    <SubliminalText text="BIO_MONITOR" sanity={sanity} />
+                </span>
+                <span className="hud-status blink">
+                    <SubliminalText text="ACTIVE" sanity={sanity} />
+                </span>
             </div>
 
             <div className="hud-section stats-grid">

@@ -1,0 +1,133 @@
+{
+    "flashbacks": {
+        "name": "Flashbacks",
+        "description": "Intrusive memories of the incident flood your mind at random moments.",
+        "effects": {
+            "Composure": -2,
+            "Fortitude": -1
+        },
+        "duration_hours": 168,
+        "trigger_chance": 0.3,
+        "narrative_effects": [
+            "random_memory_inserts",
+            "perception_distortion"
+        ],
+        "treatment": "rest_and_time",
+        "severity": "moderate"
+    },
+    "insomnia": {
+        "name": "Insomnia",
+        "description": "Sleep eludes you. When it comes, nightmares follow.",
+        "effects": {
+            "Perception": -1,
+            "Composure": -1,
+            "Endurance": -1
+        },
+        "duration_hours": 120,
+        "trigger_chance": 0.2,
+        "narrative_effects": [
+            "fatigue_text",
+            "perception_distortion"
+        ],
+        "treatment": "rest_and_time",
+        "severity": "minor"
+    },
+    "obsessive_patterning": {
+        "name": "Obsessive Pattern Recognition",
+        "description": "You see connections everywhere. Most aren't real.",
+        "effects": {
+            "Logic": -1,
+            "Skepticism": -2
+        },
+        "duration_hours": 96,
+        "trigger_chance": 0.4,
+        "narrative_effects": [
+            "false_pattern_detection",
+            "perception_distortion"
+        ],
+        "treatment": "rest_and_time",
+        "severity": "moderate"
+    },
+    "paranoia": {
+        "name": "Paranoia",
+        "description": "Everyone is suspect. Everything is a threat.",
+        "effects": {
+            "Empathy": -2,
+            "Authority": -1,
+            "Composure": -1
+        },
+        "duration_hours": 144,
+        "trigger_chance": 0.25,
+        "narrative_effects": [
+            "suspicious_text",
+            "perception_distortion"
+        ],
+        "treatment": "rest_and_time",
+        "severity": "moderate"
+    },
+    "dissociation": {
+        "name": "Dissociation",
+        "description": "You feel disconnected from reality. Are you even here?",
+        "effects": {
+            "Perception": -2,
+            "Composure": -2
+        },
+        "duration_hours": 72,
+        "trigger_chance": 0.35,
+        "narrative_effects": [
+            "unreality_text",
+            "perception_distortion"
+        ],
+        "treatment": "rest_and_time",
+        "severity": "severe"
+    },
+    "survivor_guilt": {
+        "name": "Survivor's Guilt",
+        "description": "Why did you survive when others didn't? The question haunts you.",
+        "effects": {
+            "Composure": -2,
+            "Empathy": -1,
+            "Fortitude": -1
+        },
+        "duration_hours": 240,
+        "trigger_chance": 0.15,
+        "narrative_effects": [
+            "guilt_text"
+        ],
+        "treatment": "rest_and_time",
+        "severity": "moderate"
+    },
+    "hypervigilance": {
+        "name": "Hypervigilance",
+        "description": "You can't relax. Every sound, every shadow could be a threat.",
+        "effects": {
+            "Composure": -2,
+            "Endurance": -1
+        },
+        "duration_hours": 120,
+        "trigger_chance": 0.3,
+        "narrative_effects": [
+            "threat_perception"
+        ],
+        "treatment": "rest_and_time",
+        "severity": "minor"
+    },
+    "entity_exposure": {
+        "name": "Entity Exposure",
+        "description": "You've seen something that shouldn't exist. Your mind struggles to process it.",
+        "effects": {
+            "Logic": -3,
+            "Skepticism": -3,
+            "Composure": -2
+        },
+        "duration_hours": 336,
+        "trigger_chance": 0.5,
+        "narrative_effects": [
+            "reality_distortion",
+            "perception_distortion",
+            "entity_visions"
+        ],
+        "treatment": "rest_and_time",
+        "severity": "severe"
+    }
+}

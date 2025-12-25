@@ -1,0 +1,62 @@
+[
+    {
+        "id": "dock_guard",
+        "name": "Dock Guard",
+        "title": "Night Shift Security",
+        "description": {
+            "base": "A weathered man in his forties, wearing a heavy coat against the cold. His eyes are tired but alert.",
+            "lens": {
+                "believer": "There's something haunted in his eyes, like he's seen things he can't explain.",
+                "skeptic": "A working-class man doing a thankless job in terrible conditions.",
+                "haunted": "He reminds you of someone you used to know. The resemblance is unsettling."
+            }
+        },
+        "location_id": "dock",
+        "initial_trust": 40,
+        "initial_fear": 20,
+        "knowledge": [
+            {
+                "topic": "lighthouse",
+                "trust_required": 50,
+                "clue_revealed": "lighthouse_dark",
+                "one_time": true
+            },
+            {
+                "topic": "missing",
+                "trust_required": 70,
+                "clue_revealed": "worker_disappearances",
+                "one_time": true
+            }
+        ],
+        "secrets": [
+            {
+                "id": "guard_saw_entity",
+                "description": "The guard witnessed something emerge from the water near the lighthouse.",
+                "revealed_by": {
+                    "trust_level": 85,
+                    "theory_active": "lighthouse_anomaly"
+                }
+            }
+        ],
+        "dialogue_trees": {
+            "hostile": "dock_guard_hostile",
+            "wary": "dock_guard_test",
+            "neutral": "dock_guard_test",
+            "friendly": "dock_guard_friendly",
+            "trusted": "dock_guard_trusted"
+        },
+        "reactions": {
+            "accused_lying": {
+                "trust_modifier": -20,
+                "dialogue_override": "dock_guard_hostile"
+            },
+            "showed_badge": {
+                "trust_modifier": 10
+            }
+        },
+        "flags": {
+            "alive": true,
+            "met": false
+        }
+    }
+]

@@ -1,0 +1,19 @@
+{
+    "id": "supernatural_witness",
+    "name": "Witnessing the Impossible",
+    "description": "Seeing something that defies rational explanation",
+    "trigger_conditions": {
+        "sanity_below": 60,
+        "attention_above": 50,
+        "chance": 0.2
+    },
+    "effects": {
+        "fear_level": 30,
+        "sanity": -15,
+        "mental_load": 20,
+        "reality": -10,
+        "text_overlay": "Reality fractures at the edges. What you're seeing can't exist, yet it does. The laws you built your understanding on crumble like wet paper. If this is real, what else have you been wrong about?",
+        "audio_cue": "reality_tear.wav"
+    },
+    "cooldown_minutes": 60
+}

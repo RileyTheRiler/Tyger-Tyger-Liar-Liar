@@ -1,0 +1,27 @@
+[
+    {
+        "id": "theory_intentional_crash",
+        "title": "Calculated Descent",
+        "summary": "The driver didn't lose control. They chose the exact moment and angle to ensure a total loss.",
+        "internalization_time": 30,
+        "on_internalize_effects": [
+            {
+                "type": "flag",
+                "target": "theory_crash_internalized",
+                "value": true
+            }
+        ]
+    },
+    {
+        "id": "theory_supernatural_residue",
+        "title": "Extraterrestrial / Supernatural Source",
+        "summary": "The blue fluid defies local physics. Kaltvik's geology is being invaded.",
+        "internalization_time": 60
+    },
+    {
+        "id": "theory_ghost_machine",
+        "title": "The Ghost in the Machine",
+        "summary": "Electronic signals are being used as a medium for a non-human consciousness.",
+        "internalization_time": 45
+    }
+]

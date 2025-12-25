@@ -1,104 +1,26 @@
 [
   {
-    "id": "clue_case_files",
-    "title": "Sheriff's Case Files",
-    "text": {
-      "base": "Twelve folders. Twelve missing persons. The dates span three months, but the pattern is unmistakable: all disappearances occurred during aurora activity.",
-      "lens": {
-        "believer": "The lights took them. The connection is obvious—every single one vanished when the sky was burning green.",
-        "skeptic": "Correlation, not causation. Aurora nights are darker, colder. People get lost. It's a pattern, but a mundane one.",
-        "haunted": "Twelve faces. Twelve names. One of them looks familiar. Too familiar."
-      }
-    },
-    "source_scene_id": "scene_sheriff_office",
-    "tags": ["document", "missing", "aurora", "government"],
-    "reliability": 0.8,
+    "id": "clue_missing_railing",
+    "title": "Sheared Railing",
+    "text": "The metal is bent outward, not inward. Whatever went over the side didn't just fall—it was pushed or steered with immense force.",
     "links_to_theories": [
-      {"theory_id": "the_missing_are_connected", "relation": "supports"},
-      {"theory_id": "aurora_rules", "relation": "supports"}
-    ],
-    "related_npcs": ["npc_sheriff_bergman"],
-    "analysis_skills": ["Research", "Pattern Recognition"]
+      "theory_intentional_crash"
+    ]
   },
   {
-    "id": "clue_aurora_photograph",
-    "title": "Aurora Photograph",
-    "text": {
-      "base": "A polaroid of the northern lights over Kaltvik. In the center of the green curtain, there's a shape. It could be a trick of the light.",
-      "lens": {
-        "believer": "A face. Multiple faces. Looking down at the town. Watching. Waiting.",
-        "skeptic": "Pareidolia. The human brain evolved to see faces everywhere. It's an artifact of photography, nothing more.",
-        "haunted": "One of those faces is yours. You're certain. Absolutely certain."
-      }
-    },
-    "source_scene_id": "scene_hotel_room",
-    "tags": ["photograph", "aurora", "anomaly"],
-    "reliability": 0.3,
+    "id": "clue_blue_fluid",
+    "title": "Viscous Blue Fluid",
+    "text": "It's cold to the touch. Even in the freezing wind, it doesn't solidify. It pulses when your hand gets near.",
     "links_to_theories": [
-      {"theory_id": "aurora_rules", "relation": "supports"},
-      {"theory_id": "347_resonance", "relation": "associated"}
-    ],
-    "analysis_skills": ["Perception", "Pattern Recognition", "Technology"]
+      "theory_supernatural_residue"
+    ]
   },
   {
-    "id": "clue_researcher_notes",
-    "title": "Dr. Ekberg's Notes",
-    "text": {
-      "base": "Handwritten notes from a researcher who stayed at the hotel last month. The final entry is incomplete, cut off mid-sentence: 'The frequency matches exactly. It's not random. The aurora is—'",
-      "lens": {
-        "believer": "She was close to the truth. Too close. They silenced her before she could reveal it.",
-        "skeptic": "Academic obsession turned to delusion. Isolation can do that. The incomplete sentence proves nothing except poor timing.",
-        "haunted": "The handwriting changes partway through. Becomes shakier. More desperate. You recognize desperation."
-      }
-    },
-    "source_scene_id": "scene_hotel_room_3",
-    "tags": ["document", "dewline", "aurora", "missing"],
-    "reliability": 0.6,
+    "id": "clue_mothers_tune",
+    "title": "Echo of a Lullaby",
+    "text": "The radio was playing 'The Lavender Field'. A song your mother sang to you. But the station has been dead for years.",
     "links_to_theories": [
-      {"theory_id": "347_resonance", "relation": "supports"},
-      {"theory_id": "government_coverup", "relation": "associated"}
-    ],
-    "related_npcs": ["npc_hotel_manager_elsa"],
-    "analysis_skills": ["Research", "Occult Knowledge"]
-  },
-  {
-    "id": "clue_blood_stain_lobby",
-    "title": "Cleaned Bloodstain",
-    "text": {
-      "base": "Under UV light, the carpet near the front desk tells a story someone tried to erase. A large stain, roughly human-shaped, and smaller droplets leading toward the exit.",
-      "lens": {
-        "believer": "They dragged someone out of here. Or something dragged someone out. The trail leads toward the forest.",
-        "skeptic": "A nosebleed, maybe. An accident. Someone cut themselves and walked to their car. There are explanations.",
-        "haunted": "You've seen bloodstains like this before. You've left bloodstains like this before."
-      }
-    },
-    "source_scene_id": "scene_hotel_lobby",
-    "tags": ["physical", "medical", "missing"],
-    "reliability": 0.9,
-    "links_to_theories": [
-      {"theory_id": "the_missing_are_connected", "relation": "supports"}
-    ],
-    "related_locations": ["loc_hotel_lobby", "loc_forest_edge"],
-    "analysis_skills": ["Forensics", "Medicine"]
-  },
-  {
-    "id": "clue_folklore_warning",
-    "title": "The Old Warning",
-    "text": {
-      "base": "A fragment of local folklore, whispered by Elsa: 'When the sky burns green, don't count the lights. Don't answer if they call your name. Don't look for the missing—they'll find you instead.'",
-      "lens": {
-        "believer": "Generational knowledge. These people have lived with this for centuries. They know the rules. They know how to survive.",
-        "skeptic": "Superstition used to explain the inexplicable. Every isolated community has stories like this. It's cultural coping mechanism.",
-        "haunted": "Your grandmother said something similar once. You'd forgotten until now. Why did you forget?"
-      }
-    },
-    "source_scene_id": "scene_hotel_lobby",
-    "tags": ["folklore", "aurora", "testimony"],
-    "reliability": 0.4,
-    "links_to_theories": [
-      {"theory_id": "aurora_rules", "relation": "supports"}
-    ],
-    "related_npcs": ["npc_hotel_manager_elsa"],
-    "analysis_skills": ["Occult Knowledge", "Research"]
+      "theory_ghost_machine"
+    ]
   }
 ]

@@ -1,0 +1,131 @@
+.title-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(180deg, #000000 0%, #0a0a0a 50%, #000000 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.title-content {
+    text-align: center;
+    z-index: 2;
+}
+
+.title-main {
+    font-size: 5rem;
+    font-weight: 900;
+    letter-spacing: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: #ff0040;
+    text-shadow: 0 0 20px rgba(255, 0, 64, 0.8);
+}
+
+.title-sub {
+    font-size: 3.5rem;
+    font-weight: 700;
+    letter-spacing: 0.4rem;
+    color: #00ffff;
+    text-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+}
+
+.title-tagline {
+    font-size: 1rem;
+    letter-spacing: 0.3rem;
+    color: #888;
+    margin-top: 2rem;
+    margin-bottom: 3rem;
+    font-family: 'Courier New', monospace;
+}
+
+.title-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-top: 3rem;
+}
+
+.title-btn {
+    background: transparent;
+    border: 2px solid #00ffff;
+    color: #00ffff;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 0.2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.title-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 255, 255, 0.1);
+    transition: left 0.3s ease;
+}
+
+.title-btn:hover::before {
+    left: 0;
+}
+
+.title-btn:hover {
+    border-color: #ff0040;
+    color: #ff0040;
+    box-shadow: 0 0 20px rgba(255, 0, 64, 0.5);
+    transform: scale(1.05);
+}
+
+.start-btn {
+    border-color: #00ff88;
+    color: #00ff88;
+}
+
+.start-btn:hover {
+    border-color: #00ff88;
+    color: #00ff88;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+}
+
+.exit-btn {
+    border-color: #ff4444;
+    color: #ff4444;
+}
+
+.exit-btn:hover {
+    border-color: #ff0000;
+    color: #ff0000;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+}
+
+.title-warning {
+    margin-top: 3rem;
+    font-size: 0.8rem;
+    color: #ff4444;
+    letter-spacing: 0.1rem;
+    font-family: 'Courier New', monospace;
+}
+
+.scan-line-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(0deg,
+            rgba(0, 0, 0, 0.15),
+            rgba(0, 0, 0, 0.15) 1px,
+            transparent 1px,
+            transparent 2px);
+    pointer-events: none;
+    z-index: 1;
+}

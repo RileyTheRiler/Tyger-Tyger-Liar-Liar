@@ -1,0 +1,59 @@
+{
+    "encounter": {
+        "id": "encounter_cave_entry",
+        "intro_text": {
+            "base": "The cave entrance is narrow and slick with ice. A strange hum vibrates through the rock."
+        },
+        "state_defaults": {
+            "courage": 5,
+            "warmth": 100
+        },
+        "turn_rules": {
+            "warmth": -20
+        },
+        "options_by_turn": [
+            [
+                {
+                    "label": "Light a flare and enter",
+                    "skill": "Survival",
+                    "dc": 7,
+                    "outcomes": {
+                        "success": {
+                            "text": "The light reveals a path. You press on.",
+                            "effects": {
+                                "courage": 2
+                            }
+                        },
+                        "failure": {
+                            "text": "The flare sputters. You feel a hand on your shoulder. No one is there.",
+                            "effects": {
+                                "courage": -2
+                            }
+                        }
+                    }
+                }
+            ]
+        ],
+        "exit_conditions": {
+            "success": {
+                "state_gte": {
+                    "courage": 7
+                },
+                "text": "You've braved the darkness."
+            },
+            "failure": {
+                "state_lte": {
+                    "warmth": 40
+                },
+                "text": "The cold is too much. You retreat."
+            }
+        }
+    },
+    "fracture": {
+        "id": "slice_fracture_1",
+        "trigger": {
+            "attention_gte": 50
+        },
+        "effect": "The words on the page begin to smoke."
+    }
+}

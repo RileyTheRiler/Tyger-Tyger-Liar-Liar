@@ -1,0 +1,13 @@
+{
+    "default_archetype": "neutral",
+    "manual_dice_default": false,
+    "start_scene_id": "arrival_gate",
+    "difficulty_bands": {
+        "trivial": 5,
+        "easy": 7,
+        "standard": 9,
+        "hard": 11,
+        "extreme": 13,
+        "legendary": 15
+    }
+}

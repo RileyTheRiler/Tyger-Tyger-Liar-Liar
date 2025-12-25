@@ -1,0 +1,21 @@
+{
+    "id": "aurora_exposure",
+    "name": "Aurora Overexposure",
+    "description": "Prolonged exposure to the aurora's influence",
+    "trigger_conditions": {
+        "location_type": "outdoor",
+        "flags": [
+            "aurora_visible"
+        ],
+        "time_of_day": "night",
+        "chance": 0.3
+    },
+    "effects": {
+        "fear_level": 15,
+        "sanity": -5,
+        "mental_load": 10,
+        "text_overlay": "The colors are too bright, too alive. They move with intention, reaching down like fingers of light. You can almost hear them singing in frequencies that make your teeth ache.",
+        "audio_cue": "aurora_hum.wav"
+    },
+    "cooldown_minutes": 20
+}

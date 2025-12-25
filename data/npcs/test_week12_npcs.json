@@ -1,0 +1,48 @@
+[
+    {
+        "id": "npc_test_guard",
+        "name": "Guard Thompson",
+        "title": "Station Guard",
+        "description": {
+            "base": "A weathered guard with suspicious eyes.",
+            "lens": {
+                "believer": "His eyes dart nervously, as if watching for something unseen.",
+                "skeptic": "A standard security guard, bored and underpaid.",
+                "haunted": "You've seen him before. Or someone like him. The resemblance is unsettling."
+            }
+        },
+        "location_id": "station",
+        "initial_trust": 30,
+        "initial_fear": 0,
+        "initial_rapport": 20,
+        "initial_respect": 25,
+        "tags": [],
+        "emotional_flags": [
+            "loyal_to_authority",
+            "suspicious_of_outsiders"
+        ],
+        "dialogue_trees": {
+            "hostile": "dialogue_guard_hostile",
+            "neutral": "dialogue_guard_neutral",
+            "friendly": "dialogue_guard_friendly"
+        },
+        "knowledge": [
+            {
+                "topic": "recent_incidents",
+                "trust_required": 50,
+                "clue_revealed": "clue_incident_log"
+            }
+        ],
+        "secrets": [],
+        "reactions": {
+            "helped_investigation": {
+                "trust_modifier": 15,
+                "rapport_modifier": 10
+            },
+            "accused_guard": {
+                "trust_modifier": -25,
+                "fear_modifier": 10
+            }
+        }
+    }
+]

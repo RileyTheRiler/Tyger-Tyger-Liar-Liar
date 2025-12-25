@@ -1,0 +1,15 @@
+
+        # Week 14: Theory Commands
+        if clean in ['theories', 'theory']:
+            self.display_theories()
+            return "refresh"
+        
+        if clean.startswith('internalize '):
+            theory_id = clean.replace('internalize ', '').strip()
+            self.internalize_theory(theory_id)
+            return "refresh"
+        
+        if clean.startswith('abandon '):
+            theory_id = clean.replace('abandon ', '').strip()
+            self.abandon_theory(theory_id)
+            return "refresh"

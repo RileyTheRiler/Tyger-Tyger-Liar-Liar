@@ -1,0 +1,59 @@
+{
+    "id": "frozen_victim",
+    "name": "The Frozen Victim",
+    "text": {
+        "base": "A body lies in the center of the clearing, partially encased in a strange, translucent frost.",
+        "thermal": "The body is encased in frost, but a deep heat signature is pulsing from the chest cavity. Core temp: 102.4°F.",
+        "lens": {
+            "skeptic": "It's a tragic casualty of the cold. A hiker who lost their way.",
+            "believer": "This is a Vessel. The frost is but a shell for the energy trapped within.",
+            "haunted": "The cold doesn't just bite here; it whispers. You can hear the static coming from the ice."
+        },
+        "inserts": [
+            {
+                "id": "fever_check",
+                "text": "Your medical training screams at you: human bodies don't generate this much heat while frozen solid. It's impossible.",
+                "condition": {
+                    "skill_gte": {
+                        "Medicine": 4
+                    },
+                    "thermal_mode": true
+                },
+                "insert_at": "AFTER_BASE"
+            },
+            {
+                "id": "logic_ice",
+                "text": "The ice is too regular. These are fractal patterns, not random freezing.",
+                "condition": {
+                    "skill_gte": {
+                        "Logic": 3
+                    }
+                },
+                "insert_at": "AFTER_BASE"
+            }
+        ]
+    },
+    "connected_scenes": [
+        "woods_north_path"
+    ],
+    "objects": {
+        "victim": {
+            "description": "The victim is frozen solid, yet feels... wrong.",
+            "temperature": 102.4
+        },
+        "ice_shards": {
+            "description": "Geometric shards of ice that seem to defy natural growth.",
+            "temperature": 15.0
+        }
+    },
+    "choices": [
+        {
+            "text": "Examine the victim closely.",
+            "next_scene": "frozen_victim_exam"
+        },
+        {
+            "text": "Retreat to the path.",
+            "next_scene": "woods_north_path"
+        }
+    ]
+}

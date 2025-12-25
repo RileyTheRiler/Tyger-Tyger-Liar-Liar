@@ -11,6 +11,8 @@ def get_player_input(scene, context_objects):
     
     else:
         # Parser mode
+        # Check if combat active? The handler is stateless regarding game state usually, 
+        # but we can return combat verbs regardless.
         return parse_command(raw, context_objects)
 
 def parse_command(command, objects):
@@ -88,6 +90,26 @@ def parse_command(command, objects):
             print("Usage: check [skill]")
             return ("invalid", None)
         return ("check", words[1])
+
+    # --- Combat Commands ---
+    elif verb == "fight" or verb == "attack":
+        return ("combat_action", "fight")
+    elif verb == "dodge":
+        return ("combat_action", "dodge")
+    elif verb == "run" or verb == "flee":
+        return ("combat_action", "run")
+    elif verb == "talk" and len(words) == 1: # 'talk' logic in combat vs 'talk to'
+        # Ambiguity: 'talk to npc' vs 'talk down active threat'
+        # We'll assume if they type just 'talk' or 'negotiate' in combat
+        return ("combat_action", "talk")
+
+    # --- Survival Commands ---
+    elif verb == "injuries" or verb == "status":
+        return ("injuries", None)
+    elif verb == "medicate" or verb == "heal":
+        return ("medicate", None)
+    elif verb == "rest" or verb == "sleep":
+        return ("rest", None)
 
     elif verb in ["use", "take", "open"]:
         return ("action", (verb, target))

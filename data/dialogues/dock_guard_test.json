@@ -1,0 +1,253 @@
+{
+    "npc_id": "dock_guard",
+    "start_node": "intro",
+    "nodes": [
+        {
+            "id": "intro",
+            "speaker": "Dock Guard",
+            "text": "The guard eyes you suspiciously. 'You shouldn't be here, pal.'",
+            "passives": [
+                "Profiling",
+                "Empathy"
+            ],
+            "parser_triggers": {
+                "badge": "show_badge",
+                "lighthouse": "ask_lighthouse"
+            },
+            "topics": [
+                {
+                    "keywords": [
+                        "lighthouse",
+                        "light",
+                        "beacon"
+                    ],
+                    "next": "ask_lighthouse"
+                },
+                {
+                    "keywords": [
+                        "missing",
+                        "workers",
+                        "disappearances"
+                    ],
+                    "next": "ask_missing"
+                }
+            ],
+            "choices": [
+                {
+                    "text": "Flash your badge.",
+                    "next": "show_badge",
+                    "effects": {
+                        "trust_modifier": 5
+                    }
+                },
+                {
+                    "text": "Lie: 'I'm with sanitation.'",
+                    "next": "lie_sanitation",
+                    "skill_check": {
+                        "skill": "Deception",
+                        "dc": 11
+                    }
+                },
+                {
+                    "text": "Leave.",
+                    "next": "EXIT_DIALOGUE"
+                }
+            ]
+        },
+        {
+            "id": "show_badge",
+            "speaker": "Dock Guard",
+            "text": "He relaxes slightly. 'Alright, detective. What do you need?'",
+            "passives": [
+                "Authority"
+            ],
+            "topics": [
+                {
+                    "keywords": [
+                        "lighthouse",
+                        "light"
+                    ],
+                    "next": "lighthouse_response"
+                },
+                {
+                    "keywords": [
+                        "missing",
+                        "workers"
+                    ],
+                    "next": "missing_response"
+                }
+            ],
+            "choices": [
+                {
+                    "text": "Ask about the lighthouse.",
+                    "next": "lighthouse_response"
+                },
+                {
+                    "text": "Ask about missing workers.",
+                    "next": "missing_response"
+                },
+                {
+                    "text": "That's all for now.",
+                    "next": "EXIT_DIALOGUE"
+                }
+            ]
+        },
+        {
+            "id": "ask_lighthouse",
+            "speaker": "Dock Guard",
+            "text": "'The lighthouse? Been dark for three nights now. Nobody goes near it anymore.'",
+            "passives": [
+                "Paranormal Sensitivity"
+            ],
+            "choices": [
+                {
+                    "text": "Why not?",
+                    "next": "lighthouse_why"
+                },
+                {
+                    "text": "Back to other questions.",
+                    "next": "show_badge"
+                }
+            ]
+        },
+        {
+            "id": "lighthouse_response",
+            "speaker": "Dock Guard",
+            "text": "'The lighthouse? Been dark for three nights now. Nobody goes near it anymore.'",
+            "passives": [
+                "Paranormal Sensitivity"
+            ],
+            "choices": [
+                {
+                    "text": "Why not?",
+                    "next": "lighthouse_why"
+                },
+                {
+                    "text": "Back to other questions.",
+                    "next": "show_badge"
+                }
+            ]
+        },
+        {
+            "id": "lighthouse_why",
+            "speaker": "Dock Guard",
+            "text": "He lowers his voice. 'Strange sounds. Lights that shouldn't be there. The last keeper... he didn't come back.'",
+            "passives": [
+                "Subconscious"
+            ],
+            "choices": [
+                {
+                    "text": "I need to investigate it.",
+                    "next": "EXIT_DIALOGUE",
+                    "effects": {
+                        "theory_unlock": "lighthouse_anomaly"
+                    }
+                },
+                {
+                    "text": "Tell me more about the keeper.",
+                    "next": "keeper_story"
+                }
+            ]
+        },
+        {
+            "id": "ask_missing",
+            "speaker": "Dock Guard",
+            "text": "'Missing workers? Look, I just guard the dock. I don't know nothing about that.'",
+            "passives": [
+                "Skepticism"
+            ],
+            "choices": [
+                {
+                    "text": "You're lying.",
+                    "next": "confront_lie"
+                },
+                {
+                    "text": "Ask something else.",
+                    "next": "intro"
+                }
+            ]
+        },
+        {
+            "id": "missing_response",
+            "speaker": "Dock Guard",
+            "text": "'Missing workers? Look, I just guard the dock. I don't know nothing about that.'",
+            "passives": [
+                "Skepticism"
+            ],
+            "choices": [
+                {
+                    "text": "You're lying.",
+                    "next": "confront_lie"
+                },
+                {
+                    "text": "Ask something else.",
+                    "next": "show_badge"
+                }
+            ]
+        },
+        {
+            "id": "confront_lie",
+            "speaker": "Dock Guard",
+            "text": "His face hardens. 'You calling me a liar? We're done here.'",
+            "effects": {
+                "trust_modifier": -15
+            },
+            "choices": [
+                {
+                    "text": "Leave.",
+                    "next": "EXIT_DIALOGUE"
+                }
+            ]
+        },
+        {
+            "id": "lie_sanitation",
+            "speaker": "Dock Guard",
+            "text": "He squints at you. 'Sanitation? At this hour? Get lost.'",
+            "effects": {
+                "trust_modifier": -10
+            },
+            "choices": [
+                {
+                    "text": "Leave.",
+                    "next": "EXIT_DIALOGUE"
+                }
+            ]
+        },
+        {
+            "id": "keeper_story",
+            "speaker": "Dock Guard",
+            "text": "'Old man Erikson. Been keeper for twenty years. One night he radioed in about... something in the water. Never heard from him again.'",
+            "passives": [
+                "Paranormal Sensitivity",
+                "Logic"
+            ],
+            "choices": [
+                {
+                    "text": "Something in the water?",
+                    "next": "water_thing"
+                },
+                {
+                    "text": "I should investigate.",
+                    "next": "EXIT_DIALOGUE",
+                    "effects": {
+                        "theory_unlock": "lighthouse_anomaly"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "water_thing",
+            "speaker": "Dock Guard",
+            "text": "He shakes his head. 'I've said too much already. Just... be careful out there, detective.'",
+            "choices": [
+                {
+                    "text": "Thank you.",
+                    "next": "EXIT_DIALOGUE",
+                    "effects": {
+                        "trust_modifier": 5
+                    }
+                }
+            ]
+        }
+    ]
+}

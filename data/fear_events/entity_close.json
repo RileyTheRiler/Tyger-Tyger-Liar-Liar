@@ -1,0 +1,22 @@
+{
+    "id": "entity_close",
+    "name": "Entity Proximity",
+    "description": "The Entity is aware of your presence and drawing near",
+    "trigger_conditions": {
+        "location_type": "outdoor",
+        "flags": [
+            "aurora_visible"
+        ],
+        "attention_above": 75,
+        "time_of_day": "night",
+        "chance": 0.4
+    },
+    "effects": {
+        "fear_level": 25,
+        "sanity": -10,
+        "mental_load": 15,
+        "text_overlay": "You feel a pressure behind your eyes, like static crawling inward. The aurora pulses in rhythm with something vast and patient. It knows you're here.",
+        "audio_cue": "entity_whisper_loop.wav"
+    },
+    "cooldown_minutes": 30
+}

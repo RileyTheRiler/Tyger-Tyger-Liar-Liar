@@ -1,0 +1,61 @@
+{
+    "scene_id": "test_week12_dialogue",
+    "start_node": "start",
+    "lines": [
+        {
+            "id": "start",
+            "speaker": "Guard Thompson",
+            "text": "What do you want?",
+            "text_variants": {
+                "believer": "What do you want? (His hand trembles slightly, as if he senses something wrong.)",
+                "skeptic": "What do you want? (Standard security protocol, nothing unusual.)",
+                "haunted": "What do you want? (You've heard this voice before. In a dream? A memory?)"
+            },
+            "passives": [
+                "Empathy",
+                "Perception"
+            ],
+            "choices": [
+                {
+                    "id": "friendly_approach",
+                    "text": "Just need some information about the recent incidents.",
+                    "next": "friendly_response",
+                    "relationship_gate": {
+                        "trust_min": 30,
+                        "rapport_min": 20
+                    }
+                },
+                {
+                    "id": "hostile_approach",
+                    "text": "I know you're hiding something. Tell me now.",
+                    "next": "hostile_response",
+                    "theory_req": "Trust No One"
+                },
+                {
+                    "id": "cooperative_approach",
+                    "text": "I'm here to help. We're on the same side.",
+                    "next": "cooperative_response",
+                    "theory_blocked": "Trust No One"
+                }
+            ]
+        },
+        {
+            "id": "friendly_response",
+            "speaker": "Guard Thompson",
+            "text": "Alright, I can share what I know. But keep it quiet.",
+            "choices": []
+        },
+        {
+            "id": "hostile_response",
+            "speaker": "Guard Thompson",
+            "text": "Get out of here before I call this in!",
+            "choices": []
+        },
+        {
+            "id": "cooperative_response",
+            "speaker": "Guard Thompson",
+            "text": "I appreciate that. Let me show you the incident log.",
+            "choices": []
+        }
+    ]
+}
