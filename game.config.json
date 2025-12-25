@@ -1,0 +1,176 @@
+{
+  "_comment": "Game Configuration - Centralized settings and thresholds",
+  "_version": "1.0",
+
+  "game": {
+    "title": "Tyger-Tyger-Liar-Liar",
+    "subtitle": "A Psychological Horror Investigation",
+    "starting_scene": "scene_arrival",
+    "debug_mode_default": false,
+    "autosave_interval_minutes": 15
+  },
+
+  "player": {
+    "starting_sanity": 100,
+    "starting_reality": 100,
+    "max_sanity": 100,
+    "max_reality": 100,
+    "sanity_breakdown_threshold": 0,
+    "reality_fracture_threshold": 0,
+    "sanity_recovery_per_hour": 2,
+    "reality_recovery_per_hour": 1
+  },
+
+  "population": {
+    "starting_population": 347,
+    "canonical_population": 347,
+    "thresholds": {
+      "343": "population_343_threshold",
+      "300": "population_under_300",
+      "200": "population_under_200",
+      "100": "population_under_100",
+      "50": "population_under_50",
+      "13": "population_baker_dozen",
+      "1": "population_last_one"
+    }
+  },
+
+  "attention": {
+    "starting_level": 0,
+    "max_level": 100,
+    "decay_rate_per_hour": 2.5,
+    "thresholds": {
+      "curious": 20,
+      "watching": 40,
+      "hunting": 60,
+      "omnipresent": 80,
+      "integrated": 100
+    }
+  },
+
+  "lens": {
+    "believer_threshold": 70,
+    "skeptic_threshold": 70,
+    "haunted_threshold_attention": 60,
+    "haunted_threshold_sanity": 40,
+    "inertia_hours": 3
+  },
+
+  "theories": {
+    "degradation_on_contradiction": 25,
+    "collapse_threshold": 0,
+    "sanity_damage_on_collapse": 10,
+    "internalization_default_hours": 6
+  },
+
+  "conditions": {
+    "environmental_check_interval_minutes": 60,
+    "cold_progression_hours": {
+      "mild_to_severe": 3,
+      "severe_to_critical": 1
+    }
+  },
+
+  "encounters": {
+    "default_max_turns": 20,
+    "partial_success_margin": 2,
+    "attention_gain_per_turn": 3
+  },
+
+  "dice": {
+    "difficulty_classes": {
+      "trivial": 5,
+      "easy": 7,
+      "standard": 9,
+      "hard": 11,
+      "extreme": 13,
+      "legendary": 15
+    },
+    "critical_success": 12,
+    "critical_failure": 2,
+    "partial_success_enabled": true
+  },
+
+  "time": {
+    "starting_datetime": "2024-01-08T14:00:00",
+    "polar_night_start_hour": 0,
+    "polar_night_end_hour": 24,
+    "day_length_hours": 0,
+    "actions_per_hour_default": 4
+  },
+
+  "npc": {
+    "trust_default": 50,
+    "fear_default": 0,
+    "trust_max": 100,
+    "trust_min": 0,
+    "fear_max": 100,
+    "fear_min": 0,
+    "trust_decay_per_hour": 0.5
+  },
+
+  "clues": {
+    "passive_perception_enabled": true,
+    "discovery_attention_cost": 3,
+    "analysis_time_minutes": 15,
+    "reliability_thresholds": {
+      "unreliable": 0.3,
+      "questionable": 0.5,
+      "reliable": 0.7,
+      "verified": 0.9
+    }
+  },
+
+  "fracture": {
+    "trigger_threshold": 50,
+    "cooldown_minutes": 30,
+    "max_level": 10,
+    "effects_enabled": true
+  },
+
+  "integration": {
+    "stages": [
+      {"level": 1, "name": "Noticed", "threshold": 20},
+      {"level": 2, "name": "Watched", "threshold": 40},
+      {"level": 3, "name": "Studied", "threshold": 60},
+      {"level": 4, "name": "Claimed", "threshold": 80},
+      {"level": 5, "name": "Integrated", "threshold": 100}
+    ],
+    "sanity_drain_per_stage": 0.5,
+    "reality_drain_starts_stage": 3
+  },
+
+  "endgame": {
+    "required_theories_for_ending": [
+      "the_missing_are_connected",
+      "347_resonance"
+    ],
+    "alternate_endings_enabled": true,
+    "point_of_no_return_population": 50
+  },
+
+  "ui": {
+    "text_speed_chars_per_second": 50,
+    "show_skill_modifiers": true,
+    "show_dice_rolls": true,
+    "show_attention_changes": true,
+    "enable_sound": false
+  },
+
+  "debug": {
+    "allow_teleport": true,
+    "allow_stat_modification": true,
+    "log_all_events": false,
+    "show_hidden_choices": false
+  },
+
+  "paths": {
+    "scenes_directory": "data/scenes",
+    "clues_directory": "data/clues",
+    "npcs_directory": "data/npcs",
+    "encounters_directory": "data/encounters",
+    "conditions_directory": "data/conditions",
+    "dialogues_directory": "data/dialogues",
+    "saves_directory": "saves"
+  }
+}
