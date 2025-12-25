@@ -1338,6 +1338,17 @@ class Game:
         if "synonyms" in scene:
             self.parser.set_scene_synonyms(scene["synonyms"])
 
+        # Week 24: Suggestion System (Debug Mode)
+        if self.debug_mode and random.random() < 0.15: # 15% chance to suggest
+            suggestions = []
+            if objects:
+                 # Pick a random object and a random verb
+                 obj_name = random.choice(list(objects.keys()))
+                 suggestions.append(f"Hint: You could 'examine {obj_name}'.")
+
+            if suggestions:
+                 self.print(f"{Colors.BLUE}{random.choice(suggestions)}{Colors.RESET}")
+
         self.print(f"\n[ACTION: {verb} {target or ''}]")
 
         # --- WEEK 24: PSYCHOLOGICAL COMMANDS ---
