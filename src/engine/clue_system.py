@@ -100,11 +100,20 @@ class ClueSystem:
     def _load_clue(self, data: dict) -> Clue:
         """Load a single clue from data."""
         links = []
-        for link in data.get("links_to_theories", []):
-            links.append(ClueTheoryLink(
-                theory_id=link["theory_id"],
-                relation=link.get("relation", "associated")
-            ))
+        # Handle string list for links_to_theories if simpler format used
+        raw_links = data.get("links_to_theories", [])
+        if raw_links and isinstance(raw_links[0], str):
+             for link_str in raw_links:
+                  links.append(ClueTheoryLink(
+                      theory_id=link_str,
+                      relation="associated" # Default
+                  ))
+        else:
+            for link in raw_links:
+                links.append(ClueTheoryLink(
+                    theory_id=link["theory_id"],
+                    relation=link.get("relation", "associated")
+                ))
 
         clue = Clue(
             id=data["id"],

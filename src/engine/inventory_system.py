@@ -57,7 +57,30 @@ class Item:
 
     @classmethod
     def from_dict(cls, data):
-        return cls(**data)
+        # We need to handle arguments safely as constructor might have changed
+        # or data might have extra keys.
+        # But for Item, it seems safer to map explicitly or use dict unpacking if keys match __init__.
+        # The stored keys in to_dict match __init__ mostly, but 'equipped' and 'temperature' are not in init.
+
+        # Filter keys that are valid for __init__
+        valid_keys = ["id", "name", "type", "description", "effects", "usable_in", "limited_use", "uses", "tags"]
+        init_data = {k: data.get(k) for k in valid_keys}
+
+        # Ensure description is present (it is required)
+        if "description" not in init_data or init_data["description"] is None:
+             init_data["description"] = "Restored item."
+
+        # Ensure type is present
+        if "type" not in init_data or init_data["type"] is None:
+             init_data["type"] = "unknown"
+
+        obj = cls(**init_data)
+
+        # Restore extra properties
+        obj.equipped = data.get("equipped", False)
+        obj.temperature = data.get("temperature", 70.0)
+
+        return obj
 
 
 class Evidence:

@@ -275,6 +275,12 @@ class SkillSystem:
         if s:
             s.base_level += amount
 
+    def set_skill_value(self, skill_name: str, value: int):
+        """Sets the base level of a skill directly. Used for debug/initialization."""
+        s = self.get_skill(skill_name)
+        if s:
+            s.base_level = value
+
     def roll_check(self, skill_name: str, difficulty: int, check_type: str = "white", check_id: str = None, manual_roll: int = None) -> dict:
         """
         Executes a 2d6 skill check.

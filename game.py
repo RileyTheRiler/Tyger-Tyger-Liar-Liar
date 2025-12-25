@@ -56,6 +56,8 @@ from engine.psychological_system import PsychologicalState
 from engine.fear_system import FearManager
 from engine.unreliable_narrator import HallucinationEngine
 from npc_system import NPCSystem
+from clue_system import ClueSystem
+from fracture_system import FractureSystem
 
 
 class Game:
@@ -72,7 +74,7 @@ class Game:
         self.player_state = {
             "sanity": 100.0,
             "reality": 100.0,
-            "archetype": Archetype.NEUTRAL,
+            "archetype": Archetype.NEUTRAL.value,
             "resonance_count": 347,
             "thermal_mode": False,
             "inventory": [],
@@ -144,7 +146,14 @@ class Game:
         # Initialize Population & Liar Engine
         self.population_system = PopulationSystem()
         self.liar_engine = LiarEngine(self.skill_system, self.inventory_system)
+
+        # Initialize Clue System
+        clues_dir = resource_path(os.path.join('data', 'clues'))
+        self.clue_system = ClueSystem(clues_dir if os.path.exists(clues_dir) else None, board=self.board)
         
+        # Initialize Fracture System
+        self.fracture_system = FractureSystem(game_state=self.get_game_state())
+
         # Initialize NPC System (Week 11)
         npcs_dir = resource_path(os.path.join('data', 'npcs'))
         self.npc_system = NPCSystem(npcs_dir if os.path.exists(npcs_dir) else None)
@@ -267,6 +276,13 @@ class Game:
         for event in triggered_events:
             self.apply_trigger_effects(event)
         
+        # Update Fracture System State
+        self.fracture_system.update_state(
+            attention=self.attention_system.attention_level,
+            day=self.population_system.current_day
+            # in_storm can be passed if weather system exists
+        )
+
         # Week 15: Psychological Systems
         # Fear Level decay
         fear_decay_result = self.psych_state.decay_fear(minutes)
@@ -677,6 +693,111 @@ class Game:
             
         return False
 
+    def process_debug_command(self, clean, raw):
+        """Handle debug-only commands."""
+        parts = clean.split()
+
+        # Debug: Force Save
+        if clean.startswith('forcesave'):
+            slot = parts[1] if len(parts) > 1 else "debug_save"
+            self.save_game(slot)
+            return "refresh"
+
+        # Debug: Export Save
+        if clean.startswith('export'):
+            if len(parts) >= 3:
+                slot = parts[1]
+                path = parts[2]
+                self.save_system.export_save(slot, path)
+            else:
+                self.print("Usage: export <slot_id> <output_path>")
+            return "refresh"
+
+        # Debug: Set Sanity/Reality
+        if clean.startswith('set '): # set <stat> <val>
+            if len(parts) >= 3:
+                stat = parts[1]
+                value = float(parts[2])
+                if stat in self.player_state:
+                    self.player_state[stat] = value
+                    self.print(f"[DEBUG] {stat} set to {value}")
+            return "refresh"
+
+        # Debug: Set Skill
+        if clean.startswith('setskill'):
+            if len(parts) >= 3:
+                skill = parts[1].title()
+                val = int(parts[2])
+                if skill in self.skill_system.skills:
+                    self.skill_system.set_skill_value(skill, val)
+                    self.print(f"[DEBUG] Set {skill} to {val}")
+                else:
+                    self.print(f"[DEBUG] Skill '{skill}' not found.")
+            else:
+                self.print("Usage: setskill <skill> <value>")
+            return "refresh"
+
+        # Debug: Give Item
+        if clean.startswith('give'):
+            if len(parts) >= 2:
+                item_id = parts[1]
+                item = Item(item_id, item_id, "tool", "debug_item")
+                self.inventory_system.add_item(item)
+                self.print(f"[DEBUG] Gave {item_id}")
+            return "refresh"
+
+        # Debug: Toggle Theory
+        if clean.startswith('toggletheory'):
+            if len(parts) >= 2:
+                tid = parts[1]
+                theory = self.board.get_theory(tid)
+                if theory:
+                    if theory.status == "locked":
+                         theory.status = "available"
+                         self.print(f"[DEBUG] Unlocked {tid}")
+                    elif theory.status == "available":
+                         theory.status = "active"
+                         self.print(f"[DEBUG] Activated {tid}")
+                    else:
+                         theory.status = "locked"
+                         self.print(f"[DEBUG] Locked {tid}")
+                else:
+                    self.print(f"[DEBUG] Theory '{tid}' not found")
+            return "refresh"
+
+        # Debug: Trigger Event
+        if clean.startswith('trigger'):
+            if len(parts) >= 2:
+                evt = parts[1]
+                # Simulate trigger
+                self.print(f"[DEBUG] Triggering {evt}")
+                self.player_state["event_flags"].add(evt)
+                # Check actual trigger system?
+                # For now just add flag
+            return "refresh"
+
+        # Debug: Add XP
+        if clean.startswith('addxp'):
+            if len(parts) >= 2:
+                xp = int(parts[1])
+                self.skill_system.add_xp(xp)
+                self.print(f"[DEBUG] Added {xp} XP")
+            return "refresh"
+
+        # Debug: Teleport to scene
+        if clean.startswith('goto'):
+            if len(parts) >= 2:
+                scene_id = parts[1]
+                new_scene = self.scene_manager.load_scene(scene_id)
+                if new_scene:
+                    self.print(f"[DEBUG] Teleported to {scene_id}")
+                    self.log_event("scene_entry", scene_id=scene_id, scene_name=new_scene.get("name", "Unknown"))
+                else:
+                    self.print(f"[DEBUG] Scene '{scene_id}' not found")
+            return "refresh"
+
+        return None
+
     def display_state(self):
         if self.in_dialogue:
             self.display_dialogue()
@@ -839,8 +960,13 @@ class Game:
         archetype = archetype_map.get(current_lens, Archetype.NEUTRAL)
         
         # Override if manually set in player_state
-        if self.player_state.get("archetype", Archetype.NEUTRAL) != Archetype.NEUTRAL:
-             archetype = self.player_state["archetype"]
+        if self.player_state.get("archetype", Archetype.NEUTRAL.value) != Archetype.NEUTRAL.value:
+             # Convert string back to Enum if needed, or assume Composer handles string
+             # TextComposer seems to expect Enum? Let's check TextComposer
+             try:
+                 archetype = Archetype(self.player_state["archetype"])
+             except ValueError:
+                 archetype = Archetype.NEUTRAL
 
         # 2. Prepare Data for Composer (Adapter Layer)
         text_obj = scene.get("text", {"base": "..."})
@@ -892,7 +1018,10 @@ class Game:
                 self.print(f" {s2['skill']}: {s2['text']}")
                 self.print(f" Choose a perspective: {Colors.CYAN}'side {s1['skill'].lower()}'{Colors.RESET} or {Colors.CYAN}'side {s2['skill'].lower()}'{Colors.RESET}")
             else:
-                self.print(f" [{Colors.YELLOW}{inter['skill']}{Colors.RESET}] {inter['text']}")
+                # Handle dictionary format (SkillSystem returns dicts with 'skill' key)
+                skill_name = inter.get('skill', 'UNKNOWN')
+                text_content = inter.get('text', '')
+                self.print(f" [{Colors.YELLOW}{skill_name}{Colors.RESET}] {text_content}")
         
         if "ambient_effects" in scene:
             amb = scene["ambient_effects"]
@@ -1133,57 +1262,24 @@ class Game:
             self.print(f"[DEBUG MODE: {'ON' if self.debug_mode else 'OFF'}]")
             return "refresh"
         
+        if clean.startswith("record ") and self.debug_mode:
+            fname = clean.split()[1]
+            self.start_recording(fname)
+            return "refresh"
+
+        if clean == "stoprecord" and self.debug_mode:
+             self.stop_recording()
+             return "refresh"
+
+        if clean.startswith("playback ") and self.debug_mode:
+             fname = clean.split()[1]
+             self.start_playback(fname)
+             return "refresh"
+
         if self.debug_mode:
-            # Debug: Force Save
-            if clean.startswith('forcesave'):
-                parts = clean.split()
-                slot = parts[1] if len(parts) > 1 else "debug_save"
-                self.save_game(slot)
-                return "refresh"
-            
-            # Debug: Export Save
-            if clean.startswith('export'):
-                parts = clean.split()
-                if len(parts) >= 3:
-                    slot = parts[1]
-                    path = parts[2]
-                    self.save_system.export_save(slot, path)
-                else:
-                    self.print("Usage: export <slot_id> <output_path>")
-                return "refresh"
-            
-            # Debug: Set Sanity/Reality
-            if clean.startswith('set'):
-                parts = clean.split()
-                if len(parts) >= 3:
-                    stat = parts[1]
-                    value = float(parts[2])
-                    if stat in self.player_state:
-                        self.player_state[stat] = value
-                        self.print(f"[DEBUG] {stat} set to {value}")
-                return "refresh"
-            
-            # Debug: Add XP
-            if clean.startswith('addxp'):
-                parts = clean.split()
-                if len(parts) >= 2:
-                    xp = int(parts[1])
-                    self.skill_system.add_xp(xp)
-                    self.print(f"[DEBUG] Added {xp} XP")
-                return "refresh"
-            
-            # Debug: Teleport to scene
-            if clean.startswith('goto'):
-                parts = clean.split()
-                if len(parts) >= 2:
-                    scene_id = parts[1]
-                    new_scene = self.scene_manager.load_scene(scene_id)
-                    if new_scene:
-                        self.print(f"[DEBUG] Teleported to {scene_id}")
-                        self.log_event("scene_entry", scene_id=scene_id, scene_name=new_scene.get("name", "Unknown"))
-                    else:
-                        self.print(f"[DEBUG] Scene '{scene_id}' not found")
-                return "refresh"
+            debug_result = self.process_debug_command(clean, raw)
+            if debug_result:
+                return debug_result
         
         # Theory Resolution Commands
         if clean.startswith('prove '):
@@ -1634,6 +1730,15 @@ class Game:
     def save_game(self, slot_id: str, auto=False):
         """Save the current game state."""
         try:
+            # Prepare player_state for serialization (convert sets to lists)
+            serializable_player_state = self.player_state.copy()
+            if "event_flags" in serializable_player_state:
+                serializable_player_state["event_flags"] = list(serializable_player_state["event_flags"])
+            if "discovered_locations" in serializable_player_state:
+                serializable_player_state["discovered_locations"] = list(serializable_player_state["discovered_locations"])
+            if "fired_triggers" in serializable_player_state:
+                serializable_player_state["fired_triggers"] = list(serializable_player_state["fired_triggers"])
+
             # Gather all state data
             state_data = {
                 "scene": self.scene_manager.current_scene_id if self.scene_manager.current_scene_id else "bedroom",
@@ -1641,7 +1746,7 @@ class Game:
                 "summary": self._generate_save_summary(),
                 "character_state": {
                     "skill_system": self.skill_system.to_dict(),
-                    "player_state": self.player_state.copy(),
+                    "player_state": serializable_player_state,
                 },
                 "board_state": self.board.to_dict(),
                 "inventory": self.inventory_system.to_dict(),
@@ -1650,7 +1755,12 @@ class Game:
                 "scene_state": {
                     "current_scene_id": self.scene_manager.current_scene_id,
                     "visited_scenes": list(self.scene_manager.visited_scenes) if hasattr(self.scene_manager, 'visited_scenes') else []
-                }
+                },
+                # Week 30: System Integration
+                "npc_system": self.npc_system.to_dict(),
+                "population_system": self.population_system.to_dict(),
+                "clue_system": self.clue_system.to_dict(),
+                "fracture_system": self.fracture_system.to_dict(),
             }
             
             success = self.save_system.save_game(slot_id, state_data)
@@ -1685,6 +1795,13 @@ class Game:
             # Restore player state
             if "character_state" in save_data and "player_state" in save_data["character_state"]:
                 self.player_state = save_data["character_state"]["player_state"]
+                # Convert lists back to sets
+                if "event_flags" in self.player_state:
+                    self.player_state["event_flags"] = set(self.player_state["event_flags"])
+                if "discovered_locations" in self.player_state:
+                    self.player_state["discovered_locations"] = set(self.player_state["discovered_locations"])
+                if "fired_triggers" in self.player_state:
+                    self.player_state["fired_triggers"] = set(self.player_state["fired_triggers"])
             
             # Restore board
             if "board_state" in save_data:
@@ -1707,6 +1824,16 @@ class Game:
             # Restore scene
             if "scene" in save_data:
                 self.scene_manager.load_scene(save_data["scene"])
+
+            # Week 30: Restore Systems
+            if "npc_system" in save_data:
+                self.npc_system.restore_states(save_data["npc_system"])
+            if "population_system" in save_data:
+                self.population_system.restore_state(save_data["population_system"])
+            if "clue_system" in save_data:
+                self.clue_system.restore_state(save_data["clue_system"])
+            if "fracture_system" in save_data:
+                self.fracture_system.restore_state(save_data["fracture_system"])
             
             print(f"\n✓ Game loaded successfully from '{slot_id}'")
             print(f"   Location: {save_data.get('scene', 'Unknown')}")
@@ -2055,10 +2182,69 @@ class Game:
                     self.player_state["thoughts"].append(value)
                     print(f"[THOUGHT UNLOCKED: {value}]")
 
-if __name__ == "__main__":
-    game = Game()
-    start_id = sys.argv[1] if len(sys.argv) > 1 else "bedroom"
-    game.run(start_id)
+    def run(self, start_scene_id="bedroom"):
+        self.start_game(start_scene_id)
+        while True:
+            try:
+                if self.replay_mode and self.replay_queue:
+                    user_input = self.replay_queue.pop(0)
+                    print(f"> {user_input}")
+                    time.sleep(0.1) # Simulate delay
+                    if not self.replay_queue:
+                         self.replay_mode = False
+                         print("[PLAYBACK COMPLETE]")
+                else:
+                    user_input = input("> ")
+
+                if self.recording_mode and self.record_file:
+                    self.record_file.write(user_input + "\n")
+                    self.record_file.flush()
+
+                result = self.step(user_input)
+                if result == "QUIT":
+                    break
+            except EOFError:
+                break
+            except KeyboardInterrupt:
+                print("\nQuitting...")
+                break
+
+    def start_recording(self, filename):
+        import os
+        log_dir = resource_path("logs")
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
+        path = os.path.join(log_dir, filename)
+        try:
+            self.record_file = open(path, "w")
+            self.recording_mode = True
+            print(f"[RECORDING STARTED: {path}]")
+        except Exception as e:
+            print(f"[ERROR STARTING RECORDING: {e}]")
+
+    def stop_recording(self):
+        if self.record_file:
+            self.record_file.close()
+            self.record_file = None
+        self.recording_mode = False
+        print("[RECORDING STOPPED]")
+
+    def start_playback(self, filename):
+        import os
+        log_dir = resource_path("logs")
+        path = os.path.join(log_dir, filename)
+        if not os.path.exists(path):
+             print(f"[ERROR: File not found {path}]")
+             return
+
+        try:
+            with open(path, "r") as f:
+                self.replay_queue = [line.strip() for line in f.readlines()]
+            self.replay_mode = True
+            print(f"[PLAYBACK STARTED: {len(self.replay_queue)} commands]")
+        except Exception as e:
+            print(f"[ERROR READING LOG: {e}]")
 
     # Week 14: Theory Discovery
     def check_theory_unlocks(self):
@@ -2147,3 +2333,9 @@ if __name__ == "__main__":
         
         theory.status = "available"
         theory.internalization_progress_minutes = 0
+
+
+if __name__ == '__main__':
+    game = Game()
+    start_id = sys.argv[1] if len(sys.argv) > 1 else 'bedroom'
+    game.run(start_id)

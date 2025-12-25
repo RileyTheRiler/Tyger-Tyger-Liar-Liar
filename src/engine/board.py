@@ -338,11 +338,38 @@ class Board:
                     "color": "#ff0000" if theory.status == "closed" else "#ffffff" # Red string styling
                 })
                 
-        return {"nodes": nodes, "links": links}
+    def to_dict(self) -> dict:
+        """Serialize board state for saving."""
+        theories_data = {}
+        for tid, theory in self.theories.items():
+            theories_data[tid] = {
+                "status": theory.status,
+                "internalization_progress_minutes": theory.internalization_progress_minutes,
+                "health": theory.health,
+                "proven": theory.proven,
+                "evidence_count": theory.evidence_count,
+                "contradictions": theory.contradictions,
+                "linked_evidence": theory.linked_evidence
+            }
+        return {"theories": theories_data}
 
+    @staticmethod
+    def from_dict(data: dict) -> 'Board':
+        """Deserialize board state."""
+        board = Board()
+        if "theories" in data:
+            for tid, t_data in data["theories"].items():
+                if tid in board.theories:
+                    theory = board.theories[tid]
+                    theory.status = t_data.get("status", "locked")
+                    theory.internalization_progress_minutes = t_data.get("internalization_progress_minutes", 0)
+                    theory.health = t_data.get("health", 100.0)
+                    theory.proven = t_data.get("proven")
+                    theory.evidence_count = t_data.get("evidence_count", 0)
+                    theory.contradictions = t_data.get("contradictions", 0)
+                    theory.linked_evidence = t_data.get("linked_evidence", [])
+        return board
 
-    # Week 14: New Methods
-    
     def can_discover_theory(self, theory_id: str, game_state: dict) -> bool:
         """Check if theory requirements are met for discovery."""
         theory = self.get_theory(theory_id)

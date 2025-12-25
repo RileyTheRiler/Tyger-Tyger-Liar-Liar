@@ -87,7 +87,7 @@ class SaveSystem:
             save_data = {
                 "id": slot_id,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "version": "1.0",  # For future compatibility
+                "version": "1.1",  # Updated for Week 30 Integration
                 **state_data
             }
             
