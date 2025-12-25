@@ -87,7 +87,6 @@ class LensSystem:
 
         # Logging
         log_msg = f"[LENS RESOLVER] Archetype: {archetype}, Stress: {stress_level} -> Selected: '{selected_variant[:30]}...'"
-        print(log_msg) # Printing to stdout as requested for visible debugging
         logger.debug(log_msg)
 
         return selected_variant
