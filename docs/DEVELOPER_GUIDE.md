@@ -167,6 +167,7 @@ Evidence is managed by the `InventoryManager` (`src/engine/inventory_system.py`)
     "description": "Sharp. Dangerous.",
     "type": "physical",
     "location": "porch",
+    "case_id": "murder_in_the_woods",
     "related_skills": ["Forensics"],
     "tags": ["blood", "violence"],
     "links_to_theories": [
@@ -176,6 +177,6 @@ Evidence is managed by the `InventoryManager` (`src/engine/inventory_system.py`)
 ```
 
 ### Linking to Cases/Theories
-*   **Tags**: Use generic tags (`blood`, `occult`) to group evidence.
-*   **Theory Links**: `links_to_theories` explicitly connects evidence to a theory.
-*   **Board Interaction**: When evidence is collected, `Board.add_evidence_to_theory` uses these links to update theory progress (Evidence Count vs. Contradictions).
+*   **Case ID**: The `case_id` field connects this piece of evidence to a broader investigative case (e.g., `"general"`, `"murder_in_the_woods"`).
+*   **Theory Links**: `links_to_theories` explicitly connects evidence to specific board theories. When evidence is collected, `Board.add_evidence_to_theory` uses these links to update theory progress (Evidence Count vs. Contradictions).
+*   **Tags**: Use generic tags (`blood`, `occult`) to group evidence for retrieval or passive checks.
