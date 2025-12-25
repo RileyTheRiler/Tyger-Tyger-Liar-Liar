@@ -1,0 +1,71 @@
+{
+  "id": "poc_radio",
+  "name": "The Weeping Radio",
+  "text": {
+    "base": "You stand before the desk in the center of the study, a room that feels forgotten by time. The air is thick with the scent of stale paper, dry rot, and the lingering, acrid smell of ozone. Bookshelves line the walls, filled with moldering volumes that have surrendered their knowledge to the damp. In the center of the room, dominating the space, sits the desk—a heavy mahogany piece scarred by years of use and abuse. On it sits the radio. It is a bulky 1970s model, wood-paneled, with a large, yellowing frequency dial that stares out like a cyclopean eye. A thin, grey layer of dust covers the entire surface of the desk, undisturbed for years, except for one specific spot: the volume knob. It is clean, shiny, free of dust, as if it was turned only moments ago. The silence in the room is heavy, pressing against your ears like deep water. Outside, the wind howls, rattling the windowpane in its frame, a stark contrast to the unnatural stillness within. The radio is unplugged, its frayed cord trailing uselessly across the desk and ending in a severed stump, like a dead snake.",
+    "lens": {
+      "neutral": "Compelled by curiosity, you reach out and turn the knob. The click is loud, echoing in the quiet room like a gunshot. Surprisingly, impossibly, static fills the air. It starts as a low hum and builds to a white noise hiss that shouldn't be possible without a power source. You adjust the dial, the needle trembling as it sweeps across the numbers, searching for a signal through the inexplicable interference.",
+      "believer": "The air thickens as you approach, the temperature dropping sharply with every step until your breath mists in front of you. You feel it before you touch it—a cold spot radiating from the device, a void in the room's energy that sucks the warmth from your skin. The hair on your arms stands up, reacting to the static charge in the air. When you turn the knob, the static isn't random. It's whispering. Hundreds of voices, overlapping, fighting to break through the veil between worlds. They are urgent, desperate, pleading. The 'static' rises and falls with a cadence that suggests speech, a language of the dead trying to bridge the gap. You are not alone in this room; the radio is a gateway, and you have just knocked on the door.",
+      "skeptic": "It's a piece of ancient technology, likely retaining some residual charge in its capacitors—a common phenomenon in old electronics. The wiring is probably frayed, creating a simple circuit loop that discharges stored energy. When you turn the knob, it crackles with expected electrical interference—just bad reception and loose connections interacting with the atmospheric static from the storm outside. The 'voice' people claim to hear is pareidolia, the mind's evolutionary tendency to seek patterns in random noise to make sense of chaos. It's a broken appliance, nothing more. The cold is just a draft from the poorly sealed window, and the clean knob is evidence of a recent intruder, not a ghost.",
+      "haunted": "Your hand trembles uncontrollably as you reach for the knob. You can't breathe. You remember this radio. It's the same model that sat on the kitchen counter that night, the night everything changed. It was playing that song—the one that was cut short by the screech of tires and the crunch of metal. The wood grain pattern seems to shift, forming the shape of a screaming face, *her* face. When you turn it on, the static doesn't hiss; it screams. It's the sound of metal tearing and glass shattering, amplified a thousand times. It's not white noise; it's the audio recording of your worst memory playing on an endless loop. The guilt washes over you, drowning out the room, dragging you back to the asphalt and the rain."
+    },
+    "inserts": [
+      {
+        "id": "perception_heat",
+        "condition": {"skill_gte": {"Perception": 3}},
+        "text": "The casing is warm to the touch, pulsating with a faint, rhythmic heat that mimics a slow, dying heartbeat. It's unnerving for an unplugged device, defying the laws of thermodynamics.",
+        "insert_at": "AFTER_BASE"
+      },
+      {
+        "id": "forensics_blood",
+        "condition": {"skill_gte": {"Forensics": 4}},
+        "text": "A close inspection reveals a reddish-brown stain seeped into the speaker grille. It's not rust. It's biological. Old blood, splattered at high velocity, suggesting it was near a violent impact. The pattern indicates the spray came from below, as if someone coughed into it while dying on the floor. DNA analysis would likely match a victim from a decade ago.",
+        "insert_at": "AFTER_LENS"
+      },
+      {
+        "id": "logic_wiring",
+        "condition": {"skill_gte": {"Logic": 4}},
+        "text": "You trace the power cord with a critical eye. It's severed at the plug, the copper wires exposed and oxidized green. There is no physical way this device should be receiving power, let alone emitting a signal strong enough to fill the room. The laws of physics are being violated here, or there is a hidden power source—perhaps an inductive loop hidden under the desk surface—that you haven't found yet.",
+        "insert_at": "AFTER_LENS"
+      },
+      {
+        "id": "sensitivity_aura",
+        "condition": {"skill_gte": {"Paranormal Sensitivity": 3}},
+        "text": "Closing your eyes, you sense a tether connecting the radio to something else in the house. A dark line of energy trails from the antenna, leading up through the ceiling, towards the attic. Whatever is speaking through this box isn't inside it—it's upstairs. And it knows you are here.",
+        "insert_at": "AFTER_LENS"
+      },
+      {
+        "id": "instinct_danger",
+        "condition": {"skill_gte": {"Instinct": 2}},
+        "text": "Every fiber of your being is telling you to step away. The hairs on the back of your neck prickle. This isn't just a radio; it's a trap. A beacon. And by turning it on, you've just announced your presence to whatever is listening in the dark.",
+        "insert_at": "BEFORE_CHOICES"
+      },
+       {
+        "id": "haunted_flashback",
+        "condition": {"flag_set": "trigger_fracture"},
+        "text": "The room flickers. For a second, you aren't in the study. You're in the hospital waiting room. The fluorescent lights hum. The doctor is walking towards you, shaking his head. Then you blink, and you are back. But the smell of antiseptic lingers.",
+        "insert_at": "AFTER_PARAGRAPH:1"
+      },
+      {
+        "id": "skeptic_observation",
+        "condition": {"skill_gte": {"Skepticism": 5}},
+        "text": "You notice footprints in the dust on the floor. Someone has been here recently. They walked straight to the desk and left. This whole setup—the radio, the 'atmosphere'—it's staged. Someone is trying to scare you away.",
+        "insert_at": "AFTER_BASE"
+      }
+    ]
+  },
+  "choices": [
+    {
+      "text": "Turn it off immediately.",
+      "target_scene": "poc_radio_off"
+    },
+    {
+      "text": "Tune the frequency, trying to clarify the signal.",
+      "target_scene": "poc_radio_tune"
+    },
+    {
+      "text": "Smash it.",
+      "target_scene": "poc_radio_smash"
+    }
+  ]
+}

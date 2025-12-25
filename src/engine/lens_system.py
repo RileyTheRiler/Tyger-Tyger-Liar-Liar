@@ -4,22 +4,34 @@ Filters narrative text based on the player's dominant worldview.
 """
 
 from typing import Optional, Dict
+import logging
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 class LensSystem:
-    def __init__(self, skill_system, board):
+    def __init__(self, skill_system, board, game_state=None):
         self.skill_system = skill_system
         self.board = board
+        self.game_state = game_state
         self.locked = False # Permanent worldview commitment (endgame)
-        self.current_lens = "neutral" # neutral, believer, skeptic
+        self.current_lens = "neutral" # neutral, believer, skeptic, haunted
         
     def calculate_lens(self) -> str:
         """
         Determines the current lens based on skill levels and active theories.
         Believer Skills: Paranormal Sensitivity, Instinct
         Skeptic Skills: Logic, Skepticism
+        Haunted Condition: Sanity < 40 or specific Trauma flags
         """
         if self.locked:
             return self.current_lens
+
+        # 0. Check for Haunted (Overrides others if sanity is critical)
+        # Assuming game_state is available, otherwise relying on external set
+        if self.game_state and self.game_state.sanity < 40:
+            self.current_lens = "haunted"
+            return "haunted"
             
         # 1. Get base scores from skills
         # We use effective levels (including theory bonuses/penalties)
@@ -54,6 +66,32 @@ class LensSystem:
             
         return self.current_lens
 
+    def resolve_text(self, archetype: str, stress_level: int, variants: Dict[str, str]) -> str:
+        """
+        Resolver function as requested.
+        Inputs: archetype + stress level
+        Output: selected text variant
+
+        Also logs which text block fired.
+        """
+        selected_variant = None
+
+        # Priority: Exact archetype match
+        if archetype in variants:
+            selected_variant = variants[archetype]
+        elif "neutral" in variants:
+             selected_variant = variants["neutral"]
+        else:
+            # Fallback to the first available or empty string
+            selected_variant = next(iter(variants.values())) if variants else ""
+
+        # Logging
+        log_msg = f"[LENS RESOLVER] Archetype: {archetype}, Stress: {stress_level} -> Selected: '{selected_variant[:30]}...'"
+        print(log_msg) # Printing to stdout as requested for visible debugging
+        logger.debug(log_msg)
+
+        return selected_variant
+
     def filter_text(self, base_text: str, variants: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the appropriate text variant based on the current lens.
@@ -63,13 +101,13 @@ class LensSystem:
         
         if not variants:
             return base_text
+
+        # Calculate stress level (proxy via game_state if available, else 0)
+        stress = 0
+        if self.game_state:
+            stress = 100 - self.game_state.sanity
             
-        if lens == "believer" and "believer" in variants:
-            return variants["believer"]
-        elif lens == "skeptic" and "skeptic" in variants:
-            return variants["skeptic"]
-            
-        return base_text
+        return self.resolve_text(lens, stress, variants)
 
     def lock_lens(self, forced_lens: Optional[str] = None):
         """Permanently locks the current lens, typically for major story events."""
