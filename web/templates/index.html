@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Terminal</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #d0d0d0;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        #output-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            border: 1px solid #333;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #000;
+            white-space: pre-wrap; /* Preserve formatting */
+        }
+        #input-container {
+            display: flex;
+        }
+        #command-input {
+            flex-grow: 1;
+            background-color: #000;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 10px;
+            font-family: inherit;
+            font-size: 16px;
+        }
+        button {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 0 20px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #444;
+        }
+        .line {
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div id="output-container"></div>
+    <div id="input-container">
+        <input type="text" id="command-input" placeholder="Type command..." autofocus autocomplete="off">
+        <button id="send-btn">Send</button>
+    </div>
+
+    <script>
+        const outputDiv = document.getElementById('output-container');
+        const inputField = document.getElementById('command-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // Setup EventSource for SSE
+        const evtSource = new EventSource("/stream");
+
+        evtSource.onmessage = function(e) {
+            const line = document.createElement('div');
+            line.className = 'line';
+            line.textContent = e.data; // Using textContent escapes HTML automatically, simpler security
+            outputDiv.appendChild(line);
+            outputDiv.scrollTop = outputDiv.scrollHeight; // Auto scroll
+        };
+
+        evtSource.onerror = function(e) {
+            console.error("EventSource failed:", e);
+        };
+
+        function sendCommand() {
+            const val = inputField.value;
+            // Optimistic echo (optional, but game might echo it anyway)
+            // const echo = document.createElement('div');
+            // echo.textContent = '> ' + val;
+            // echo.style.color = '#ffff00';
+            // outputDiv.appendChild(echo);
+
+            fetch('/input', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({input: val})
+            });
+            inputField.value = '';
+        }
+
+        sendBtn.addEventListener('click', sendCommand);
+        inputField.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendCommand();
+            }
+        });
+    </script>
+</body>
+</html>
