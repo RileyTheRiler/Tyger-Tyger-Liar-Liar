@@ -1,7 +1,15 @@
 import random
 import json
 import os
+import copy
 from typing import Dict, List, Optional, Any
+from enum import Enum
+
+class ActionType(Enum):
+    STANDARD = "standard"
+    TACTICAL = "tactical"
+    ENVIRONMENTAL = "environmental"
+    MENTAL = "mental"
 
 class CombatManager:
     """
@@ -9,7 +17,9 @@ class CombatManager:
     
     Attributes:
         skill_system: Reference to the mechanics.SkillSystem instance.
-        player_state: Reference to the player's state dictionary (sanity, injuries, etc).
+        player_state: Reference to the player's state dictionary.
+        injury_system: Reference to InjurySystem.
+        trauma_system: Reference to TraumaSystem.
         enemies: List of dictionaries representing active threats.
         turn_order: List of participants sorted by initiative.
         active: Boolean indicating if a combat/chase sequence is currently running.
@@ -29,8 +39,10 @@ class CombatManager:
         self.round_counter = 0
         self.log: List[str] = []
         self.encounter_templates: Dict[str, dict] = {}
+        self.last_action_result: Optional[Dict] = None  # For skill chaining
+        self.environment_features: Dict[str, Any] = {} # Lights, cover, hazards
         
-        # Initialize injuries if not present
+        # Initialize injuries if not present (legacy support)
         if "injuries" not in self.player_state:
             self.player_state["injuries"] = []
 
@@ -47,10 +59,11 @@ class CombatManager:
     def log_message(self, message: str):
         self.log.append(message)
         # Keep log size manageable
-        if len(self.log) > 20:
+        if len(self.log) > 50:
             self.log.pop(0)
 
-    def start_encounter(self, encounter_id: str = None, enemies: List[Dict] = None, encounter_type: str = "combat"):
+    def start_encounter(self, encounter_id: str = None, enemies: List[Dict] = None,
+                       encounter_type: str = "combat", environment: Dict = None):
         """
         Starts a new encounter.
         
@@ -58,19 +71,27 @@ class CombatManager:
             encounter_id: Template ID to load from encounter_templates
             enemies: List of enemy dicts (if not using template)
             encounter_type: "combat" or "chase"
+            environment: Dict defining environment features (e.g. {"lighting": "dark", "cover": ["table"]})
         """
         if encounter_id and encounter_id in self.encounter_templates:
             template = self.encounter_templates[encounter_id]
-            self.enemies = [template.copy()]
+            # Deep copy to avoid modifying template
+            self.enemies = [copy.deepcopy(template)] if isinstance(template, dict) else copy.deepcopy(template)
         elif enemies:
-            self.enemies = enemies
+            self.enemies = copy.deepcopy(enemies)
         else:
             raise ValueError("Must provide either encounter_id or enemies list")
         
         self.active = True
         self.round_counter = 1
         self.log = []
+        self.environment_features = environment or {}
+        self.last_action_result = None
+
         self.log_message(f"--- {encounter_type.upper()} STARTED ---")
+        if self.environment_features:
+            desc = ", ".join(f"{k}: {v}" for k, v in self.environment_features.items())
+            self.log_message(f"Environment: {desc}")
         
         # Roll Initiative
         self._roll_initiative()
@@ -78,9 +99,8 @@ class CombatManager:
     def _roll_initiative(self):
         self.turn_order = []
         
-        # Player Initiative
-        # Using Reflexes for initiative
-        reflex_check = self.skill_system.roll_check("Reflexes", 0) # DC 0 just to get total
+        # Player Initiative - Reflexes check
+        reflex_check = self.skill_system.roll_check("Reflexes", 0)
         player_init = reflex_check["total"]
         self.turn_order.append({
             "name": "Player",
@@ -90,10 +110,13 @@ class CombatManager:
         
         # Enemy Initiative
         for enemy in self.enemies:
-            # Simple 2d6 + 'reflexes' (or 0 if missing)
             roll = random.randint(1, 6) + random.randint(1, 6)
             bonus = enemy.get("reflexes", 0)
             total = roll + bonus
+            # Enemies with 'ambusher' trait get bonus
+            if "ambusher" in enemy.get("traits", []):
+                total += 2
+
             self.turn_order.append({
                 "name": enemy.get("name", "Unknown Threat"),
                 "is_player": False,
@@ -101,10 +124,8 @@ class CombatManager:
                 "data": enemy
             })
             
-        # Sort descending by initiative
         self.turn_order.sort(key=lambda x: x["initiative"], reverse=True)
         
-        # Log order
         self.log_message("Initiative Order:")
         for participant in self.turn_order:
             self.log_message(f"  {participant['name']} ({participant['initiative']})")
@@ -115,53 +136,107 @@ class CombatManager:
         self.turn_order = []
         self.log_message("--- ENCOUNTER ENDED ---")
 
-    def get_player_turn_data(self):
-        """Returns details if it's currently the player's turn to present UI choices."""
-        if not self.active:
-            return None
-            
-        # For simplicity in this text iteration, we assume strict turn order just rotates.
-        # But to integrate with game loop, we just need to know if we are waiting for player input.
-        # Let's assume the game loop calls `process_round` which iterates until player input is needed or round ends.
-        pass
-
     def perform_action(self, action_type: str, target_name: str = None, description: str = "") -> Dict[str, Any]:
         """
         Executes a player action.
-        
-        Args:
-            action_type: "attack", "dodge", "talk", "flee"
-            target_name: Name of the enemy targeted (if applicable)
-            description: Additional context (skill name, dialogue, etc.)
-        
-        Returns:
-            Result dictionary with messages and effects
+        Dispatches to specific handlers based on action category.
         """
-        result = {"action": action_type, "messages": [], "effects": {}}
+        if not self.active:
+            return {"success": False, "messages": ["No active encounter."]}
+
+        # Normalize action string
+        action_clean = action_type.lower()
         
-        if action_type == "attack" or action_type == "fight":
-            # Determine weapon skill from equipped items
+        # Detect Action Category
+        category = ActionType.STANDARD
+        if action_clean in ["feint", "disarm", "shove", "flank", "trip"]:
+            category = ActionType.TACTICAL
+        elif action_clean in ["intimidate", "threaten", "plead", "distract", "reason", "talk"]:
+            category = ActionType.MENTAL
+        elif action_clean in ["interact", "use", "ignite", "collapse"]:
+            category = ActionType.ENVIRONMENTAL
+
+        # Dispatch
+        if category == ActionType.STANDARD:
+            result = self._handle_standard_action(action_clean, target_name)
+        elif category == ActionType.TACTICAL:
+            result = self._handle_tactical_action(action_clean, target_name)
+        elif category == ActionType.MENTAL:
+            result = self._handle_mental_action(action_clean, target_name)
+        elif category == ActionType.ENVIRONMENTAL:
+            result = self._handle_environmental_action(action_clean, target_name, description)
+        else:
+            result = {"success": False, "messages": [f"Unknown action: {action_type}"]}
+
+        # Update Skill Chaining State
+        if result.get("success"):
+            self.last_action_result = {
+                "action": action_clean,
+                "skill": result.get("skill_used"),
+                "margin": result.get("margin", 0)
+            }
+        else:
+            self.last_action_result = None
+
+        # Check Win Condition
+        if not self.enemies and self.active:
+            self.log_message("All enemies defeated.")
+            result["messages"].append("Victory!")
+            result["effects"] = result.get("effects", {})
+            result["effects"]["victory"] = True
+            self.end_encounter()
+            return result
+        
+        # Process Enemy Turns (if player didn't escape/win)
+        if self.active and not result.get("effects", {}).get("escaped") and not result.get("effects", {}).get("de_escalated"):
+            enemy_results = self._process_enemy_turns()
+            result["messages"].extend(enemy_results)
+
+        return result
+
+    def _handle_standard_action(self, action: str, target_name: str) -> Dict[str, Any]:
+        result = {"action": action, "messages": [], "effects": {}, "success": False}
+        
+        target = self._get_enemy_by_name(target_name)
+        if (action == "attack" or action == "fight") and not target:
+             result["messages"].append("Target not found.")
+             return result
+
+        if action in ["attack", "fight"]:
             skill = self._get_combat_skill()
             
-            target = self._get_enemy_by_name(target_name)
-            if not target:
-                result["messages"].append("Target not found.")
-                return result
+            # Chain Bonus?
+            bonus = 0
+            if self.last_action_result and self.last_action_result["action"] in ["feint", "distract"]:
+                if self.last_action_result["margin"] >= 2:
+                    bonus = 2
+                    result["messages"].append("Capitalizing on their hesitation!")
             
-            # Roll to hit
             defense = target.get("reflexes", 0)
             dc = 8 + defense
             
-            outcome = self.combat_check(skill, dc, target["name"], "attack")
+            outcome = self.combat_check(skill, dc, target["name"], "attack", bonus=bonus)
             
             if outcome["success"]:
+                result["success"] = True
+                result["skill_used"] = skill
+                result["margin"] = outcome["difference"]
+
                 dmg = 1
+                # Check weapon damage
+                weapon_dmg = 0
+                if self.inventory_system:
+                    for item in self.inventory_system.carried_items:
+                        if item.equipped and item.type == "weapon":
+                             weapon_dmg = item.effects.get("damage_bonus", 0)
+
+                total_dmg = dmg + weapon_dmg
                 if outcome["difference"] >= 4:
-                    dmg = 2
+                    total_dmg += 1
                     self.log_message("CRITICAL HIT!")
                 
-                target["hp"] = target.get("hp", 3) - dmg
-                msg = f"Hit {target['name']} for {dmg} damage!"
+                target["hp"] = target.get("hp", 3) - total_dmg
+                msg = f"Hit {target['name']} for {total_dmg} damage!"
                 self.log_message(msg)
                 result["messages"].append(msg)
                 
@@ -174,13 +249,12 @@ class CombatManager:
                 msg = f"Missed {target['name']}."
                 self.log_message(msg)
                 result["messages"].append(msg)
-        
-        elif action_type == "dodge":
-            # Dodge gives defensive bonus for next enemy attack
+
+        elif action == "dodge":
             dc = 10
             outcome = self.combat_check("Reflexes", dc, "Dodge", "defense")
-            
             if outcome["success"]:
+                result["success"] = True
                 self.player_state["combat_dodging"] = True
                 msg = "You weave and bob, ready to evade the next attack."
                 self.log_message(msg)
@@ -189,141 +263,273 @@ class CombatManager:
                 msg = "You stumble and remain exposed."
                 self.log_message(msg)
                 result["messages"].append(msg)
-        
-        elif action_type == "talk" or action_type == "intimidate" or action_type == "reason":
-            # Attempt to de-escalate with Authority or Empathy
-            target = self._get_enemy_by_name(target_name) if target_name else self.enemies[0] if self.enemies else None
-            if not target:
-                result["messages"].append("No one to talk to.")
-                return result
-            
-            # Check if enemy has dialogue options
-            if not target.get("dialogue_options"):
-                msg = f"{target['name']} is beyond reason."
-                self.log_message(msg)
-                result["messages"].append(msg)
-            else:
-                skill = "Authority" if action_type == "intimidate" else "Empathy"
-                dc = 12  # Hard check to de-escalate combat
-                
-                outcome = self.combat_check(skill, dc, target["name"], "social")
-                
-                if outcome["success"]:
-                    msg = f"Your words give {target['name']} pause. The tension eases."
-                    self.log_message(msg)
-                    result["messages"].append(msg)
-                    result["effects"]["de_escalated"] = True
-                    # Could end combat or make enemy non-hostile
-                    self.end_encounter()
-                    return result
-                else:
-                    msg = f"{target['name']} is not listening."
-                    self.log_message(msg)
-                    result["messages"].append(msg)
-        
-        elif action_type == "flee" or action_type == "run":
+
+        elif action in ["flee", "run"]:
             dc = 10 + (self.enemies[0].get("skills", {}).get("Athletics", 0) if self.enemies else 0)
             outcome = self.combat_check("Athletics", dc, "Escape", "move")
-            
             if outcome["success"]:
+                result["success"] = True
                 msg = "You scramble away into the darkness!"
                 self.log_message(msg)
                 result["messages"].append(msg)
                 result["effects"]["escaped"] = True
                 self.end_encounter()
-                return result
             else:
                 msg = "You try to run, but they cut you off!"
                 self.log_message(msg)
                 result["messages"].append(msg)
+
+        return result
+
+    def _handle_tactical_action(self, action: str, target_name: str) -> Dict[str, Any]:
+        result = {"action": action, "messages": [], "effects": {}, "success": False}
+        target = self._get_enemy_by_name(target_name)
         
-        # Check end condition
-        if not self.enemies and self.active:
-            self.log_message("All enemies defeated.")
-            result["messages"].append("Victory!")
-            result["effects"]["victory"] = True
-            self.end_encounter()
+        if not target:
+            result["messages"].append("No target specified.")
             return result
 
-        # Enemy Turn (Simplified: immediate response)
-        if self.active and not result.get("effects", {}).get("escaped"):
-            enemy_results = self._process_enemy_turns()
-            result["messages"].extend(enemy_results)
+        if action == "feint":
+            # Deception vs Logic/Instinct
+            dc = 10 + target.get("logic", 0)
+            outcome = self.combat_check("Deception", dc, target["name"], "tactical")
+
+            if outcome["success"]:
+                result["success"] = True
+                result["skill_used"] = "Deception"
+                result["margin"] = outcome["difference"]
+                msg = f"You feint left, exposing {target['name']}'s guard."
+                self.log_message(msg)
+                result["messages"].append(msg)
+                # Next attack gets bonus handled in _handle_standard_action via last_action_result
+            else:
+                msg = f"{target['name']} sees through your ploy."
+                self.log_message(msg)
+                result["messages"].append(msg)
+
+        elif action == "shove":
+            # Hand-to-Hand vs Constitution/Strength (simulated by Endurance)
+            dc = 8 + target.get("endurance", 0)
+            outcome = self.combat_check("Hand-to-Hand Combat", dc, target["name"], "tactical")
+
+            if outcome["success"]:
+                result["success"] = True
+                result["skill_used"] = "Hand-to-Hand Combat"
+                msg = f"You shove {target['name']} back, buying space."
+                self.log_message(msg)
+                result["messages"].append(msg)
+                target["stunned"] = True # Simple status effect
+            else:
+                msg = f"You fail to move {target['name']}."
+                self.log_message(msg)
+                result["messages"].append(msg)
+
+        return result
+
+    def _handle_mental_action(self, action: str, target_name: str) -> Dict[str, Any]:
+        result = {"action": action, "messages": [], "effects": {}, "success": False}
+        target = self._get_enemy_by_name(target_name)
+
+        if not target:
+            target = self.enemies[0] if self.enemies else None
+
+        if not target:
+            result["messages"].append("No one to target.")
+            return result
+
+        skill = "Authority" # Default
+        if action == "intimidate" or action == "threaten":
+            skill = "Authority"
+        elif action == "plead" or action == "reason":
+            skill = "Empathy"
+        elif action == "distract":
+            skill = "Wits"
+
+        dc = 12 # Default hard
+        if target.get("psychology", "") == "weak_willed":
+            dc = 8
+        elif target.get("psychology", "") == "fanatic":
+            dc = 15
+
+        outcome = self.combat_check(skill, dc, target["name"], "mental")
+
+        if outcome["success"]:
+            result["success"] = True
+            result["skill_used"] = skill
+            result["margin"] = outcome["difference"]
+
+            if action == "distract":
+                msg = f"You successfully distract {target['name']}!"
+                self.log_message(msg)
+                result["messages"].append(msg)
+            else:
+                msg = f"Your words land. {target['name']} hesitates."
+                self.log_message(msg)
+                result["messages"].append(msg)
+                result["effects"]["de_escalated"] = True
+                if outcome["difference"] > 3:
+                     # Complete morale break
+                     msg = f"{target['name']} backs down completely."
+                     self.log_message(msg)
+                     result["messages"].append(msg)
+                     self.enemies.remove(target) # Effectively defeated
+        else:
+            msg = f"{target['name']} ignores you."
+            self.log_message(msg)
+            result["messages"].append(msg)
             
         return result
 
+    def _handle_environmental_action(self, action: str, target_name: str, description: str) -> Dict[str, Any]:
+        result = {"action": action, "messages": [], "effects": {}, "success": False}
+
+        # This requires contextual objects in environment_features
+        # For now, we simulate generic interaction
+
+        if action == "turn off lights" or (action == "interact" and "light" in description):
+            if self.environment_features.get("lighting") == "dim":
+                 self.environment_features["lighting"] = "dark"
+                 msg = "You smash the light. Darkness floods the room."
+                 self.log_message(msg)
+                 result["messages"].append(msg)
+                 result["success"] = True
+                 # Effect: +2 Stealth, -2 Firearms
+        else:
+             # Generic improvisation
+             skill = "Logic"
+             dc = 10
+             outcome = self.combat_check(skill, dc, "Environment", "environmental")
+             if outcome["success"]:
+                 result["success"] = True
+                 msg = f"You use the environment to your advantage ({description or 'improvise'})."
+                 self.log_message(msg)
+                 result["messages"].append(msg)
+             else:
+                 msg = "You can't find an advantage here."
+                 self.log_message(msg)
+                 result["messages"].append(msg)
+
+        return result
+
     def _process_enemy_turns(self) -> List[str]:
-        """Process all enemy turns and return messages."""
+        """Process all enemy turns and return messages, handling player reactions."""
         messages = []
         
         for enemy in self.enemies:
             if not self.active:
                 break
             
-            # Check if player is dodging
-            if self.player_state.get("combat_dodging", False):
-                msg = f"{enemy['name']} strikes, but you're already moving. MISS!"
+            # Skip if stunned
+            if enemy.get("stunned"):
+                msg = f"{enemy['name']} shakes off the stun."
                 self.log_message(msg)
                 messages.append(msg)
-                self.player_state["combat_dodging"] = False
+                enemy["stunned"] = False
                 continue
+
+            # 1. Determine Attack
+            att_roll = random.randint(1, 6) + random.randint(1, 6) + enemy.get("attack", 0)
             
-            # Enemy attack roll
-            att = random.randint(1, 6) + random.randint(1, 6) + enemy.get("attack", 0)
+            # 2. Player Reaction Opportunity (Passive)
+            # Check reflexes/instinct to auto-defend or interrupt
+            reaction_success = False
+            reaction_msg = ""
             
-            # Player Defense = 8 + Reflexes
             player_reflex = self.skill_system.get_skill("Reflexes")
-            defense = 8 + (player_reflex.effective_level if player_reflex else 0)
+            reflex_val = player_reflex.effective_level if player_reflex else 0
+
+            # If player explicitly dodged, they get bonus, but here we check for PASSIVE interrupt
+            # e.g. "Instinct" warns you of a feint, or "Reflexes" allows a parry
             
-            attack_msg = f"{enemy['name']} attacks! (Roll: {att} vs Defense: {defense})"
+            if att_roll > 10: # Strong attack coming
+                # Check Instinct
+                instinct_check = self.skill_system.roll_check("Instinct", 10, "reaction")
+                if instinct_check["success"]:
+                    reaction_msg = "Your instinct screams 'MOVE'!"
+                    # Grant bonus to defense
+                    reflex_val += 2
+
+            # 3. Calculate Defense
+            # Base 8 + Reflexes
+            defense = 8 + reflex_val
+            if self.player_state.get("combat_dodging"):
+                defense += 2
+                self.player_state["combat_dodging"] = False # Consumed
+
+            # Environment modifiers
+            if self.environment_features.get("lighting") == "dark":
+                # Harder to hit
+                att_roll -= 2
+
+            attack_msg = f"{enemy['name']} attacks! (Roll: {att_roll} vs Defense: {defense})"
+            if reaction_msg:
+                messages.append(reaction_msg)
             self.log_message(attack_msg)
             messages.append(attack_msg)
             
-            if att >= defense:
+            if att_roll >= defense:
+                # HIT
                 hit_msg = "HIT! You take damage."
                 self.log_message(hit_msg)
                 messages.append(hit_msg)
                 
-                # Apply injury via injury_system if available
-                if self.injury_system:
-                    injury = self.injury_system.apply_injury(
-                        "blunt_force_head" if random.random() < 0.2 else "bruised_ribs",
-                        severity="minor"
-                    )
-                    injury_msg = f"Injury sustained: {injury.name}"
-                    messages.append(injury_msg)
-                else:
-                    # Fallback to old system
-                    self.apply_injury("blunt_force", "body", ["-1 Endurance"])
+                # Apply Injury
+                self._apply_damage(enemy)
+
             else:
-                miss_msg = "MISS! You deflect the blow."
+                miss_msg = "MISS! You evade the blow."
                 self.log_message(miss_msg)
                 messages.append(miss_msg)
         
         self.round_counter += 1
         return messages
 
-    def combat_check(self, skill: str, dc: int, target: str, type: str = "attack") -> dict:
+    def _apply_damage(self, enemy_source: Dict):
+        """Calculates and applies injury."""
+        # Determine injury based on enemy type or random
+        severity = "minor"
+        location = random.choice(["arm", "leg", "torso", "head"])
+
+        # Bosses or high rolls deal more damage
+        if enemy_source.get("damage_tier") == "high":
+            severity = "moderate"
+
+        if self.injury_system:
+            injury = self.injury_system.apply_injury(
+                f"{enemy_source.get('attack_type', 'blunt')}_{location}",
+                location=location,
+                severity=severity
+            )
+            self.log_message(f"INJURY: {injury.name}")
+
+            # Check for Trauma Trigger (Pain/Violence)
+            if self.trauma_system and severity in ["moderate", "severe"]:
+                 self.trauma_system.check_trauma_trigger("personal_torture", self.skill_system, self.player_state)
+
+        else:
+            # Fallback
+            self.player_state["injuries"].append({"type": "generic", "severity": severity})
+
+    def combat_check(self, skill: str, dc: int, target: str, type: str = "attack", bonus: int = 0) -> dict:
         """
         Executes a combat check.
         """
-        # Calculate penalties
         penalties = self._get_total_injury_penalty(skill)
         
-        # Need to temporarily apply injury-based penalty to the skill system? 
-        # Or just subtract from total. mechanics.py `roll_check` doesn't take arbitrary mod param easily
-        # except via `manual_roll` or we just subtract result.
-        # BUT mechanics.py DOES return modifiers breakdown. 
-        # Let's create a temporary modifier on the skill, roll, then remove it.
-        
         sk_obj = self.skill_system.get_skill(skill)
-        if sk_obj and penalties != 0:
-            sk_obj.set_modifier("Injury", penalties)
+        if sk_obj:
+            if penalties != 0:
+                sk_obj.set_modifier("Injury", penalties)
+            if bonus != 0:
+                sk_obj.set_modifier("CombatBonus", bonus)
             
-        res = self.skill_system.roll_check(skill, dc)
+        res = self.skill_system.roll_check(skill, dc, check_id=f"combat_{self.round_counter}_{random.randint(0,100)}")
         
-        if sk_obj and penalties != 0:
-            sk_obj.set_modifier("Injury", 0) # Clean up
+        if sk_obj:
+            if penalties != 0:
+                sk_obj.set_modifier("Injury", 0)
+            if bonus != 0:
+                sk_obj.set_modifier("CombatBonus", 0)
             
         return {
             "success": res["success"],
@@ -332,53 +538,53 @@ class CombatManager:
             "raw": res
         }
 
-    def apply_injury(self, type: str, location: str, effects: List[str], persistent: bool = True):
-        """Legacy injury application (kept for backwards compatibility)."""
-        injury = {
-            "type": type,
-            "location": location,
-            "effects": effects,
-            "persistent": persistent,
-            "healing_time": 72
-        }
-        self.player_state["injuries"].append(injury)
-        self.log_message(f"INJURY RECEIVED: {type} ({location})")
-    
     def _get_combat_skill(self) -> str:
         """Determine which combat skill to use based on equipped weapons."""
         if not self.inventory_system:
             return "Hand-to-Hand Combat"
         
-        # Check for equipped firearms
-        for item in self.inventory_system.carried_items:
-            if item.equipped and item.type == "weapon":
-                weapon_type = item.effects.get("weapon_type", "melee")
-                if weapon_type == "firearm":
-                    return "Firearms"
-                elif weapon_type == "melee":
-                    return "Hand-to-Hand Combat"
+        try:
+            for item in self.inventory_system.carried_items:
+                if item.equipped and item.type == "weapon":
+                    weapon_type = item.effects.get("weapon_type", "melee")
+                    if weapon_type == "firearm":
+                        return "Firearms"
+                    elif weapon_type == "melee":
+                        return "Hand-to-Hand Combat"
+        except AttributeError:
+             # Safety fallback if inventory_system is mocked or incomplete
+             return "Hand-to-Hand Combat"
         
         return "Hand-to-Hand Combat"
 
     def _get_enemy_by_name(self, name):
+        if not name:
+             return self.enemies[0] if self.enemies else None
+
+        name_lower = name.lower()
+        # Exact match first
         for e in self.enemies:
-            if e["name"].lower() == name.lower():
+            if e["name"].lower() == name_lower:
+                return e
+
+        # Then startswith
+        for e in self.enemies:
+            if e["name"].lower().startswith(name_lower):
+                return e
+
+        # Then fuzzy 'in' (fallback)
+        for e in self.enemies:
+            if name_lower in e["name"].lower():
                 return e
         return None
 
     def _get_total_injury_penalty(self, skill_name: str) -> int:
+        if self.injury_system:
+            return self.injury_system.get_penalty_for_skill(skill_name)
+
         total_penalty = 0
-        # Parse injury strings like "-1 Reflexes" or "-2 All"
         for injury in self.player_state.get("injuries", []):
-            for effect in injury["effects"]:
-                parts = effect.split() 
-                # e.g. ["-1", "Reflexes"] or ["-2", "Attributes"]
-                if len(parts) >= 2:
-                    try:
-                        val = int(parts[0])
-                        target = " ".join(parts[1:])
-                        if target == skill_name or target == "All":
-                            total_penalty += val
-                    except ValueError:
-                        pass
+            if isinstance(injury, dict) and "effects" in injury:
+                # Legacy parsing
+                pass
         return total_penalty
