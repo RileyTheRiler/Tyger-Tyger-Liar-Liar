@@ -40,6 +40,7 @@ class NarrativeMemorySystem:
         self.player_state = player_state
         self.time_system = time_system
         self.false_memory_injected = False  # Track if the mandatory false memory exists
+        self.spontaneous_recall_triggered = False
 
     def log_event(self, event_id: str, text_data: Any, importance: int = 1, tags: List[str] = None):
         """
@@ -137,6 +138,22 @@ class NarrativeMemorySystem:
 
         return recalled_text
 
+    def check_spontaneous_recall(self, player_state: Dict) -> Optional[str]:
+        """Check if a spontaneous false memory should surface."""
+        if self.spontaneous_recall_triggered:
+            return None
+
+        sanity = player_state.get("sanity", 100)
+
+        # Trigger if Sanity drops below 50 AND we have the seed memory
+        if sanity < 50 and "arrival_memory" in self.memories:
+            self.inject_explicit_false_memory() # Ensure it's corrupted
+            text = self.recall_event("arrival_memory")
+            self.spontaneous_recall_triggered = True
+            return text
+
+        return None
+
     def _apply_drift_effects(self, text: str, drift: float, current_reality: float) -> str:
         """Apply text distortions based on drift level."""
         if drift < 0.2 and current_reality > 80:
@@ -152,8 +169,6 @@ class NarrativeMemorySystem:
         if drift >= 0.5 or current_reality < 50:
             sentences = text.split(". ")
             if len(sentences) > 1:
-                # Shuffle a sentence order slightly? No, that's too confusing.
-                # Maybe modify adjectives.
                 pass
 
             # Add doubt
@@ -161,7 +176,6 @@ class NarrativeMemorySystem:
 
         # Severe corruption
         if drift >= 0.8 or current_reality < 25:
-            import random
             words = text.split()
             if words:
                 # Randomly replace a word with "..."
@@ -187,7 +201,6 @@ class NarrativeMemorySystem:
             "\n(No. You weren't alone. HE was there.)",
             "\n(You didn't find it. It found you.)"
         ]
-        import random
         return text + random.choice(contradictions)
 
     def inject_explicit_false_memory(self):
@@ -217,7 +230,8 @@ class NarrativeMemorySystem:
     def to_dict(self) -> Dict:
         return {
             "memories": {k: asdict(v) for k, v in self.memories.items()},
-            "false_memory_injected": self.false_memory_injected
+            "false_memory_injected": self.false_memory_injected,
+            "spontaneous_recall_triggered": self.spontaneous_recall_triggered
         }
 
     def load_state(self, data: Dict):
@@ -226,3 +240,4 @@ class NarrativeMemorySystem:
         for k, v in data.get("memories", {}).items():
             self.memories[k] = NarrativeEvent(**v)
         self.false_memory_injected = data.get("false_memory_injected", False)
+        self.spontaneous_recall_triggered = data.get("spontaneous_recall_triggered", False)

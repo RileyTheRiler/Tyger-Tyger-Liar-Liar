@@ -688,7 +688,14 @@ class Game:
                         memory_scene = json.load(f)
                         self.print("\n" + memory_scene.get("text", ""))
         
-        # 3. Breakdowns
+        # 3. Spontaneous False Memories (Week 16)
+        recall_text = self.narrative_memory.check_spontaneous_recall(self.player_state)
+        if recall_text:
+            self.print("\n[INTRUSIVE MEMORY SURFACING]")
+            self.print(recall_text)
+            self.log_event("spontaneous_recall", memory="arrival_memory")
+
+        # 4. Breakdowns
         if self.player_state["sanity"] <= 0:
             self.print("\n>> SANITY CRITICAL: You collapse under the weight of your own mind. <<")
             self.player_state["sanity"] = 10 
