@@ -53,8 +53,8 @@ class Game:
         self.board = Board()
         self.board_ui = BoardUI(self.board)
         self.skill_system = SkillSystem(resource_path(os.path.join('data', 'skills.json')))
-        self.lens_system = LensSystem(self.skill_system, self.board)
         self.attention_system = AttentionSystem()
+        # LensSystem initialized after player_state (see below)
         self.integration_system = IntegrationSystem()
         self.char_ui = CharacterSheetUI(self.skill_system)
         self.inventory_system = InventoryManager()
@@ -84,6 +84,14 @@ class Game:
             "failed_reds": [],
             "checked_whites": []
         }
+
+        # Initialize LensSystem with player_state and attention_system for Haunted lens
+        self.lens_system = LensSystem(
+            self.skill_system,
+            self.board,
+            self.player_state,
+            self.attention_system
+        )
 
         # Initialize Scene Manager
         self.scene_manager = SceneManager(
