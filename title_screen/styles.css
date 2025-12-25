@@ -1,0 +1,199 @@
+:root {
+    --white-glitch: #F0F0F0;
+    --cyan-glitch: #00FFFF;
+    --red-glitch: #FF0000;
+    --green-term: #50FF50;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'VT323', monospace;
+    background-color: #000;
+}
+
+.main-container {
+    width: 100vw;
+    height: 100vh;
+    background-image: url('background.png');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+/* Phase 2: Main Title Overlay */
+.main-title-glitch {
+    position: absolute;
+    top: 5%;
+    left: 5%;
+    font-size: 6rem;
+    line-height: 0.9;
+    color: var(--white-glitch);
+    text-transform: uppercase;
+    margin: 0;
+    white-space: pre; /* Important for newline in data-text */
+}
+
+.main-title-glitch::before,
+.main-title-glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+}
+
+/* Layer 2 (Cyan) */
+.main-title-glitch::before {
+    left: 2px;
+    text-shadow: -2px 0 var(--red-glitch);
+    clip-path: inset(0 0 0 0); /* Fallback */
+    animation: glitch-anim-1 2s infinite linear alternate-reverse;
+    color: var(--white-glitch);
+    /* The prompt says Layer 2 is Cyan copy. Let's make the text cyan or shadow?
+       Prompt: "A copy of the text colored Cyan". */
+    color: var(--cyan-glitch);
+    z-index: -1;
+    opacity: 0.8;
+}
+
+/* Layer 3 (Red) */
+.main-title-glitch::after {
+    left: -2px;
+    text-shadow: -2px 0 var(--cyan-glitch);
+    animation: glitch-anim-2 3s infinite linear alternate-reverse;
+    color: var(--red-glitch);
+    z-index: -2;
+    opacity: 0.8;
+}
+
+/* Glitch Animations */
+@keyframes glitch-anim-1 {
+    0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 0); }
+    20% { clip-path: inset(60% 0 10% 0); transform: translate(2px, 0); }
+    40% { clip-path: inset(40% 0 50% 0); transform: translate(-2px, 0); }
+    60% { clip-path: inset(80% 0 5% 0); transform: translate(2px, 0); }
+    80% { clip-path: inset(10% 0 60% 0); transform: translate(-1px, 0); }
+    100% { clip-path: inset(30% 0 30% 0); transform: translate(1px, 0); }
+}
+
+@keyframes glitch-anim-2 {
+    0% { clip-path: inset(10% 0 60% 0); transform: translate(2px, 0); }
+    20% { clip-path: inset(30% 0 20% 0); transform: translate(-2px, 0); }
+    40% { clip-path: inset(70% 0 10% 0); transform: translate(1px, 0); }
+    60% { clip-path: inset(20% 0 50% 0); transform: translate(-1px, 0); }
+    80% { clip-path: inset(50% 0 30% 0); transform: translate(2px, 0); }
+    100% { clip-path: inset(0% 0 80% 0); transform: translate(-2px, 0); }
+}
+
+/* Phase 3: Main Menu Overlay */
+.main-menu {
+    position: absolute;
+    top: 40%;
+    left: 5%;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.main-menu li {
+    font-size: 2.5rem;
+    color: var(--green-term);
+    text-shadow: 0 0 10px var(--green-term), 0 0 20px var(--green-term);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: text-shadow 0.2s;
+}
+
+.main-menu li:hover {
+    text-shadow: 0 0 15px var(--green-term), 0 0 30px var(--green-term), 0 0 40px #A0FFA0;
+}
+
+/* Phase 4: CRT Monitor Container */
+.crt-screen-container {
+    position: absolute;
+    /* Approximate placement based on standard monitor position in a scene */
+    top: 34%;
+    left: 34%;
+    width: 28%;
+    height: 33%;
+    overflow: hidden;
+    transform: perspective(1000px) rotateX(2deg);
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.9), inset 0 0 10px rgba(80,255,80,0.2);
+    /* For debugging alignment */
+    /* border: 1px solid red; */
+}
+
+.crt-content-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.crt-inner-content {
+    transform: scale(0.3); /* Scaled down heavily */
+    transform-origin: center center;
+    width: 100vw; /* Assume full width to layout like main screen */
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* Align similar to main screen */
+    padding-top: 5%; /* Padding to match main screen top: 5% */
+    padding-left: 5%;
+    box-sizing: border-box;
+}
+
+/* Reusing styles for CRT internal content but scoping them if needed */
+.crt-title {
+    font-size: 6rem;
+    line-height: 0.9;
+    color: var(--white-glitch);
+    text-transform: uppercase;
+    margin: 0;
+    white-space: pre;
+    position: relative;
+    /* Simplified glitch for CRT to avoid performance heavy duplicate animations if not needed,
+       but prompt says 'repeat the HTML structure'. Let's keep it static or simple for now unless requested.
+       Prompt: "The content displayed inside the physical monitor screen" -> "small title... scanlines overtop" */
+}
+
+/* Apply some curvature to the text inside?
+   The container has perspective, so the content is already rotated. */
+
+.crt-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    margin-top: 100px; /* Space between title and menu */
+}
+
+.crt-menu li {
+    font-size: 2.5rem;
+    color: var(--green-term);
+    text-shadow: 0 0 5px var(--green-term); /* Less bloom for small screen */
+    margin-bottom: 0.5rem;
+}
+
+/* Scanlines */
+.crt-overlay-scanlines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(18, 16, 16, 0) 50%,
+        rgba(0, 0, 0, 0.4) 50%
+    );
+    background-size: 100% 4px;
+    z-index: 10;
+    pointer-events: none;
+}
