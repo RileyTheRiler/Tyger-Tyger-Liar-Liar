@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from theories import THEORY_DATA
 
 class Theory:
@@ -42,23 +42,31 @@ class Board:
     def get_theory(self, theory_id: str) -> Optional[Theory]:
         return self.theories.get(theory_id)
 
-    def start_internalizing(self, theory_id: str) -> bool:
+    def can_internalize(self, theory_id: str) -> Tuple[bool, str]:
         theory = self.get_theory(theory_id)
         if not theory:
-            return False
+            return False, "Theory not found."
             
         if theory.status != "available":
-            # Only available theories can be internalized
-            return False
+            return False, f"Theory is {theory.status}."
             
         if self.get_active_or_internalizing_count() >= self.max_slots:
-            return False
+            return False, "No available slots."
             
         # Check conflicts
         for other_id, other_t in self.theories.items():
             if other_t.status == "active" and (other_id in theory.conflicts_with or theory_id in other_t.conflicts_with):
-                return False
+                return False, f"Conflicts with active theory: {other_t.name}"
 
+        return True, "OK"
+
+    def start_internalizing(self, theory_id: str) -> bool:
+        can, reason = self.can_internalize(theory_id)
+        if not can:
+            print(f"[BOARD] Cannot internalize {theory_id}: {reason}")
+            return False
+
+        theory = self.get_theory(theory_id)
         theory.status = "internalizing"
         theory.internalization_progress_minutes = 0
         

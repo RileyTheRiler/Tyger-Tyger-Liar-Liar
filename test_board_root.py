@@ -11,19 +11,26 @@ def test_board_integration():
     print("Initializing Game Systems...")
     
     # Setup
-    manager = SceneManager("scenes.json") # file existence doesn't matter much if we don't run loop
+    # manager = SceneManager("scenes.json") # file existence doesn't matter much if we don't run loop
+    time_sys = TimeSystem()
+    skill_sys = SkillSystem()
+    board = Board()
+    player_state = {"sanity": 100, "reality": 100}
     
+    manager = SceneManager(time_sys, board, skill_sys, player_state)
+    manager.load_scenes_from_directory(".", "scenes.json")
+
     # 1. Check Initial Board State
     print("\n[Test 1] Initial Board State")
     t = manager.board.get_theory("i_want_to_believe")
-    if t.status != "locked":
-        print(f"FAILED: Expected locked, got {t.status}")
+    if t.status != "available":
+        print(f"FAILED: Expected available, got {t.status}")
     else:
-        print("PASSED: Theory is locked.")
+        print("PASSED: Theory is available.")
 
     # 2. Internalize
     print("\n[Test 2] Internalize 'I Want To Believe'")
-    res = manager.board.internalize("i_want_to_believe")
+    res = manager.board.start_internalizing("i_want_to_believe")
     print(f"Result: {res}")
     
     if manager.board.get_theory("i_want_to_believe").status != "internalizing":
