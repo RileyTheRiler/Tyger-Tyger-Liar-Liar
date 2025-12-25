@@ -625,7 +625,8 @@ class Game:
             "choices": scene.get("choices", []),
             "board_data": self.board.get_board_data(),
             "music": self.current_music,
-            "sfx_queue": sfx_to_play
+            "sfx_queue": sfx_to_play,
+            "ghost_commands": self.parser_hallucination.ghost_commands if self.parser_hallucination.get_hallucination_level() >= 2 else []
         }
 
     def run_passive_mechanics(self):
@@ -722,7 +723,13 @@ class Game:
 
         # New Conditions: Integration, Attention, Dream Residue
         integration_level = self.integration_system.integration_progress
-        attention_level = self.attention_system.attention_level
+        # Use fear manager for attention if available, otherwise check attention_system
+        attention_level = 0
+        if hasattr(self, 'attention_system'):
+            attention_level = self.attention_system.attention_level
+        elif hasattr(self, 'fear_manager') and hasattr(self.fear_manager, 'attention_level'):
+             attention_level = self.fear_manager.attention_level
+
         dream_residue = self.player_state.get("dream_residue", False)
         # Determine distortion intensity
         intensity = 0
