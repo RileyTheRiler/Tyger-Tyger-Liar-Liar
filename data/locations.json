@@ -8,6 +8,15 @@
             },
             "trail": {
                 "travel_minutes": 5
+            },
+            "clinic_front": {
+                "travel_minutes": 15
+            },
+            "aurora_ridge": {
+                "travel_minutes": 25
+            },
+            "records_room": {
+                "travel_minutes": 20
             }
         },
         "state": {
@@ -17,6 +26,57 @@
             "trailhead"
         ],
         "on_enter_scene": "trailhead"
+    },
+    "clinic_front": {
+        "name": "Kaltvik Clinic",
+        "description": "A sterile, beige building. The lights hum with an unsettling frequency.",
+        "connected_to": {
+            "trailhead": {
+                "travel_minutes": 15
+            }
+        },
+        "enter_conditions": {
+            "time_range": [7, 22],
+            "time_msg": "The clinic doors are locked. A note on the window says: HOURS 07:00 - 22:00."
+        },
+        "state": {
+            "searched": false
+        },
+        "scenes": ["clinic_scene"]
+    },
+    "aurora_ridge": {
+        "name": "Aurora Ridge",
+        "description": "A high vantage point exposed to the sky. The air tastes like ozone.",
+        "connected_to": {
+            "trailhead": {
+                "travel_minutes": 25
+            }
+        },
+        "enter_conditions": {
+            "restricted_hours": [1, 3],
+            "restricted_msg": "The sky is burning too bright. The radiation is lethal right now."
+        },
+        "state": {
+            "searched": false
+        },
+        "scenes": ["ridge_scene"]
+    },
+    "records_room": {
+        "name": "Municipal Records",
+        "description": "Rows of filing cabinets smelling of dust and old secrets.",
+        "connected_to": {
+            "trailhead": {
+                "travel_minutes": 20
+            }
+        },
+        "enter_conditions": {
+            "min_days_passed": 1,
+            "days_msg": "The records room is sealed for 'Inventory audit' until tomorrow."
+        },
+        "state": {
+            "searched": false
+        },
+        "scenes": ["records_scene"]
     },
     "woods_clearing": {
         "name": "Woods Clearing",

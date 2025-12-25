@@ -404,11 +404,13 @@ class Game:
 
     def get_game_state(self):
         """Package current game state for trigger evaluation and movement checks."""
+        date_data = self.time_system.get_date_data()
         return {
             "current_location": self.player_state.get("current_location"),
             "location_states": self.player_state.get("location_states", {}),
             "player_flags": self.player_state.get("event_flags", set()),
             "time": self.time_system.current_time,
+            "days_passed": date_data["days_passed"], # Added for location gating
             "board": self.board,
             "skill_system": self.skill_system,
             "sanity": self.player_state["sanity"],
@@ -459,8 +461,9 @@ class Game:
             return
             
         # Access condition check
-        if not self.location_manager.can_enter(target_id, self.get_game_state()):
-            self.print(f"The way to {loc['name']} is blocked or you aren't ready yet.")
+        allowed, reason = self.location_manager.can_enter(target_id, self.get_game_state())
+        if not allowed:
+            self.print(f"\n[BLOCKED] {reason}")
             return
             
         # Move
@@ -1187,7 +1190,7 @@ class Game:
              # Requires target usually, but simple parser handle here
              self.print("Destroy what? (Use 'destroy [item]')")
              return "refresh"
-        
+
         # Debug Mode Commands
         if clean == 'debug':
             self.debug_mode = not self.debug_mode
@@ -1257,6 +1260,22 @@ class Game:
                         self.log_event("scene_entry", scene_id=scene_id, scene_name=new_scene.get("name", "Unknown"))
                     else:
                         self.print(f"[DEBUG] Scene '{scene_id}' not found")
+                return "refresh"
+
+            # Debug: Set Time
+            if clean.startswith('time now') or clean.startswith('settime'):
+                # Format: time now 14:00
+                parts = clean.split()
+                time_str = parts[-1]
+                try:
+                    h, m = map(int, time_str.split(':'))
+                    new_time = self.time_system.current_time.replace(hour=h, minute=m)
+                    # If new time is earlier in day, maybe assume next day?
+                    # For simple debug, just set the hour/min of current day
+                    self.time_system.current_time = new_time
+                    self.print(f"[DEBUG] Time set to {self.time_system.get_time_string()}")
+                except ValueError:
+                    self.print("[DEBUG] Invalid time format. Use HH:MM")
                 return "refresh"
         
         # Theory Resolution Commands
