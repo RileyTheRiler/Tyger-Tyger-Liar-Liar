@@ -101,13 +101,15 @@ class CombatManager:
         # Let's assume the game loop calls `process_round` which iterates until player input is needed or round ends.
         pass
 
-    def perform_action(self, action_type: str, target_name: str = None, description: str = "") -> str:
+    def perform_action(self, action_type: str, target_name: str = None, description: str = "", manual_roll: int = None) -> str:
         """
         Executes a player action.
         
         Args:
             action_type: "attack", "move", "skill", "item", "flee"
             target_name: Name of the enemy targeted (if applicable)
+            description: Optional context or skill name
+            manual_roll: Optional forced dice roll for testing/determinism
         
         Returns:
             Result string
@@ -134,7 +136,7 @@ class CombatManager:
             injury_penalties = self._get_total_injury_penalty(skill)
             
             # We can use combat_check helper
-            outcome = self.combat_check(skill, dc, target["name"], "attack")
+            outcome = self.combat_check(skill, dc, target["name"], "attack", manual_roll=manual_roll)
             
             if outcome["success"]:
                 dmg = 1 # Discrete hits
@@ -152,7 +154,7 @@ class CombatManager:
                 result_msg = f"Missed {target['name']}."
         
         elif action_type == "flee":
-            outcome = self.combat_check("Athletics", 10, "Escape", "move")
+            outcome = self.combat_check("Athletics", 10, "Escape", "move", manual_roll=manual_roll)
             if outcome["success"]:
                 result_msg = "You managed to escape!"
                 self.end_encounter()
@@ -164,7 +166,7 @@ class CombatManager:
             # Arbitrary skill check in combat
             # description should be skill name?
             skill = description
-            outcome = self.combat_check(skill, 10, "Environment", "skill")
+            outcome = self.combat_check(skill, 10, "Environment", "skill", manual_roll=manual_roll)
             result_msg = f"Used {skill}: {'Success' if outcome['success'] else 'Failure'}."
             
         self.log_message(result_msg)
@@ -210,7 +212,7 @@ class CombatManager:
         
         self.round_counter += 1
 
-    def combat_check(self, skill: str, dc: int, target: str, type: str = "attack") -> dict:
+    def combat_check(self, skill: str, dc: int, target: str, type: str = "attack", manual_roll: int = None) -> dict:
         """
         Executes a combat check.
         """
@@ -227,7 +229,7 @@ class CombatManager:
         if sk_obj and penalties != 0:
             sk_obj.set_modifier("Injury", penalties)
             
-        res = self.skill_system.roll_check(skill, dc)
+        res = self.skill_system.roll_check(skill, dc, manual_roll=manual_roll)
         
         if sk_obj and penalties != 0:
             sk_obj.set_modifier("Injury", 0) # Clean up
@@ -245,7 +247,7 @@ class CombatManager:
             "location": location,
             "effects": effects,
             "persistent": persistent,
-            "healing_time": 72 # Default hours
+            "healing_time_remaining": 72 * 60 # Default 72 hours in minutes
         }
         self.player_state["injuries"].append(injury)
         self.log_message(f"INJURY RECEIVED: {type} ({location})")

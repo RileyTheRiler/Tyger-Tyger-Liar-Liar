@@ -15,51 +15,55 @@ def test_combat_flow():
     player_state = {"injuries": [], "sanity": 50}
     cm = CombatManager(skill_sys, player_state)
     
-    # Mock SkillSystem roll_check slightly if needed, but defaults are random
-    # We'll rely on randomness or use manual mode if mechanics supports it (mechanics.py has set_manual_mode!) 
-
-    
     # Start Encounter
     enemies = [{"name": "Thug", "hp": 3, "reflexes": 1, "attack": 2}]
     cm.start_encounter(enemies, "combat")
     
     if not cm.active:
         print("FAIL: Combat did not start.")
-        return
+        sys.exit(1)
 
     print(f"Status: Active={cm.active}, Enemies={len(cm.enemies)}")
     
-    # Test Player Turn
-    # We don't have a rigid turn enforcer in perform_action yet, it just processes player action then enemy reaction
-    
-    # Player Attacks Thug
-    # Manually force a hit. 
-    # roll_check call: skill="Hand-to-Hand Combat", DC=8+1=9.
-    # manual mode requires us to patch roll_check or just trust it uses manual_roll param if we could pass it.
-    # mechanics.py implementation of roll_check takes `manual_roll` arg but CombatManager doesn't pass it down.
-    # However, mechanics.py `roll_check` uses `random.randint` if `manual_roll` is None.
-    # `set_manual_mode` only sets a flag but `roll_check` doesn't seem to check that flag in the code I saw?
-    # Let's re-read mechanics.py snippet...
-    # Line 118: if manual_roll is not None: ... else: random... 
-    # It doesn't check self.manual_dice_mode! 
-    # Ah, I missed that implementing detail in mechanics.py or it's incomplete.
-    # It's fine, we'll deal with randomness.
-    
-    print("Action: Player attacks Thug")
-    result = cm.perform_action("attack", "Thug", "Hand-to-Hand Combat")
+    # --- Test Player Attack (Forced Hit) ---
+    # Target Reflexes is 1, so DC = 8 + 1 = 9.
+    # Player Hand-to-Hand base is usually 0 or 1.
+    # Force roll of 10. Total 10 > 9. Should Hit.
+    print("\nAction: Player attacks Thug (Forced Hit)")
+    result = cm.perform_action("attack", "Thug", "Hand-to-Hand Combat", manual_roll=10)
     print(f"Result: {result}")
     
-    # Check log
-    print("Log:")
-    for l in cm.log:
-        print(f"  {l}")
+    # Verify Hit
+    thug = cm._get_enemy_by_name("Thug")
+    if thug["hp"] < 3:
+        print("PASS: Thug took damage.")
+    else:
+        print(f"FAIL: Thug HP did not decrease. HP: {thug['hp']}")
+        sys.exit(1)
 
-    # Test Injury Application
+    # --- Test Player Attack (Forced Miss) ---
+    # Force roll of 2. Total 2 < 9. Should Miss.
+    print("\nAction: Player attacks Thug (Forced Miss)")
+    result = cm.perform_action("attack", "Thug", "Hand-to-Hand Combat", manual_roll=2)
+    print(f"Result: {result}")
+    
+    if "Missed" in result:
+        print("PASS: Attack missed as expected.")
+    else:
+        print(f"FAIL: Expected miss, got: {result}")
+
+    # --- Test Injury Application & Penalty ---
     print("\nAction: Apply Mock Injury")
     cm.apply_injury("Gunshot", "Leg", ["-2 Athletics"])
     
-    print(f"Injuries: {player_state['injuries']}")
-    
+    # Verify key consistency (healing_time_remaining)
+    injury = player_state["injuries"][0]
+    print(f"Injury keys: {injury.keys()}")
+    if "healing_time_remaining" in injury and injury["healing_time_remaining"] == 72 * 60:
+         print("PASS: Injury has correct 'healing_time_remaining' key and value (minutes).")
+    else:
+         print(f"FAIL: Injury key/value incorrect: {injury}")
+
     # Test Penalty Logic
     penalty = cm._get_total_injury_penalty("Athletics")
     if penalty == -2:
@@ -67,10 +71,14 @@ def test_combat_flow():
     else:
         print(f"FAIL: Injury penalty wrong. Got {penalty}, expected -2.")
         
-    # End Encounter
-    cm.end_encounter()
+    # --- Test Flee (Forced Success) ---
+    # DC 10. Force roll 11.
+    print("\nAction: Flee (Forced Success)")
+    result = cm.perform_action("flee", manual_roll=11)
+    print(f"Result: {result}")
+
     if not cm.active:
-        print("PASS: Encounter ended.")
+        print("PASS: Encounter ended after flee.")
     else:
         print("FAIL: Encounter still active.")
 
