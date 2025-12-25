@@ -102,6 +102,56 @@ THEORY_DATA = {
         "active_case": True,
         "critical_for_endgame": True
     },
+    "government_coverup": {
+        "name": "Government Cover-up",
+        "category": "Conspiracy",
+        "description": "The DEW Line station wasn't abandoned. It was repurposed. They know what's happening.",
+        "status": "available",
+        "hidden_effects": True,
+        "effects": {
+            "Research": 2,
+            "Skepticism": 2,
+            "Authority": -1
+        },
+        "conflicts_with": [],
+        "auto_locks": [],
+        "degradation_rate": 10,
+        "internalize_time_hours": 8,
+        "active_case": False
+    },
+    "347_resonance": {
+        "name": "347 Resonance",
+        "category": "Belief",
+        "description": "The number 347 isn't a count. It's a frequency. The town is vibrating.",
+        "status": "available",
+        "hidden_effects": True,
+        "effects": {
+            "Paranormal Sensitivity": 3,
+            "Pattern Recognition": 2,
+            "Sanity": -10
+        },
+        "conflicts_with": ["there_is_a_rational_explanation"],
+        "auto_locks": [],
+        "degradation_rate": 20,
+        "internalize_time_hours": 10,
+        "active_case": False
+    },
+    "aurora_rules": {
+        "name": "Aurora Rules",
+        "category": "Survival",
+        "description": "The lights follow rules. If you learn them, you might survive.",
+        "status": "available",
+        "hidden_effects": False,
+        "effects": {
+            "Survival": 2,
+            "Instinct": 2
+        },
+        "conflicts_with": [],
+        "auto_locks": [],
+        "degradation_rate": 5,
+        "internalize_time_hours": 6,
+        "active_case": False
+    },
     "what_happened_in_town": {
         "name": "What Happened In Blackwood",
         "category": "Trauma",
