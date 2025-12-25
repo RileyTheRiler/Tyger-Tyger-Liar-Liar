@@ -1,0 +1,36 @@
+--- STARTING INTERACTION TEST ---
+[MEMORY] Loaded 5 suppressed memories
+[InjurySystem] Loaded 10 injury templates.
+[TraumaSystem] Loaded 8 trauma templates.
+[ChaseSystem] Loaded 5 chase scenarios.
+[CombatManager] Loaded 4 encounter templates.
+[FearManager] Loaded fear events from supernatural_witness.json
+[FearManager] Loaded fear events from aurora_exposure.json
+[FearManager] Loaded fear events from entity_close.json
+[FearManager] Loaded fear events from isolation_dread.json
+[HallucinationEngine] Loaded 10 visual hallucinations
+[HallucinationEngine] Loaded 10 auditory hallucinations
+[HallucinationEngine] Loaded 8 memory drifts
+[Inventory] Loaded 4 documents into database.
+Loading test scene...
+
+--- TEST: COLLECT TOOLS ---
+[Inventory] Added: Forensics Kit
+[Inventory] Added: UV Light
+[Inventory] Added: Flashlight
+Inventory: ['Forensics Kit', 'UV Light', 'Flashlight']
+
+--- TEST: FLASHLIGHT INTERACTION ---
+Dark Corner Status: Exposed Safe
+
+--- TEST: UV LIGHT INTERACTION ---
+
+--- TEST: SWAB VERB ---
+Evidence Collected: []
+Traceback (most recent call last):
+  File "/app/tests/test_week27_interactions.py", line 66, in <module>
+    test_interactions()
+  File "/app/tests/test_week27_interactions.py", line 61, in test_interactions
+    assert any("blood_sample" in eid for eid in ev_ids)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
