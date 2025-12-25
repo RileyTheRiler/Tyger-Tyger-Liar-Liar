@@ -2,7 +2,6 @@ import json
 import os
 import sys
 import random
-from typing import Optional
 
 class SceneManager:
     def __init__(self, time_system, board, skill_system, player_state):
@@ -173,27 +172,3 @@ class SceneManager:
         mult = ambient.get("paranoia_multiplier", 1.0)
         if mult > 1.0 and random.random() < 0.1 * mult:
              print("[Paranoia] Shadows stretch longer than they should.")
-
-    def update_board_effects(self):
-        """
-        Updates skill modifiers based on active theories in the board.
-        """
-        if not self.board or not self.skill_system:
-            return
-
-        modifiers = self.board.get_all_modifiers()
-
-        # Clear old board modifiers first?
-        # Ideally, we should track which modifiers come from board to avoid wiping others.
-        # But for now, we'll assume we overwrite/set them by key "Board Theory".
-
-        # Reset board-related modifiers on all skills
-        for skill in self.skill_system.skills.values():
-            skill.set_modifier("Board Theory", 0)
-
-        # Apply new
-        for skill_name, mod_value in modifiers.items():
-            skill = self.skill_system.get_skill(skill_name)
-            if skill:
-                skill.set_modifier("Board Theory", mod_value)
-                print(f"[Board Effect] {skill_name} modifier: {mod_value}")
