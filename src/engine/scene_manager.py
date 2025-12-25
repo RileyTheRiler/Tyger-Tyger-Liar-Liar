@@ -14,6 +14,7 @@ class SceneManager:
         self.skill_system = skill_system
         self.player_state = player_state
         self.flashback_manager = flashback_manager
+        self.pending_encounter_id = None  # New: Track if an encounter should start
 
     def load_scenes_from_directory(self, directory: str, root_scenes: Optional[str] = None):
         # Fallback to finding existing scenes.json in root if directory doesn't look populated
@@ -57,6 +58,7 @@ class SceneManager:
 
         self.current_scene_id = scene_id
         self.current_scene_data = scene
+        self.pending_encounter_id = None # Reset pending encounter
         
         # Flashback Handling (Phase 6)
         if scene.get("type") == "flashback":
@@ -71,6 +73,13 @@ class SceneManager:
         
         # Apply on-entry effects
         self._apply_on_entry_effects(scene)
+
+        # Check for Encounter Trigger (Week 26)
+        if "encounter" in scene:
+            # Check if this encounter has already been resolved if unique?
+            # For now, assume always triggers on entry
+            self.pending_encounter_id = scene["encounter"]
+            print(f"[SCENE] Encounter detected: {self.pending_encounter_id}")
 
         return self.current_scene_data
 

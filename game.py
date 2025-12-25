@@ -552,9 +552,20 @@ class Game:
         self.output.clear()
         
         # 1. Process Input
-        if self.in_dialogue:
+        if self.combat_manager.active:
+             self.process_combat_input(user_input)
+        elif self.in_dialogue:
              self.process_dialogue_input(user_input)
         else:
+             # Check for pending encounter trigger from Scene Manager
+             if self.scene_manager.pending_encounter_id:
+                 self.combat_manager.start_encounter(
+                     encounter_id=self.scene_manager.pending_encounter_id,
+                     encounter_type="combat" # Default, could be refined
+                 )
+                 # Don't process other input this tick, show combat start
+                 return self.output.flush()
+
              choices = self.scene_manager.current_scene_data.get("choices", [])
              action_result = self.process_command(user_input, choices)
              
@@ -597,6 +608,50 @@ class Game:
             self.display_state()
             
         return self.output.flush()
+
+    def process_combat_input(self, raw_input):
+        """Handle input when in combat mode."""
+        clean = raw_input.strip().lower()
+
+        # 1. Parse Action
+        action_type = "attack" # Default
+        target = None
+
+        # Simple parser for "attack thug", "dodge", "run"
+        parts = clean.split()
+        if not parts:
+            return
+
+        cmd = parts[0]
+        if cmd in ["a", "attack", "fight", "shoot"]:
+            action_type = "attack"
+            if len(parts) > 1: target = parts[1]
+        elif cmd in ["d", "dodge", "evade"]:
+            action_type = "dodge"
+        elif cmd in ["r", "run", "flee", "escape"]:
+            action_type = "flee"
+        elif cmd in ["feint", "shove", "trip"]:
+            action_type = cmd
+            if len(parts) > 1: target = parts[1]
+        elif cmd in ["intimidate", "distract", "talk"]:
+            action_type = cmd
+            if len(parts) > 1: target = parts[1]
+        elif cmd in ["help", "?"]:
+            self.print("COMBAT COMMANDS: attack [target], dodge, flee, feint/shove [target], intimidate/distract [target]")
+            return
+
+        # 2. Execute Action
+        result = self.combat_manager.perform_action(action_type, target)
+
+        # 3. Print Output
+        for msg in result.get("messages", []):
+            self.print(f"> {msg}")
+
+        # 4. Check End State
+        if result.get("effects", {}).get("victory"):
+            self.print("\n*** VICTORY ***")
+        elif result.get("effects", {}).get("escaped"):
+            self.print("\n*** ESCAPED ***")
 
     def get_ui_state(self):
         """Return structured state for the UI frontend."""
@@ -678,7 +733,9 @@ class Game:
         return False
 
     def display_state(self):
-        if self.in_dialogue:
+        if self.combat_manager.active:
+            self.display_combat()
+        elif self.in_dialogue:
             self.display_dialogue()
         else:
             self.display_scene()
@@ -705,8 +762,30 @@ class Game:
             self.display_status_line()
             self.display_choices(choices)
 
+    def display_combat(self):
+        self.print("\n" + "!"*60)
+        self.print(f"!!! COMBAT ENCOUNTER (Round {self.combat_manager.round_counter}) !!!")
+        self.print("!"*60)
+
+        # Show Enemies
+        self.print("\nTHREATS:")
+        for i, enemy in enumerate(self.combat_manager.enemies):
+            hp = enemy.get("hp", "?")
+            status = "STUNNED" if enemy.get("stunned") else "ACTIVE"
+            self.print(f"  {i+1}. {enemy['name']} (HP: {hp}) [{status}]")
+
+        # Show Log
+        self.print("\nLOG:")
+        for msg in self.combat_manager.log[-5:]:
+            self.print(f"  {msg}")
+
+        self.print("\nCOMMANDS: attack [target], dodge, flee, feint [target], intimidate [target]")
+        self.print("!"*60)
+
     def display_status_line(self):
         mode_str = "DIALOGUE" if self.input_mode == InputMode.DIALOGUE else "INVESTIGATION"
+        if self.combat_manager.active: mode_str = "COMBAT"
+
         debug_str = " [DEBUG]" if self.debug_mode else ""
         print_separator("-", 64, printer=self.print)
         self.print(f"[{mode_str} MODE{debug_str}] - (b)oard, (c)haracter, (i)nventory, (e)vidence")
@@ -2054,6 +2133,20 @@ class Game:
                 if value not in self.player_state["thoughts"]:
                     self.player_state["thoughts"].append(value)
                     print(f"[THOUGHT UNLOCKED: {value}]")
+
+    def run(self, start_id="bedroom"):
+        self.start_game(start_id)
+        while True:
+            try:
+                user_input = input("> ")
+                output = self.step(user_input)
+                if output == "QUIT":
+                    break
+            except EOFError:
+                break
+            except KeyboardInterrupt:
+                print("\nQuitting...")
+                break
 
 if __name__ == "__main__":
     game = Game()
