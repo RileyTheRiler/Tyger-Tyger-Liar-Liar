@@ -36,6 +36,7 @@ from src.io_system import OutputBuffer
 from src.inventory_system import InventoryManager, Item, Evidence
 from src.save_system import EventLog, SaveSystem
 from src.journal_system import JournalManager
+from src.npc_system import NPCSystem
 from interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result, Colors
 from text_composer import TextComposer, Archetype
 
@@ -71,6 +72,7 @@ class Game:
         self.lens_system = LensSystem(self.skill_system, self.board)
         self.attention_system = AttentionSystem()
         self.integration_system = IntegrationSystem()
+        self.npc_system = NPCSystem(resource_path(os.path.join('data', 'npcs')))
         self.char_ui = CharacterSheetUI(self.skill_system)
         self.inventory_system = InventoryManager()
         self.corkboard = CorkboardMinigame(self.board, self.inventory_system)
@@ -635,6 +637,53 @@ class Game:
                     else:
                         self.print(f"[DEBUG] Scene '{scene_id}' not found")
                 return "refresh"
+
+            # Debug: Social
+            if clean.startswith('set_trust'):
+                parts = clean.split()
+                if len(parts) >= 3:
+                    npc_id = parts[1]
+                    val = int(parts[2])
+                    npc = self.npc_system.get_npc(npc_id)
+                    if npc:
+                        npc.trust = val
+                        self.print(f"[DEBUG] Set {npc.name} trust to {val}")
+                return "refresh"
+
+            if clean.startswith('reveal_faction'):
+                parts = clean.split()
+                if len(parts) >= 2:
+                    faction_id = parts[1]
+                    if faction_id in self.npc_system.factions:
+                        f = self.npc_system.factions[faction_id]
+                        self.print(f"[DEBUG] Faction {f.name}: Rep {f.reputation}, Members {f.members}")
+                return "refresh"
+
+            if clean == 'social_graph':
+                self.print("\n=== SOCIAL GRAPH ===")
+                for npc in self.npc_system.npcs.values():
+                    self.print(f"{npc.name} [{npc.faction_id or 'No Faction'}]")
+                    self.print(f"  Trust: {npc.trust} | Fear: {npc.fear}")
+                self.print("====================\n")
+                return "refresh"
+
+            if clean.startswith('spread_rumor'):
+                parts = clean.split()
+                # spread_rumor <id> <content> <truth> <status>
+                if len(parts) >= 2:
+                    rumor_id = parts[1]
+                    # If existing, spread it
+                    if rumor_id in self.npc_system.rumors:
+                        self.npc_system.spread_rumor(rumor_id)
+                        self.print(f"[DEBUG] Spreading rumor {rumor_id} globally")
+                    else:
+                        # Create new test rumor
+                        content = parts[2] if len(parts) > 2 else "Something strange happened."
+                        self.npc_system.create_rumor(rumor_id, content, "partial", "public")
+                        self.print(f"[DEBUG] Created and spreading new rumor: {rumor_id}")
+                else:
+                    self.print("Usage: spread_rumor <id> [content]")
+                return "refresh"
         
         # Theory Resolution Commands
         if clean.startswith('prove '):
@@ -871,6 +920,7 @@ class Game:
                     "player_state": self.player_state.copy(),
                 },
                 "board_state": self.board.to_dict(),
+                "npc_system": self.npc_system.to_dict(),
                 "inventory": self.inventory_system.to_dict(),
                 "time_system": self.time_system.to_dict(),
                 "event_log": self.event_log.to_dict(),
@@ -916,6 +966,10 @@ class Game:
             # Restore board
             if "board_state" in save_data:
                 self.board = Board.from_dict(save_data["board_state"])
+
+            # Restore NPC system
+            if "npc_system" in save_data:
+                self.npc_system.restore_states(save_data["npc_system"])
             
             # Restore time system
             if "time_system" in save_data:

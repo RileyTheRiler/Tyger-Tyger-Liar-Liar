@@ -3,6 +3,8 @@
     "id": "npc_sheriff_bergman",
     "name": "Sheriff Erik Bergman",
     "title": "Kaltvik Sheriff",
+    "faction_id": "sheriff",
+    "faction_loyalty": 90,
     "description": {
       "base": "A weathered man in his fifties with tired eyes and a permanent frown. His uniform is worn but clean. He moves like someone carrying an invisible weight.",
       "lens": {
@@ -70,6 +72,8 @@
     "id": "npc_hotel_manager_elsa",
     "name": "Elsa Lindqvist",
     "title": "Hotel Manager",
+    "faction_id": "elders",
+    "faction_loyalty": 75,
     "description": {
       "base": "A thin woman in her sixties with sharp features and sharper eyes. She wears a faded floral dress under a heavy cardigan. Her hands never stop moving—adjusting things, straightening things.",
       "lens": {

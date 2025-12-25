@@ -1,0 +1,74 @@
+[
+  {
+    "id": "npc_elder_magnus",
+    "name": "Magnus Ooluk",
+    "title": "Town Elder",
+    "faction_id": "elders",
+    "faction_loyalty": 95,
+    "description": {
+      "base": "An ancient Iñupiaq man with skin like cracked leather. He watches the horizon.",
+      "lens": {
+        "believer": "He speaks to the wind, and sometimes, it answers.",
+        "skeptic": "A traditionalist clinging to old ways in a changing world.",
+        "haunted": "He looks at you with pity, as if he knows your fate."
+      }
+    },
+    "location_id": "loc_community_center",
+    "initial_trust": 30,
+    "initial_fear": 0
+  },
+  {
+    "id": "npc_scientist_kara",
+    "name": "Dr. Kara Vane",
+    "title": "Atmospheric Scientist",
+    "faction_id": "scientists",
+    "faction_loyalty": 80,
+    "description": {
+      "base": "Sharp, focused, always checking her instruments. She doesn't have time for stories.",
+      "lens": {
+        "believer": "She refuses to look at the data that doesn't make sense.",
+        "skeptic": "A beacon of reason in this madness.",
+        "haunted": "Her denial is a wall she built to keep the fear out."
+      }
+    },
+    "location_id": "loc_radio_tower",
+    "initial_trust": 45,
+    "initial_fear": 10
+  },
+  {
+    "id": "npc_believer_tully",
+    "name": "Tully 'Spook' Henderson",
+    "title": "Conspiracy Theorist",
+    "faction_id": "believers",
+    "faction_loyalty": 70,
+    "description": {
+      "base": "A frantic man covered in layers of mismatched clothes. He smells of old paper and coffee.",
+      "lens": {
+        "believer": "He knows. He's connected the dots you're just starting to see.",
+        "skeptic": "Paranoid schizophrenia, untreated.",
+        "haunted": "He's seen the edges of the simulation."
+      }
+    },
+    "location_id": "loc_trailer_park",
+    "initial_trust": 20,
+    "initial_fear": 60
+  },
+  {
+    "id": "npc_cult_priestess",
+    "name": "Sister Rena",
+    "title": "Voice of the Aurora",
+    "faction_id": "cult",
+    "faction_loyalty": 100,
+    "description": {
+      "base": "Serene, smiling, with eyes that seem to glow faintly in the dark.",
+      "lens": {
+        "believer": "A prophet of the new age.",
+        "skeptic": "A charismatic leader exploiting vulnerable people.",
+        "haunted": "She is not entirely human anymore."
+      }
+    },
+    "location_id": "loc_ice_chapel",
+    "initial_trust": 10,
+    "initial_fear": 0
+  }
+]

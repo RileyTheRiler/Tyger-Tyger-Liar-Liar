@@ -1,5 +1,5 @@
 """
-NPC System - Manages non-player characters with trust/fear tracking and relationships.
+NPC System - Manages non-player characters with trust/fear tracking, relationships, and factions.
 Trust is visible, trackable, and consequential per Canon & Constraints.
 """
 
@@ -7,6 +7,39 @@ import json
 import os
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
+from enum import Enum
+
+
+class FactionAlignment(Enum):
+    TRADITIONALIST = "Traditionalist"
+    RATIONALIST = "Rationalist"
+    PRAGMATIC = "Pragmatic"
+    CONSPIRACIST = "Conspiracist"
+    CULTIST = "Cultist"
+    UNKNOWN = "Unknown"
+
+
+@dataclass
+class Rumor:
+    """A piece of information spreading through the town."""
+    id: str
+    content: str
+    truth_value: str  # "true", "false", "partial"
+    status: str  # "private", "public", "suppressed"
+    origin_faction: Optional[str] = None
+    affected_factions: List[str] = field(default_factory=list)
+    known_by: List[str] = field(default_factory=list)  # List of NPC IDs
+
+
+@dataclass
+class Faction:
+    """A group of NPCs with shared ideology."""
+    id: str
+    name: str
+    alignment: FactionAlignment
+    description: str
+    members: List[str] = field(default_factory=list)
+    reputation: int = 0  # Player's reputation with this faction (-100 to 100)
 
 
 @dataclass
@@ -44,6 +77,15 @@ class NPC:
         # Trust and Fear (0-100 scale, visible to player)
         self.trust = data.get("initial_trust", 50)
         self.fear = data.get("initial_fear", 0)
+
+        # Faction & Loyalty
+        self.faction_id = data.get("faction_id")
+        self.faction_loyalty = data.get("faction_loyalty", 50)  # 0-100
+
+        # Memory & Beliefs
+        self.suspects_integration = data.get("suspects_integration", False)
+        self.player_alignment_belief = data.get("player_alignment_belief", "Unknown")
+        self.key_memories = data.get("key_memories", [])  # List of strings describing events
 
         # Trust thresholds for relationship status
         self.trust_thresholds = data.get("trust_thresholds", {
@@ -125,12 +167,24 @@ class NPC:
             else:
                 message = f"{self.name}'s trust in you has deteriorated. ({old_status} -> {new_status})"
 
+        # Add memory of significant trust shifts
+        if abs(amount) >= 10:
+            sentiment = "positive" if amount > 0 else "negative"
+            self.add_memory(f"Trust shift ({sentiment}): {reason}")
+
         return self.trust, message
 
     def modify_fear(self, amount: int, reason: str = "") -> int:
         """Modify fear level. Fear affects dialogue options and NPC behavior."""
         self.fear = max(0, min(100, self.fear + amount))
+        if amount > 10:
+             self.add_memory(f"Became afraid: {reason}")
         return self.fear
+
+    def add_memory(self, memory: str):
+        """Add a key memory to the NPC."""
+        if memory not in self.key_memories:
+            self.key_memories.append(memory)
 
     def get_available_knowledge(self) -> List[NPCKnowledge]:
         """Get knowledge that can be shared based on current trust."""
@@ -253,6 +307,11 @@ class NPC:
             "id": self.id,
             "trust": self.trust,
             "fear": self.fear,
+            "faction_id": self.faction_id,
+            "faction_loyalty": self.faction_loyalty,
+            "suspects_integration": self.suspects_integration,
+            "player_alignment_belief": self.player_alignment_belief,
+            "key_memories": self.key_memories,
             "flags": self.flags,
             "knowledge_revealed": [k.topic for k in self.knowledge if k.revealed],
             "secrets_revealed": [s.id for s in self.secrets if s.revealed]
@@ -263,6 +322,11 @@ class NPC:
         """Restore NPC state from saved data."""
         npc.trust = state.get("trust", npc.trust)
         npc.fear = state.get("fear", npc.fear)
+        npc.faction_id = state.get("faction_id", npc.faction_id)
+        npc.faction_loyalty = state.get("faction_loyalty", npc.faction_loyalty)
+        npc.suspects_integration = state.get("suspects_integration", npc.suspects_integration)
+        npc.player_alignment_belief = state.get("player_alignment_belief", npc.player_alignment_belief)
+        npc.key_memories = state.get("key_memories", npc.key_memories)
         npc.flags = state.get("flags", npc.flags)
 
         for topic in state.get("knowledge_revealed", []):
@@ -281,10 +345,24 @@ class NPCSystem:
 
     def __init__(self, npcs_dir: str = None):
         self.npcs: Dict[str, NPC] = {}
+        self.factions: Dict[str, Faction] = {}
+        self.rumors: Dict[str, Rumor] = {}
         self.npcs_dir = npcs_dir
+
+        self._initialize_factions()
 
         if npcs_dir:
             self.load_npcs(npcs_dir)
+
+    def _initialize_factions(self):
+        """Initialize the core factions of Kaltvik."""
+        self.factions = {
+            "elders": Faction("elders", "Town Elders", FactionAlignment.TRADITIONALIST, "Protective of tradition, suspicious of outsiders."),
+            "scientists": Faction("scientists", "Scientists", FactionAlignment.RATIONALIST, "Empirical, data-driven, skeptical."),
+            "sheriff": Faction("sheriff", "Sheriff's Office", FactionAlignment.PRAGMATIC, "Pragmatic lawkeepers."),
+            "believers": Faction("believers", "Believers", FactionAlignment.CONSPIRACIST, "Seek hidden patterns, often unhinged."),
+            "cult": Faction("cult", "Church of Ice", FactionAlignment.CULTIST, "Secretive, view aurora as divine.")
+        }
 
     def load_npcs(self, npcs_dir: str):
         """Load NPC definitions from a directory."""
@@ -302,6 +380,11 @@ class NPCSystem:
                     for npc_data in npcs:
                         npc = NPC(npc_data)
                         self.npcs[npc.id] = npc
+
+                        # Register with faction if set
+                        if npc.faction_id and npc.faction_id in self.factions:
+                            self.factions[npc.faction_id].members.append(npc.id)
+
                 except Exception as e:
                     print(f"Error loading NPC from {filename}: {e}")
 
@@ -309,6 +392,8 @@ class NPCSystem:
         """Load a single NPC from data."""
         npc = NPC(npc_data)
         self.npcs[npc.id] = npc
+        if npc.faction_id and npc.faction_id in self.factions:
+             self.factions[npc.faction_id].members.append(npc.id)
         return npc
 
     def get_npc(self, npc_id: str) -> Optional[NPC]:
@@ -339,7 +424,8 @@ class NPCSystem:
                     "trust": npc.trust,
                     "fear": npc.fear,
                     "status": npc.get_relationship_status(),
-                    "alive": npc.flags.get("alive", True)
+                    "alive": npc.flags.get("alive", True),
+                    "faction": npc.faction_id
                 }
         return summary
 
@@ -349,6 +435,47 @@ class NPCSystem:
         if npc:
             return npc.modify_trust(amount, reason)
         return None
+
+    def modify_faction_reputation(self, faction_id: str, amount: int):
+        """Modify reputation with an entire faction."""
+        if faction_id in self.factions:
+            self.factions[faction_id].reputation = max(-100, min(100, self.factions[faction_id].reputation + amount))
+
+            # Ripple effect to members
+            for npc_id in self.factions[faction_id].members:
+                npc = self.get_npc(npc_id)
+                if npc:
+                    # Impact depends on loyalty
+                    impact = int(amount * (npc.faction_loyalty / 100.0))
+                    if impact != 0:
+                        npc.modify_trust(impact, f"Faction reputation change ({faction_id})")
+
+    def create_rumor(self, id: str, content: str, truth_value: str, status: str, origin_faction: str = None) -> Rumor:
+        """Create and track a new rumor."""
+        rumor = Rumor(id, content, truth_value, status, origin_faction)
+        self.rumors[id] = rumor
+        return rumor
+
+    def spread_rumor(self, rumor_id: str, target_faction: str = None):
+        """Spread an existing rumor to a faction or publicly."""
+        if rumor_id not in self.rumors:
+            return
+
+        rumor = self.rumors[rumor_id]
+
+        if target_faction:
+            if target_faction in self.factions and target_faction not in rumor.affected_factions:
+                rumor.affected_factions.append(target_faction)
+                # Faction members learn it
+                for member_id in self.factions[target_faction].members:
+                    if member_id not in rumor.known_by:
+                        rumor.known_by.append(member_id)
+        else:
+            # Spread to everyone (Public)
+            rumor.status = "public"
+            for npc in self.npcs.values():
+                if npc.id not in rumor.known_by:
+                    rumor.known_by.append(npc.id)
 
     def apply_global_reaction(self, trigger: str) -> Dict[str, dict]:
         """Apply a reaction trigger to all NPCs, returning results."""
@@ -377,14 +504,58 @@ class NPCSystem:
 
     def to_dict(self) -> dict:
         """Serialize all NPC states for saving."""
-        return {npc_id: npc.to_dict() for npc_id, npc in self.npcs.items()}
+        return {
+            "npcs": {npc_id: npc.to_dict() for npc_id, npc in self.npcs.items()},
+            "factions": {
+                fid: {
+                    "reputation": f.reputation,
+                    "members": f.members
+                } for fid, f in self.factions.items()
+            },
+            "rumors": {
+                rid: {
+                    "content": r.content,
+                    "truth": r.truth_value,
+                    "status": r.status,
+                    "known_by": r.known_by,
+                    "affected": r.affected_factions
+                } for rid, r in self.rumors.items()
+            }
+        }
 
     def restore_states(self, states: dict):
         """Restore NPC states from saved data."""
-        for npc_id, state in states.items():
+        # Handle old save format (just dict of NPCs) vs new format (nested)
+        if "npcs" in states:
+            npc_states = states["npcs"]
+            faction_states = states.get("factions", {})
+            rumor_states = states.get("rumors", {})
+        else:
+            npc_states = states
+            faction_states = {}
+            rumor_states = {}
+
+        for npc_id, state in npc_states.items():
             npc = self.get_npc(npc_id)
             if npc:
                 NPC.restore_state(npc, state)
+
+        # Restore faction reputation
+        for fid, f_data in faction_states.items():
+            if fid in self.factions:
+                self.factions[fid].reputation = f_data.get("reputation", 0)
+
+        # Restore rumors
+        self.rumors = {}
+        for rid, r_data in rumor_states.items():
+            self.rumors[rid] = Rumor(
+                id=rid,
+                content=r_data["content"],
+                truth_value=r_data["truth"],
+                status=r_data["status"],
+                known_by=r_data["known_by"],
+                affected_factions=r_data["affected"]
+            )
 
 
 # Example NPC data for testing
@@ -392,6 +563,8 @@ EXAMPLE_NPC_DATA = {
     "id": "npc_sheriff_bergman",
     "name": "Sheriff Bergman",
     "title": "Local Sheriff",
+    "faction_id": "sheriff",
+    "faction_loyalty": 90,
     "description": {
         "base": "A weathered man in his fifties with tired eyes and a permanent frown.",
         "lens": {
@@ -453,15 +626,22 @@ if __name__ == "__main__":
 
     print(f"NPC: {npc.name}")
     print(f"Trust: {npc.trust}")
-    print(f"Status: {npc.get_relationship_status()}")
+    print(f"Faction: {npc.faction_id}")
+    print(f"Loyalty: {npc.faction_loyalty}")
 
     # Test trust modification
     new_trust, msg = npc.modify_trust(15, "helped investigation")
     print(f"After +15: {new_trust} - {msg}")
 
+    # Test Faction Ripple
+    print("\nTesting Faction Reputation change...")
+    system.modify_faction_reputation("sheriff", -50)
+    print(f"Faction Reputation: {system.factions['sheriff'].reputation}")
+    print(f"NPC Trust after faction hit: {npc.trust}")
+
     # Check available knowledge
     print(f"Available knowledge: {[k.topic for k in npc.get_available_knowledge()]}")
 
     # Test serialization
-    state = npc.to_dict()
-    print(f"Saved state: {state}")
+    state = system.to_dict()
+    # print(f"Saved state: {state}")
