@@ -205,5 +205,51 @@ THEORY_DATA = {
         "internalize_time_hours": 14,
         "active_case": False,
         "critical_for_endgame": True
+    },
+    # Case: The Disappearance of Elias Vane
+    "ran_away": {
+        "name": "Elias Ran Away",
+        "category": "Case Theory",
+        "description": "He finally snapped and left. He's hiding somewhere.",
+        "hidden_effects": False,
+        "effects": {
+            "Logic": 1,
+            "Empathy": -1
+        },
+        "conflicts_with": ["cult_abduction", "entity_snatch"],
+        "auto_locks": [],
+        "degradation_rate": 20,
+        "internalize_time_hours": 2,
+        "active_case": True
+    },
+    "cult_abduction": {
+        "name": "Cult Abduction",
+        "category": "Case Theory",
+        "description": "The Church of Ice took him for a ritual.",
+        "hidden_effects": False,
+        "effects": {
+            "Paranormal Sensitivity": 1,
+            "Skepticism": -1
+        },
+        "conflicts_with": ["ran_away", "entity_snatch"],
+        "auto_locks": [],
+        "degradation_rate": 15,
+        "internalize_time_hours": 3,
+        "active_case": True
+    },
+    "entity_snatch": {
+        "name": "Taken by the Aurora",
+        "category": "Case Theory",
+        "description": "He was in the wrong place during a surge. He's gone.",
+        "hidden_effects": True,
+        "effects": {
+            "Paranormal Sensitivity": 2,
+            "Sanity": -1
+        },
+        "conflicts_with": ["ran_away", "cult_abduction"],
+        "auto_locks": [],
+        "degradation_rate": 10,
+        "internalize_time_hours": 4,
+        "active_case": True
     }
 }

@@ -36,6 +36,7 @@ from src.io_system import OutputBuffer
 from src.inventory_system import InventoryManager, Item, Evidence
 from src.save_system import EventLog, SaveSystem
 from src.journal_system import JournalManager
+from src.case_system import CaseSystem
 from interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result, Colors
 from text_composer import TextComposer, Archetype
 
@@ -112,6 +113,19 @@ class Game:
         
         # Initialize Journal Manager (Week 6)
         self.journal = JournalManager()
+
+        # Initialize Case System (Week 22)
+        # Note: clue_system is not explicitly in Game, but inventory_system manages evidence.
+        # We might need to refactor or pass inventory as clue system adapter.
+        # For now, we will use a dummy clue system adapter if needed, or update CaseSystem to use Inventory.
+        # Wait, there IS a clue_system.py but Game doesn't initialize it?
+        # Game initializes InventoryManager. ClueSystem seems separate in file list.
+        # Let's import ClueSystem if it exists and use it, or check if it's integrated.
+        # Looking at imports... 'clue_system.py' is in list_files but not imported in game.py
+        # I should initialize it.
+        from src.clue_system import ClueSystem
+        self.clue_system = ClueSystem(board=self.board)
+        self.case_system = CaseSystem(board=self.board, clue_system=self.clue_system, journal_system=self.journal)
         
         # Load Scenes
         scenes_dir = resource_path(os.path.join('data', 'scenes'))
@@ -517,7 +531,26 @@ class Game:
         if clean in ['j', 'journal']:
             self.journal.display_journal() # Prints directly
             return "refresh"
+
+        # Week 22: Case Commands
+        if clean in ['case', 'cases']:
+            status = self.case_system.get_case_status()
+            if status["active"]:
+                self.print("\n" + "="*60)
+                self.print(f"ACTIVE CASE: {status['title']}")
+                self.print("="*60)
+                self.print(f"Hook: {status['hook']}")
+                self.print(f"Potential Theories: {', '.join(status['theories_active'] if 'theories_active' in status else status['theories_available'])}")
+            else:
+                self.print("\nNo active case.")
+            return "refresh"
         
+        if clean.startswith('start_case '):
+            parts = clean.split(maxsplit=1)
+            if len(parts) > 1:
+                self.case_system.start_case(parts[1])
+            return "refresh"
+
         # Taboo Actions (Attention System)
         taboo_map = {
             'whistle': 'whistle_at_aurora',
@@ -698,8 +731,31 @@ class Game:
         
         # Endgame Commands
         if clean in ['submit_report', 'submit']:
-            self.player_state["event_flags"].add("submit_report")
-            self.print("[You prepare to submit your final report...]")
+            # Week 22: Integrate with CaseSystem resolution
+            case = self.case_system.get_active_case()
+            if case:
+                self.print(f"\nSubmitting report for case: {case.title}")
+                # For now, just pick the first active theory as the 'selected' one
+                # In a full UI, we'd ask the user to pick one.
+                # Let's see if any theory is 'active' or 'internalized'.
+                # The prompt said "Moment where player acts on their belief".
+                # Let's assume the player has to internalize a theory first.
+
+                active_case_theories = [t for t in case.theories if self.board.is_theory_active(t)]
+
+                if not active_case_theories:
+                    self.print("You haven't internalized a concrete theory yet. You can't file a report based on nothing.")
+                elif len(active_case_theories) > 1:
+                    self.print(f"You have multiple conflicting theories: {', '.join(active_case_theories)}. You must choose one.")
+                    # TODO: Implement choice. For now, take first.
+                    res = self.case_system.resolve_case(active_case_theories[0])
+                    self.print(res["message"])
+                else:
+                    res = self.case_system.resolve_case(active_case_theories[0])
+                    self.print(res["message"])
+            else:
+                self.player_state["event_flags"].add("submit_report")
+                self.print("[You prepare to submit your final report... (Endgame Trigger)]")
             return "refresh"
         
         if clean in ['leave_town', 'leave']:
@@ -761,6 +817,23 @@ class Game:
         objects = scene.get("objects", {})
         
         print(f"\n[ACTION: {verb} {target}]")
+
+        # Week 22: Parser Extensions
+        if verb == "ACCUSE":
+            if not target:
+                print("Accuse whom?")
+                return
+
+            print(f"You point a finger at {target}.")
+            # Integration with Dialogue or NPC system would go here.
+            # For now, check if we have an active case and if this is a resolution step?
+            # Or maybe just log it.
+            self.journal.add_entry(f"ACCUSATION: {target}", f"I openly accused {target}.", ["action", "accusation"])
+
+            # Check if this accusation triggers any consequences
+            # This would likely be scene-specific logic, maybe handled via 'triggers' in scene data.
+            # But we can also check against case outcomes if the outcome is based on accusing someone.
+            return
 
         if verb == "EXAMINE":
             if not target:
@@ -874,6 +947,8 @@ class Game:
                 "inventory": self.inventory_system.to_dict(),
                 "time_system": self.time_system.to_dict(),
                 "event_log": self.event_log.to_dict(),
+                "clue_system": self.clue_system.to_dict(),
+                "case_system": self.case_system.to_dict(),
                 "scene_state": {
                     "current_scene_id": self.scene_manager.current_scene_id,
                     "visited_scenes": list(self.scene_manager.visited_scenes) if hasattr(self.scene_manager, 'visited_scenes') else []
@@ -931,6 +1006,13 @@ class Game:
             if "event_log" in save_data:
                 self.event_log = EventLog.from_dict(save_data["event_log"])
             
+            # Restore Clue and Case systems
+            if "clue_system" in save_data:
+                self.clue_system.restore_state(save_data["clue_system"])
+
+            if "case_system" in save_data:
+                self.case_system.restore_state(save_data["case_system"])
+
             # Restore scene
             if "scene" in save_data:
                 self.scene_manager.load_scene(save_data["scene"])
@@ -1195,9 +1277,18 @@ class Game:
             elif key == "add_item":
                 item = Item.from_dict(value)
                 self.inventory_system.add_item(item)
+                # Week 22: Sync with ClueSystem if item is a clue
+                # We assume if it's added as item, it might be a clue.
+                # Check if item ID matches a clue ID.
+                if self.clue_system.get_clue(item.id):
+                    self.clue_system.acquire_clue(item.id)
+
             elif key == "add_evidence":
                 ev = Evidence.from_dict(value)
                 self.inventory_system.add_evidence(ev)
+                # Week 22: Sync with ClueSystem
+                if self.clue_system.get_clue(ev.id):
+                    self.clue_system.acquire_clue(ev.id)
             elif key == "unlock_thought":
                 if value not in self.player_state["thoughts"]:
                     self.player_state["thoughts"].append(value)
