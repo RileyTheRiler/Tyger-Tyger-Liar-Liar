@@ -1,0 +1,28 @@
+{
+    "id": "radio_tower_logbook",
+    "title": "The Logbook",
+    "location_id": "radio_tower",
+    "text": {
+        "base": "You open the logbook. The pages are crisp, despite the damp air. The handwriting is jagged, hurried.",
+        "lens": {
+            "believer": "'Frequency 89.3. It's not static. It's a map.' The coordinates listed point to the center of the lake.",
+            "skeptic": "Entries suggest severe sleep deprivation. 'The noise stops when I scream.' Classic paranoia symptoms.",
+            "haunted": "The handwriting changes halfway down the page. It starts to look like yours."
+        }
+    },
+    "board_updates": [
+        {
+            "node_type": "clue",
+            "action": "add",
+            "id": "clue_tower_log",
+            "label": "Tower Logbook",
+            "description": "Maintenance log found in the radio tower shed. Contains impossible dates and erratic ramblings."
+        }
+    ],
+    "choices": [
+        {
+            "label": "Close the book",
+            "next_scene": "radio_tower_shed"
+        }
+    ]
+}

@@ -21,7 +21,7 @@ class BranchController:
     
     def __init__(self):
         self.condition_cache = {}
-        self.cache_enabled = True
+        self.cache_enabled = False # Disable caching as state changes frequently
         self.debug_mode = False
         self.last_evaluation_log = []
         

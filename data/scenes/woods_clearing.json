@@ -1,41 +1,52 @@
 {
     "id": "woods_clearing",
-    "name": "Woods Clearing",
-    "text": "A small, circular clearing deep in the forest. The grass here is yellowed and dry, despite the recent rain. In the center stands a weathered stone pillar, half-covered in moss. To the north, a narrow path winds back towards the trailhead.",
+    "title": "The Whispering Clearing",
+    "location_id": "woods",
+    "time_cost": 10,
+    "text": {
+        "base": "The forest floor drops away into a bowl of dead earth. No birdsong. No insect hum. Just a pressure against the eardrums, like deep water. In the center, the stone pillar stands not like a ruin, but like a bone pushed up through the skin of the world.",
+        "lens": {
+            "believer": "The silence isn't empty; it's holding its breath. The trees lean inward, a jury of twisted wood waiting for a verdict. The pillar is a lightning rod for things that don't have names.",
+            "skeptic": "Geiger counter would likely scream here. The grass pattern suggests a localized die-off from subsurface leakage. The pillar? Old survey marker, likely granite, heavily weathered by acid rain.",
+            "haunted": "The light is wrong here. Grey and flat, like the fluorescent tubes in the Psych Ward hallway. You can smell the antiseptic ghost of that place rising from the dirt."
+        },
+        "inserts": [
+            {
+                "condition": {
+                    "skill_gte": {
+                        "Perception": 4
+                    }
+                },
+                "text": "The moss on the pillar hasn't grown over it; it's shying away. Leaving a gap of bare, grey stone.",
+                "insert_at": "AFTER_BASE"
+            }
+        ]
+    },
     "connected_scenes": [
         "trailhead",
         "woods_north_path"
     ],
     "objects": {
         "pillar": {
-            "description": "It's an ancient stone pillar, about four feet tall. It feels unnervingly warm to the touch.",
-            "passive_checks": [
-                {
-                    "skill": "Perception",
-                    "difficulty": 8,
-                    "success_text": "You notice faint, rhythmic etchings near the base, resembling claw marks."
-                },
-                {
-                    "skill": "Logic",
-                    "difficulty": 12,
-                    "success_text": "The placement of the pillar suggests it wasn't built here; it was moved, possibly centuries ago."
-                }
-            ],
+            "description": "It absorbs the light. Touching it feels like touching a fevered forehead—damp, and impossibly warm.",
             "interactions": {
-                "use": "You place your hand on the pillar. A faint hum vibrates through your palm, and for a moment, the yellowed grass seems to pulse with a dull grey light."
+                "use": "You press your palm to the stone. The warmth travels up your arm, settling in your teeth. A low thrum, like a generator beneath the earth."
             }
         },
         "grass": {
-            "description": "Brittle and colorless. It crunches like glass under your boots.",
-            "passive_checks": [
-                {
-                    "skill": "Subconscious",
-                    "difficulty": 10,
-                    "success_text": "The way the grass bends... it's like something heavy was dragged through here recently. Or many things."
-                }
-            ]
+            "description": "Yellow. Brittle. It crunches like insect wings under your boots."
         }
     },
+    "passive_clues": [
+        {
+            "clue_id": "clue_pillar_scratches",
+            "visible_when": {
+                "skill_gte": {
+                    "Perception": 4
+                }
+            }
+        }
+    ],
     "ambient_effects": {
         "sanity_drain_per_min": 0.1,
         "paranoia_multiplier": 1.2
@@ -43,32 +54,36 @@
     "memory_trigger": {
         "skill": "Subconscious",
         "dc": 14,
-        "text": "You remember sitting in a place like this once. But the sun was bright, and someone was laughing. The memory is cut short by a flash of red."
+        "text": "A flash of memory: a child's laughter, abruptly cut off by a sound like tearing metal. You are standing in this exact spot, but the pillar is new and unblemished."
     },
     "choices": [
         {
-            "text": "Inspect the pillar more closely.",
+            "label": "Inspect the pillar more closely",
             "next_scene": "woods_clearing",
-            "effects": {
-                "sanity": -2
-            }
+            "effects": [
+                {
+                    "type": "sanity",
+                    "value": -2
+                },
+                {
+                    "type": "flag",
+                    "target": "inspected_pillar",
+                    "value": true
+                }
+            ]
         },
         {
-            "text": "Walk back to the trailhead.",
+            "label": "Walk back to the trailhead",
             "next_scene": "trailhead"
         },
         {
-            "text": "[Empathy (Hard)] Close your eyes and feel the atmosphere.",
-            "skill_check": {
+            "label": "[Empathy (Hard)] Close your eyes and feel the atmosphere",
+            "check": {
                 "skill": "Empathy",
-                "difficulty": 12,
-                "on_success": {
-                    "next_scene": "scene_clearing_peace"
-                },
-                "on_fail": {
-                    "next_scene": "scene_clearing_dread"
-                }
-            }
+                "dc": 12
+            },
+            "next_scene": "scene_clearing_peace",
+            "on_fail_scene": "scene_clearing_dread"
         }
     ]
 }

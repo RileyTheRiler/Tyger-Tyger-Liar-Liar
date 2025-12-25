@@ -1,9 +1,9 @@
 {
     "id": "scene_pockets",
-    "text": "Lint. A bent paperclip. A receipt for a 'Spicy Tuna Roll' dated three years ago. Nothing useful.",
+    "text": "Your hands find the inventory of a ghost: A Zippo lighter, heavy brass, scratched with tally marks. A crumpled receipt for 'Haloperidol', three months expired. And a single, heavy key that feels warm.",
     "choices": [
         {
-            "text": "Return to the room.",
+            "text": "Put them back. Don't think about the tally marks.",
             "next_scene": "scene_wakeup"
         }
     ]

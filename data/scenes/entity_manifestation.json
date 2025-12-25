@@ -1,0 +1,56 @@
+{
+    "id": "entity_manifestation",
+    "title": "The Arrival",
+    "location_id": "void",
+    "time_cost": 0,
+    "text": {
+        "base": "There is no sky. There is only the hum. It starts in the marrow of your bones, a vibration that matches the resonant frequency of your pain. The light isn't coming from above; it's coming from *inside* your optic nerve. You are being unmade. Your first birthday party. The taste of lemons. The face of your mother. They are being deleted, one by one.",
+        "lens": {
+            "believer": "It's not an invasion. It's an answer. Finally, the question marks in your DNA are being straightened into exclamation points. The song is beautiful.",
+            "skeptic": "Stroke. A massive hemorrhagic event in the occipital lobe. You are dying. This is just the firing of neurons as they starve. Fight the shutdown.",
+            "haunted": "The ghosts aren't screaming anymore. They are silent. Because they are afraid of *this*. Even the dead know when to hide."
+        }
+    },
+    "choices": [
+        {
+            "label": "Open the door. (Let it in.)",
+            "type": "ending",
+            "ending_id": "integrated_voluntary",
+            "description": "The pain stops. The you stops. You become part of the chorus."
+        },
+        {
+            "label": "[Composure (Impossible)] Anchor yourself to the pain.",
+            "check": {
+                "skill": "Composure",
+                "dc": 14
+            },
+            "on_success": {
+                "text": "You bite your tongue until you taste copper. The pain is yours. The fear is yours. You are small, and fragile, and *real*. The light recoils from the density of your existence. You keep the memory of the lemons.",
+                "effects": [
+                    {
+                        "type": "sanity",
+                        "value": -20
+                    },
+                    {
+                        "type": "teleport",
+                        "target": "clinic_bed"
+                    }
+                ]
+            },
+            "on_fail": {
+                "text": "The anchor drags through the silt of your mind. It finds no purchase. You drift away.",
+                "effects": [
+                    {
+                        "type": "ending",
+                        "target": "integrated_forced"
+                    }
+                ]
+            }
+        }
+    ],
+    "music": "theme_entity_presence.mp3",
+    "background_media": {
+        "type": "image",
+        "src": "aurora_manifestation.png"
+    }
+}

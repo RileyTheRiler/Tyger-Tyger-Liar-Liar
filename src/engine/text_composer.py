@@ -17,6 +17,8 @@ except ImportError:
         MAGENTA = "\033[35m"
         RESET = "\033[0m"
 
+from engine.distortion_rules import DistortionManager
+
 
 class InsertPosition(Enum):
     BEFORE_CHOICES = "BEFORE_CHOICES"
@@ -46,6 +48,7 @@ class TextInsert:
 class ComposedText:
     """The result of text composition."""
     full_text: str
+    raw_text: Optional[str] = None # Pre-distortion text for side-by-side comparison
     base_used: bool
     lens_used: Optional[str]
     inserts_applied: List[str]
@@ -90,7 +93,9 @@ class TextComposer:
         self.game_state = game_state
         self.debug_mode = False
         self.developer_commentary = False
-        self.fracture_chance = 0.0  # Base chance for random fractures
+        self.distortion_manager = DistortionManager()
+        self.fracture_chance = 0.01  # Base chance for reality glitches
+
     
     def calculate_dominant_lens(self, player_state: dict = None) -> Archetype:
         """
@@ -306,12 +311,41 @@ class TextComposer:
                     except (ValueError, IndexError):
                         pass
 
-        # === LAYER 4: FRACTURE EFFECTS ===
+        # === LAYER 4: FRACTURE EFFECTS & DISTORTION ===
+        raw_text_content = full_text
         fracture_applied = False
+
+        # Check for active failures
+        active_failures = player_state.get("active_failures", [])
+
+        # Cognitive Overload: Fragment text
+        if "cognitive_overload" in active_failures:
+            full_text = self._apply_overload_fragmentation(full_text)
+            debug_info["layers"].append("cognitive_overload")
+
+        # Social Breakdown: Paranoia
+        if "social_breakdown" in active_failures:
+            full_text = self._apply_paranoia(full_text)
+            debug_info["layers"].append("social_breakdown")
+
+        # Investigative Paralysis: Circular text
+        if "investigative_paralysis" in active_failures:
+            full_text = self._apply_paralysis_loops(full_text)
+            debug_info["layers"].append("investigative_paralysis")
+
+        # Reality Fractures
         if self._should_apply_fracture(player_state):
             full_text = self._apply_fracture_effect(full_text, player_state)
-            fracture_applied = True
             debug_info["layers"].append("fracture")
+
+        # Stress-based Distortions
+        if self.distortion_manager and player_state:
+            full_text = self.distortion_manager.apply_distortions(full_text, player_state)
+
+        fracture_applied = (full_text != raw_text_content)
+        if fracture_applied and "fracture" not in debug_info["layers"]:
+            debug_info["layers"].append("distortion")
+
 
         # === LAYER 5: DEVELOPER COMMENTARY ===
         if self.developer_commentary:
@@ -325,6 +359,7 @@ class TextComposer:
 
         return ComposedText(
             full_text=full_text.strip(),
+            raw_text=raw_text_content.strip(),
             base_used=True,
             lens_used=archetype.value if lens_text else None,
             inserts_applied=inserts_applied,
@@ -443,7 +478,7 @@ class TextComposer:
             return random.random() < 0.15  # 15% chance at high attention
 
         # Base random chance (very low)
-        if self.fracture_chance > 0:
+        if hasattr(self, 'fracture_chance') and self.fracture_chance > 0:
             import random
             return random.random() < self.fracture_chance
 
@@ -529,6 +564,52 @@ class TextComposer:
             idx = random.randint(0, len(words) - 1)
             words[idx] = " " * len(words[idx])
         return " ".join(words)
+
+    def _apply_overload_fragmentation(self, text: str) -> str:
+        """Simulate cognitive overload by truncating and fragmenting text."""
+        # Split into sentences
+        sentences = text.split(". ")
+        if len(sentences) <= 1: return text
+
+        # Keep only the beginning or random parts
+        import random
+        if random.random() < 0.5:
+            # Just fade out
+            return ". ".join(sentences[:2]) + "... [FOCUS LOST]"
+        else:
+            # Fragmented
+            new_text = ""
+            for s in sentences:
+                if random.random() < 0.5:
+                    new_text += s + ". "
+                else:
+                    new_text += "... "
+            return new_text.strip()
+
+    def _apply_paralysis_loops(self, text: str) -> str:
+        """Simulate analysis paralysis by repeating doubts."""
+        doubt_phrases = [
+            "\n\nBut that can't be right.",
+            "\n\nWait. Is this significant?",
+            "\n\nYou're missing something.",
+            "\n\nReview the data again."
+        ]
+        import random
+        return text + random.choice(doubt_phrases)
+
+    def _apply_paranoia(self, text: str) -> str:
+        """Inject paranoid thoughts for social breakdown."""
+        paranoia_phrases = [
+            " (They are lying to you.)",
+            " (Do not trust them.)",
+            " (They know what you did.)",
+            " (Can you hear them whispering?)"
+        ]
+        import random
+        # Insert randomly into text
+        if random.random() < 0.4:
+            return text + random.choice(paranoia_phrases)
+        return text
 
 
 class ClueTextComposer:

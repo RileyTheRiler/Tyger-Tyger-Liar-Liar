@@ -18,21 +18,46 @@ class EndgameManager:
     CRITICAL_REALITY = 0
     IDENTITY_COLLAPSE_THRESHOLD = 20
     
-    # Ending Categories
-    ENDING_RATIONALITY = "rationality"
-    ENDING_CONSPIRACY = "conspiracy"
-    ENDING_COLLAPSE = "collapse"
-    ENDING_CORRUPTION = "corruption"
-    ENDING_REDEMPTION = "redemption"
+    # Ending Categories (ID mapping based on JSON filenames)
+    ENDING_RATIONALITY = "ending_rationality"
+    ENDING_CONSPIRACY = "ending_conspiracy"
+    ENDING_COLLAPSE = "ending_collapse"
+    ENDING_CORRUPTION = "ending_corruption"
+    ENDING_REDEMPTION = "ending_redemption"
     
-    def __init__(self, board, player_state: Dict[str, Any], skill_system):
+    def __init__(self, board, player_state: Dict[str, Any], skill_system, endings_path: str = "data/endings"):
         self.board = board
         self.player_state = player_state
         self.skill_system = skill_system
+        self.endings_path = endings_path
         
         self.triggered = False
         self.trigger_reason = ""
         self.ending_path: Optional[str] = None
+        self.endings_data = {}
+        
+        # Load endings immediately
+        self.load_endings()
+
+    def load_endings(self):
+        """Load ending data from JSON files."""
+        if not os.path.exists(self.endings_path):
+            print(f"[ENDGAME] Warning: Endings path not found: {self.endings_path}")
+            return
+
+        for filename in os.listdir(self.endings_path):
+            if filename.endswith(".json"):
+                full_path = os.path.join(self.endings_path, filename)
+                try:
+                    with open(full_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        # Usefilename without extension as default ID if not in data
+                        ending_id = data.get("id", filename.replace(".json", ""))
+                        self.endings_data[ending_id] = data
+                except Exception as e:
+                    print(f"[ENDGAME] Error loading ending {filename}: {e}")
+        
+        print(f"[ENDGAME] Loaded {len(self.endings_data)} endings.")
     
     def check_endgame_triggers(self) -> Tuple[bool, str]:
         """
@@ -183,7 +208,7 @@ class EndgameManager:
         Determine which ending path the player has earned.
         
         Returns:
-            Ending category string
+            Ending category string (matches JSON file IDs)
         """
         sanity = self.player_state.get("sanity", 50)
         reality = self.player_state.get("reality", 50)
@@ -386,17 +411,17 @@ class EndgameManager:
     
     def run_ending_sequence(self, printer=print):
         """Execute the final ending sequence based on determined path."""
-        ending = self.calculate_ending_path()
-        self.ending_path = ending
+        ending_id = self.calculate_ending_path()
+        self.ending_path = ending_id
         
         printer("\n" + "#"*60)
         printer("#" + " "*58 + "#")
-        printer(f"#  FINAL ACT: {ending.upper():^50}  #")
+        printer(f"#  FINAL ACT: {ending_id.upper().replace('ENDING_', '')[:40]:^50}  #")
         printer("#" + " "*58 + "#")
         printer("#"*60 + "\n")
         
         # Display ending narrative
-        self._display_ending_narrative(ending, printer)
+        self._display_ending_narrative(ending_id, printer)
         
         # Generate and export dossier
         dossier = self.generate_final_dossier()
@@ -405,7 +430,7 @@ class EndgameManager:
         printer("\n" + "="*60)
         printer("  FINAL DOSSIER")
         printer("="*60)
-        printer(f"Ending: {ending.upper()}")
+        printer(f"Ending: {ending_id.upper()}")
         printer(f"Final Sanity: {dossier['final_stats']['sanity']:.1f}")
         printer(f"Final Reality: {dossier['final_stats']['reality']:.1f}")
         printer(f"Theories Proven: {dossier['theories']['proven_count']}")
@@ -415,68 +440,20 @@ class EndgameManager:
         printer(f"\nFull dossier exported to: {filepath}")
         printer("\nThank you for playing Tyger Tyger Liar Liar.\n")
     
-    def _display_ending_narrative(self, ending: str, printer=print):
-        """Display the narrative text for a specific ending."""
-        narratives = {
-            self.ENDING_COLLAPSE: [
-                "The boundaries dissolve.",
-                "You are no longer sure where the town ends and you begin.",
-                "Faces merge. Time loops. The Tyger burns too bright.",
-                "",
-                "There is no you. There never was.",
-                "",
-                "[ENDING: IDENTITY DEATH]"
-            ],
-            
-            self.ENDING_RATIONALITY: [
-                "You pack your bags. The report is filed.",
-                "Mass hysteria. Shared delusion. Perfectly explainable.",
-                "",
-                "You leave Tyger Tyger behind.",
-                "But the silence follows you.",
-                "",
-                "[ENDING: COLD CASE]"
-            ],
-            
-            self.ENDING_CONSPIRACY: [
-                "You know the truth now.",
-                "They are watching. They know that you know.",
-                "",
-                "You run, but you cannot hide from what is ancient.",
-                "The Tyger sees all.",
-                "",
-                "[ENDING: THE TRUTH IS OUT THERE]"
-            ],
-            
-            self.ENDING_CORRUPTION: [
-                "You solved it. You won.",
-                "But looking in the mirror, you don't recognize the eyes staring back.",
-                "",
-                "Necessary sacrifices, you tell yourself.",
-                "The ends justified the means.",
-                "",
-                "Didn't they?",
-                "",
-                "[ENDING: PYRRHIC VICTORY]"
-            ],
-            
-            self.ENDING_REDEMPTION: [
-                "The horror is real, but so is the healing.",
-                "You stand firm against the dark.",
-                "",
-                "You may not save everyone.",
-                "But you saved yourself.",
-                "",
-                "And that's a start.",
-                "",
-                "[ENDING: DAWN]"
-            ]
-        }
+    def _display_ending_narrative(self, ending_id: str, printer=print):
+        """Display the narrative text for a specific ending from JSON."""
+        ending_data = self.endings_data.get(ending_id)
         
-        lines = narratives.get(ending, ["[UNKNOWN ENDING]"])
-        for line in lines:
-            printer(line)
-            # Only sleep if we are using the default print (interactive mode assumption)
-            if line and printer == print:  
+        if not ending_data:
+            printer(f"[ERROR: Ending data for '{ending_id}' not found.]")
+            return
+            
+        scene_text = ending_data.get("text", "")
+        # Split by double newlines for pacing
+        paragraphs = scene_text.split("\n\n")
+        
+        for p in paragraphs:
+            printer(p + "\n")
+            if printer == print:
                 import time
-                time.sleep(0.5)
+                time.sleep(1.0)

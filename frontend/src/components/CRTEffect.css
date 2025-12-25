@@ -1,17 +1,83 @@
 /* CRTEffect.css */
 
-/* The main container that curves the screen */
+/* Main Vignette & Curve Container */
 .crt-container {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    overflow: hidden;
-    background: transparent;
-    z-index: 9998;
-    /* Just below VHS effect if needed, or above content */
     pointer-events: none;
+    z-index: 9998;
+    overflow: hidden;
+}
+
+/* The high-quality vignette */
+.crt-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Subtle central glow, heavy dark corners */
+    background: radial-gradient(circle,
+            rgba(0, 0, 0, 0) 60%,
+            rgba(0, 0, 0, 0.4) 85%,
+            rgb(0, 0, 0) 100%);
+    mix-blend-mode: multiply;
+}
+
+/* The RGB Mesh / Phosphor Triads */
+.crt-mesh {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Very fine mesh */
+    background-image:
+        linear-gradient(rgba(0, 0, 0, 0.1) 50%, transparent 50%),
+        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.03), rgba(0, 0, 255, 0.03));
+    background-size: 100% 3px, 4px 100%;
+    opacity: 0.7;
+    mix-blend-mode: overlay;
+    z-index: 5;
+}
+
+/* Electric Flicker */
+.crt-flicker {
+    position: absolute;
+    inset: 0;
+    background: white;
+    opacity: 0.01;
+    mix-blend-mode: overlay;
+    animation: flicker 0.1s infinite;
+}
+
+@keyframes flicker {
+    0% {
+        opacity: 0.01;
+    }
+
+    50% {
+        opacity: 0.02;
+    }
+
+    52% {
+        opacity: 0.005;
+    }
+
+    100% {
+        opacity: 0.01;
+    }
+}
+
+/* Physical Screen Bezel Simulation */
+.crt-bezel {
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(255, 255, 255, 0.02);
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8);
 }
 
 /* The curved screen effect */

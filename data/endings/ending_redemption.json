@@ -1,11 +1,11 @@
 {
     "id": "ending_redemption",
     "type": "ending",
-    "text": "The horror is real.\n\nBut so is the healing.\n\nYou stand in the center of Tyger Tyger, and you do not run.\n\nYou faced the darkness. You looked into the void.\n\nAnd you chose to be human anyway.\n\nYou may not save everyone. The missing may never be found.\n\nBut you saved yourself.\n\nAnd that's a start.\n\nYou stay in town. Someone has to bear witness.\n\nSomeone has to remember.\n\nSomeone has to stand against the Tyger.\n\nAnd today, that someone is you.\n\nThe dawn breaks over Tyger Tyger.\n\nAnd you're still here.",
+    "text": "The wind dies down. The silence returns. It's not peaceful. It's just empty.\n\nYou didn't fix it. You just survived it.\n\nThe Tyger is gone, or sleeping, or waiting. It doesn't matter.\n\nYou light a cigarette with hands that almost don't shake.\n\nThe town is still broken. The dead are still dead.\n\nBut for tonight, the bleeding has stopped.\n\nYou walk back to the car. You don't look back.\n\nNot because you're afraid.\n\nBut because there's nothing left to see.",
     "background_media": null,
     "choices": [
         {
-            "text": "[Credits]",
+            "text": "[Credits] (Drive away)",
             "next_scene": null
         }
     ]
