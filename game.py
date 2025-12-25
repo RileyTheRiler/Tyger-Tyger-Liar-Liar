@@ -1500,6 +1500,14 @@ class Game:
         elif verb == "COMBINE":
              self.print("You try to combine them, but nothing happens. (Not implemented yet)")
 
+        elif verb == "OPEN":
+            if not target:
+                self.print("Open what?")
+                return
+
+            self.print(f"You open the {target}.")
+            # The implicit 'EXAMINE' command will follow immediately to show contents.
+
         elif verb == "USE":
             if not target:
                 self.print("Use what?")

@@ -107,10 +107,9 @@ class CommandParser:
                 # "open drawer" -> also "examine drawer" (to see contents)
                 results.append(("EXAMINE", target))
             elif verb == "SEARCH" and target:
-                # "search desk" -> "examine desk" (handled by game logic mostly, but good to be explicit)
-                # Maybe implicitly collect?
-                # Let's keep it simple: SEARCH implies EXAMINE too if not redundant
-                pass
+                # "search desk" -> "examine desk" + "collect" (if applicable, but "collect" needs specific item)
+                # For now, SEARCH implies EXAMINE.
+                results.append(("EXAMINE", target))
 
         return results
 
