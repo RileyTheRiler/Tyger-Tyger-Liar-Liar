@@ -93,6 +93,7 @@ class FractureSystem:
         self.fractures_enabled = True
         self.current_day = 1
         self.current_attention = 0
+        self.current_reality = 100
         self.in_storm = False
 
         # Load default fracture effects
@@ -265,7 +266,7 @@ class FractureSystem:
         """Register a fracture effect."""
         self.fracture_effects[effect.id] = effect
 
-    def update_state(self, attention: int = None, day: int = None, in_storm: bool = None):
+    def update_state(self, attention: int = None, day: int = None, in_storm: bool = None, reality: float = None):
         """Update system state for fracture calculations."""
         if attention is not None:
             self.current_attention = attention
@@ -273,6 +274,8 @@ class FractureSystem:
             self.current_day = day
         if in_storm is not None:
             self.in_storm = in_storm
+        if reality is not None:
+            self.current_reality = reality
 
     def should_fracture(self, context: str = "general") -> bool:
         """Determine if a fracture should occur based on current state."""
@@ -282,6 +285,14 @@ class FractureSystem:
         # High attention = high fracture chance
         if self.current_attention >= self.attention_threshold:
             if random.random() < 0.3:  # 30% chance at high attention
+                return True
+
+        # Low reality = high fracture chance
+        if self.current_reality <= 50:
+            if random.random() < 0.2: # 20% chance at low reality
+                return True
+        if self.current_reality <= 25:
+            if random.random() < 0.4: # 40% chance at very low reality
                 return True
 
         # Storm increases chance
