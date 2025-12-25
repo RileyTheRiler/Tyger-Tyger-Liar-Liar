@@ -89,6 +89,7 @@ class TextComposer:
         self.board = board
         self.game_state = game_state
         self.debug_mode = False
+        self.developer_commentary = False
         self.fracture_chance = 0.0  # Base chance for random fractures
     
     def calculate_dominant_lens(self, player_state: dict = None) -> Archetype:
@@ -285,7 +286,8 @@ class TextComposer:
             
         for comm in theory_commentary:
             # Inject as a "Subconscious" interjection if it matches the style
-            comm_text = f"\n\n{Colors.MAGENTA}[{comm['skill']}]: *{comm['text']}*{Colors.RESET}"
+            # UX Polish: Standardized theory interrupt format
+            comm_text = f"\n\n{Colors.MAGENTA}[{comm['skill'].upper()}]: \"{comm['text']}\"{Colors.RESET}"
             full_text += comm_text
             debug_info["layers"].append(f"theory:{comm['skill']}")
 
@@ -310,6 +312,16 @@ class TextComposer:
             full_text = self._apply_fracture_effect(full_text, player_state)
             fracture_applied = True
             debug_info["layers"].append("fracture")
+
+        # === LAYER 5: DEVELOPER COMMENTARY ===
+        if self.developer_commentary:
+            dev_note = text_data.get("dev_note")
+            if dev_note:
+                full_text += f"\n\n{Colors.CYAN}[DEV NOTE: {dev_note}]{Colors.RESET}"
+
+            # Show active flags affecting this scene?
+            # Or insert conditions?
+            # Maybe too verbose. Just explicit dev_note is good.
 
         return ComposedText(
             full_text=full_text.strip(),

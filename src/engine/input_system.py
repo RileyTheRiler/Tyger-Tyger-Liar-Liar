@@ -1,9 +1,11 @@
 
 import re
+from typing import List, Tuple, Optional, Dict
 
 class InputMode:
     DIALOGUE = "DIALOGUE"
     INVESTIGATION = "INVESTIGATION"
+    COMBAT = "COMBAT"
 
 class CommandParser:
     def __init__(self):
@@ -107,3 +109,46 @@ class CommandParser:
             return best_verb, raw_target if raw_target else None
 
         return None, None
+
+    def get_suggestion(self, invalid_input: str) -> Optional[str]:
+        """
+        Returns a suggested command if the input is close to a valid verb.
+        Uses Levenshtein distance for fuzzy matching.
+        """
+        clean_input = invalid_input.lower().strip().split(' ')[0]
+        if not clean_input:
+            return None
+
+        def levenshtein(s1, s2):
+            if len(s1) < len(s2):
+                return levenshtein(s2, s1)
+            if len(s2) == 0:
+                return len(s1)
+            previous_row = range(len(s2) + 1)
+            for i, c1 in enumerate(s1):
+                current_row = [i + 1]
+                for j, c2 in enumerate(s2):
+                    insertions = previous_row[j + 1] + 1
+                    deletions = current_row[j] + 1
+                    substitutions = previous_row[j] + (c1 != c2)
+                    current_row.append(min(insertions, deletions, substitutions))
+                previous_row = current_row
+            return previous_row[-1]
+
+        best_match = None
+        min_dist = float('inf')
+
+        # Check all synonyms
+        for syn in self.verb_map.keys():
+            dist = levenshtein(clean_input, syn)
+            # Threshold: Allow distance of 1 for short words (len <= 4), 2 for longer
+            threshold = 1 if len(syn) <= 4 else 2
+
+            if dist <= threshold and dist < min_dist:
+                min_dist = dist
+                best_match = syn
+
+        if best_match:
+            return best_match
+
+        return None

@@ -92,8 +92,18 @@ class SaveSystem:
             }
             
             # Write to file with pretty formatting
+            # Helper to handle non-serializable objects (like Enum)
+            def default_serializer(obj):
+                if hasattr(obj, 'value'): # Enum
+                    return obj.value
+                if hasattr(obj, 'to_dict'):
+                    return obj.to_dict()
+                if isinstance(obj, set):
+                    return list(obj)
+                raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
             with open(save_path, 'w', encoding='utf-8') as f:
-                json.dump(save_data, f, indent=2, ensure_ascii=False)
+                json.dump(save_data, f, indent=2, ensure_ascii=False, default=default_serializer)
             
             print(f"[SAVE] Game saved to slot '{slot_id}'")
             return True
