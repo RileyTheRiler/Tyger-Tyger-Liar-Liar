@@ -1304,7 +1304,12 @@ class Game:
                 self.print(f"You try to speak, but nothing comes out.")
                 return "refresh"
 
-            parsed_commands = self.parser.normalize(raw)
+            # Retrieve Reason/Logic Attribute for parser gating
+            reason_score = 1 # Default
+            if hasattr(self.skill_system, 'attributes') and "REASON" in self.skill_system.attributes:
+                reason_score = self.skill_system.attributes["REASON"].value
+
+            parsed_commands = self.parser.normalize(raw, reason_score=reason_score)
             if parsed_commands:
                 for verb, target in parsed_commands:
                     if verb:

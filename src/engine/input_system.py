@@ -78,10 +78,14 @@ class CommandParser:
         """Register scene-specific synonyms."""
         self.scene_synonyms = synonyms
 
-    def normalize(self, input_str: str) -> List[Tuple[Optional[str], Optional[str]]]:
+    def normalize(self, input_str: str, reason_score: int = 0) -> List[Tuple[Optional[str], Optional[str]]]:
         """
         Parses the input string into a list of (verb, target) tuples.
         Supports command chaining with 'then', 'and', or '.'.
+
+        Args:
+            input_str: Raw input string.
+            reason_score: Player's Reason/Logic attribute score. High score enables shortcuts.
         """
         if not input_str:
             return []
@@ -119,14 +123,24 @@ class CommandParser:
 
         return results
 
-    def _parse_single_command(self, clean_input: str) -> Tuple[Optional[str], Optional[str]]:
+    def _parse_single_command(self, clean_input: str, reason_score: int = 0) -> Tuple[Optional[str], Optional[str]]:
         """Internal helper to parse a single normalized command string."""
         clean_input = re.sub(r'\s+', ' ', clean_input).strip()
         
         # Check for spatial shortcut (e.g. "under table" -> "look under table")
+        # Week 24: "High Reason: Interprets vague commands more precisely"
+        # We require a basic level of capability (Reason > 2) to infer this connection instantly.
+        # Or maybe check the 'Logic' skill. But we have 'reason_score' passed in.
+        # Let's say Reason >= 3 (Average is often 1-6 in this system based on mechanics.py)
+        # Attribute base_value is 1, cap 6. So 3 is above average?
+        # Let's check mechanics.py again. base_value=1.
+
         first_word = clean_input.split()[0]
         if first_word in self.spatial_prepositions:
-            return "EXAMINE", clean_input # Target is "under table"
+            # If Reason is low, we might not understand the intent
+            if reason_score >= 3:
+                return "EXAMINE", clean_input
+            # Else, fall through and likely fail or return as EXAMINE default later
 
         # Verb matching
         best_verb = None
