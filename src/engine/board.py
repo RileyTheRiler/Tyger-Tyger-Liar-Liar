@@ -239,6 +239,14 @@ class Board:
             "unresolved": unresolved
         }
 
+    def get_proven_theories(self) -> List[str]:
+        """Get a list of IDs of all theories that have been proven."""
+        proven_ids = []
+        for theory in self.theories.values():
+            if theory.proven is True:
+                proven_ids.append(theory.id)
+        return proven_ids
+
     def get_critical_theories(self) -> List[str]:
         """Get list of theories marked as critical for endgame."""
         critical = []

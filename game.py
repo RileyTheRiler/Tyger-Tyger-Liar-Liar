@@ -694,10 +694,15 @@ class Game:
                 for item in interrupts:
                     if isinstance(item, dict):
                         # Format structured interrupt
-                        skill = item['skill']
-                        text = item['text']
-                        # Simple color simulation for CLI text if supported or just text
-                        self.print(f" [{skill}] {text}")
+                        # Handle case where item might be an argument dictionary without 'skill' key
+                        if item.get('type') == 'argument':
+                             # Handled below in separate loop, or we can handle here
+                             pass
+                        else:
+                            skill = item.get('skill', 'UNKNOWN')
+                            text = item.get('text', '')
+                            # Simple color simulation for CLI text if supported or just text
+                            self.print(f" [{skill}] {text}")
                     else:
                         self.print(f" {item}")
                 self.print("~" * 60)
