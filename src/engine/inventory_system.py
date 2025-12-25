@@ -2,7 +2,10 @@ import json
 from typing import List, Dict, Optional, Any
 
 class Item:
-    def __init__(self, id: str, name: str, type: str, description: str, effects: Dict[str, Any] = None, usable_in: List[str] = None, limited_use: bool = False, uses: int = 0, tags: List[str] = None):
+    def __init__(self, id: str, name: str, type: str, description: str,
+                 effects: Dict[str, Any] = None, usable_in: List[str] = None,
+                 limited_use: bool = False, uses: int = 0, tags: List[str] = None,
+                 weight: float = 0.0, slots: int = 1):
         self.id = id
         self.name = name
         self.type = type  # tool, weapon, evidence, consumable, kit
@@ -10,6 +13,9 @@ class Item:
         self.effects = effects or {} 
         self.tags = tags or []
         self.equipped = False
+        self.weight = weight
+        self.slots = slots
+
         # effects example: {"skill_modifiers": {"Perception": 1}}
         
         self.usable_in = usable_in or []
@@ -42,7 +48,9 @@ class Item:
             "uses": self.uses,
             "temperature": self.temperature,
             "tags": self.tags,
-            "equipped": self.equipped
+            "equipped": self.equipped,
+            "weight": self.weight,
+            "slots": self.slots
         }
 
     def get_temperature_status(self) -> str:
@@ -73,7 +81,7 @@ class Evidence:
         self.collected_with = collected_with
         self.related_to = related_to or []
         self.timestamp = timestamp
-        self.tags: List[str] = [] # e.g. "blood", "victim_1"
+        self.tags: List[str] = [] # e.g. "blood", "victim_1", "contaminated"
         
         # Week 6 additions
         self.related_skills = related_skills or []  # Skills that can analyze this
@@ -92,6 +100,7 @@ class Evidence:
         self.degrades = False
         self.degradation_rate = 0.0 # Percent loss per hour
         self.collected_at = timestamp or 0.0 # In-game minutes from start
+        self.contaminated = False
 
     def add_tag(self, tag: str):
         if tag not in self.tags:
@@ -100,8 +109,15 @@ class Evidence:
     def analyze_with_skill(self, skill_name: str, result_text: str):
         """Mark evidence as analyzed with a specific skill and store results."""
         self.analyzed = True
+        if self.contaminated:
+             result_text += " [SAMPLE CONTAMINATED]"
         self.analysis_results[skill_name] = result_text
         print(f"[Evidence] {self.name} analyzed with {skill_name}")
+
+    def contaminate(self):
+        self.contaminated = True
+        self.quality = max(0, self.quality - 50)
+        self.add_tag("contaminated")
 
     def to_dict(self):
         return {
@@ -127,7 +143,8 @@ class Evidence:
             "quality": self.quality,
             "degrades": self.degrades,
             "degradation_rate": self.degradation_rate,
-            "collected_at": self.collected_at
+            "collected_at": self.collected_at,
+            "contaminated": self.contaminated
         }
     
     @classmethod
@@ -159,6 +176,7 @@ class Evidence:
         obj.degrades = data.get("degrades", False)
         obj.degradation_rate = data.get("degradation_rate", 0.0)
         obj.collected_at = data.get("collected_at", 0.0)
+        obj.contaminated = data.get("contaminated", False)
         return obj
 
 
@@ -209,15 +227,45 @@ class EvidenceBoard:
 
 
 class InventoryManager:
-    def __init__(self):
+    def __init__(self, max_weight: float = 20.0, max_slots: int = 10):
         self.carried_items: List[Item] = []
         self.evidence_collection: Dict[str, Evidence] = {}
         self.board = EvidenceBoard()
         self.documents: List[Dict] = []
+        self.max_weight = max_weight
+        self.max_slots = max_slots
     
-    def add_item(self, item: Item):
-        self.carried_items.append(item)
-        print(f"[Inventory] Added: {item.name}")
+    @property
+    def current_weight(self) -> float:
+        return sum(item.weight for item in self.carried_items)
+
+    @property
+    def current_slots(self) -> int:
+        return sum(item.slots for item in self.carried_items)
+
+    def can_carry(self, item: Item) -> bool:
+        if self.current_weight + item.weight > self.max_weight:
+            return False
+        if self.current_slots + item.slots > self.max_slots:
+            return False
+        return True
+
+    def add_item(self, item: Item) -> bool:
+        if self.can_carry(item):
+            self.carried_items.append(item)
+            print(f"[Inventory] Added: {item.name}")
+            return True
+        else:
+            print(f"[Inventory] Cannot carry {item.name} (Not enough space/weight).")
+            return False
+
+    def remove_item(self, item_id: str) -> bool:
+        for i, item in enumerate(self.carried_items):
+            if item.id == item_id or item.name == item_id:
+                self.carried_items.pop(i)
+                print(f"[Inventory] Removed: {item.name}")
+                return True
+        return False
 
     def add_evidence(self, evidence: Evidence):
         self.evidence_collection[evidence.id] = evidence
@@ -231,10 +279,6 @@ class InventoryManager:
             try:
                 with open(filepath, "r", encoding="utf-8") as f:
                     docs = json.load(f)
-                    # We store them in a list or dict? 
-                    # For discovery, we might want to keep "all possible documents" separate from collected ones.
-                    # But the prompt implies this manager handles the *collected* ones.
-                    # So let's load them into a "database" attribute first.
                     self.document_database = {d["id"]: d for d in docs}
                     print(f"[Inventory] Loaded {len(docs)} documents into database.")
             except Exception as e:
@@ -259,8 +303,6 @@ class InventoryManager:
         """Equip an item by name or ID. Returns True if successful."""
         for item in self.carried_items:
             if item.id == item_id or item.name.lower() == item_id.lower():
-                # Potential logic: Only one tool or weapon at a time?
-                # For now, let multiple things be equipped unless they clash.
                 item.equipped = True
                 print(f"[Inventory] Equipped: {item.name}")
                 return True
@@ -302,12 +344,13 @@ class InventoryManager:
         return None
 
     def list_inventory(self):
-        print("\n=== INVENTORY ===")
+        print(f"\n=== INVENTORY (Weight: {self.current_weight}/{self.max_weight} | Slots: {self.current_slots}/{self.max_slots}) ===")
         if not self.carried_items:
             print(" (Empty)")
         for item in self.carried_items:
             uses_str = f" ({item.uses} uses left)" if item.limited_use else ""
-            print(f"- {item.name} [{item.type}]{uses_str}: {item.description}")
+            equip_str = " [EQUIPPED]" if item.equipped else ""
+            print(f"- {item.name} [{item.type}]{uses_str}{equip_str}: {item.description}")
             if item.effects:
                  print(f"  Effects: {item.effects}")
                  
@@ -320,12 +363,16 @@ class InventoryManager:
             "evidence_collection": {k: v.to_dict() for k, v in self.evidence_collection.items()},
             "board": self.board.to_dict(),
             "documents": self.documents,
-            # Database doesn't need saving, just collected docs
+            "max_weight": self.max_weight,
+            "max_slots": self.max_slots
         }
     
     @classmethod
     def from_dict(cls, data):
-        obj = cls()
+        obj = cls(
+            max_weight=data.get("max_weight", 20.0),
+            max_slots=data.get("max_slots", 10)
+        )
         obj.carried_items = [Item.from_dict(i) for i in data.get("carried_items", [])]
         obj.evidence_collection = {k: Evidence.from_dict(v) for k, v in data.get("evidence_collection", {}).items()}
         obj.board = EvidenceBoard.from_dict(data.get("board", {}))

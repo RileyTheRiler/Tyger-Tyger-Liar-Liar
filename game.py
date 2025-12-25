@@ -56,6 +56,7 @@ from engine.psychological_system import PsychologicalState
 from engine.fear_system import FearManager
 from engine.unreliable_narrator import HallucinationEngine
 from npc_system import NPCSystem
+from engine.interaction_system import InteractionManager
 
 
 class Game:
@@ -141,6 +142,9 @@ class Game:
         )
         self.last_composed_text = ""
         
+        # Initialize Interaction Manager
+        self.interaction_manager = InteractionManager(self.skill_system, self.inventory_system, self.player_state)
+
         # Initialize Population & Liar Engine
         self.population_system = PopulationSystem()
         self.liar_engine = LiarEngine(self.skill_system, self.inventory_system)
@@ -1448,24 +1452,61 @@ class Game:
              self.print("You try to combine them, but nothing happens. (Not implemented yet)")
 
         elif verb == "USE":
-            if not target:
-                self.print("Use what?")
-                return
+            # Parsing "USE <TOOL> ON <TARGET>"
+            # 'target' might contain the whole string like "flashlight on door"
+            tool_name = None
+            target_obj_name = target
             
-            # Simple use logic for now
-            obj_key, obj_data = self._resolve_object(target, objects)
-            if obj_data and "interactions" in obj_data and "use" in obj_data["interactions"]:
-                self.print(obj_data["interactions"]["use"])
-            else:
-                # Try inventory item
+            if target and " on " in target.lower():
+                parts = target.lower().split(" on ")
+                tool_name = parts[0].strip()
+                target_obj_name = parts[1].strip()
+            elif target:
+                # Maybe just "USE ITEM"
                 item = self.inventory_system.get_item_by_name(target)
                 if item:
                     if item.use():
                         self.print(f"You use the {item.name}.")
                     else:
                         self.print(f"The {item.name} is out of uses.")
-                else:
-                    self.print(f"You can't use '{target}' here.")
+                    return
+
+            if not target_obj_name:
+                self.print("Use what on what?")
+                return
+
+            # Resolve target object in scene
+            obj_key, obj_data = self._resolve_object(target_obj_name, objects)
+
+            if obj_data:
+                result = self.interaction_manager.interact("USE", tool_name, obj_data, {"scene": scene})
+                self.print(result)
+            else:
+                self.print(f"You don't see '{target_obj_name}' here.")
+
+        elif verb in ["SWAB", "RECORD", "SHINE", "SCAN"]:
+             # Specific tool verbs
+             # Target is the object
+             obj_key, obj_data = self._resolve_object(target, objects)
+             if obj_data:
+                 # Infer tool from verb if needed, but interaction manager handles "verb" as key
+                 # Map verb to tool name if necessary?
+                 tool_map = {
+                     "SWAB": "forensics kit",
+                     "RECORD": "audio recorder",
+                     "SHINE": "flashlight" if "dark" in (obj_data.get("tags", [])) else "uv light", # Ambiguous
+                     "SCAN": "thermal imager"
+                 }
+
+                 implicit_tool = tool_map.get(verb)
+
+                 # If user typed "SHINE UV LIGHT ON FLOOR", parser might have split it weirdly?
+                 # Assuming verb is just "SHINE" and target is "FLOOR".
+
+                 result = self.interaction_manager.interact(verb, implicit_tool, obj_data, {"scene": scene})
+                 self.print(result)
+             else:
+                 self.print(f"You can't {verb.lower()} '{target}'.")
 
         # --- SYSTEM ---
         elif verb == "MAP":
@@ -1569,13 +1610,22 @@ class Game:
         """Helper to fuzzy match an object name in the current scene."""
         if not target_name: return None, None
         
-        # Exact match
+        target_lower = target_name.lower()
+
+        # Exact match on Key
         if target_name in objects:
             return target_name, objects[target_name]
             
-        # Partial match
+        # Exact match on Name
         for k, v in objects.items():
-            if target_name.lower() in k.lower():
+            if v.get("name", "").lower() == target_lower:
+                return k, v
+
+        # Partial match on Key or Name
+        for k, v in objects.items():
+            if target_lower in k.lower():
+                return k, v
+            if target_lower in v.get("name", "").lower():
                 return k, v
                 
         return None, None
@@ -2054,6 +2104,17 @@ class Game:
                 if value not in self.player_state["thoughts"]:
                     self.player_state["thoughts"].append(value)
                     print(f"[THOUGHT UNLOCKED: {value}]")
+
+    # Removed if __name__ == "__main__" block to avoid execution on import
+    # This was preventing tests from importing Game class without running the game.
+
+    def run(self, start_id="bedroom"):
+        self.start_game(start_id)
+        while True:
+            user_input = input("> ")
+            result = self.step(user_input)
+            if result == "QUIT":
+                break
 
 if __name__ == "__main__":
     game = Game()

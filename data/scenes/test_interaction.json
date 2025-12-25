@@ -1,0 +1,119 @@
+{
+    "id": "test_interaction_room",
+    "name": "Forensics Lab (Test)",
+    "text": {
+        "base": "A sterile room for testing investigative tools."
+    },
+    "objects": {
+        "blood_stain": {
+            "name": "Blood Stain",
+            "description": "A dark red stain on the floor.",
+            "type": "clue",
+            "tags": ["biological"],
+            "interactions": {
+                "swab": {
+                    "text": "You carefully swab the stain.",
+                    "yield_evidence": {
+                        "id": "blood_sample_01",
+                        "description": "A swab of the blood stain.",
+                        "type": "biological"
+                    },
+                    "skill_check": {
+                        "skill": "Forensics",
+                        "difficulty": 8,
+                        "on_fail": {
+                            "text": "You swab it, but your hand slips. Possible contamination.",
+                            "contamination_risk": true
+                        }
+                    }
+                },
+                "use uv light": {
+                    "text": "The stain glows brightly under UV light, revealing a drag mark.",
+                    "sanity": -2
+                }
+            }
+        },
+        "dark_corner": {
+            "name": "Dark Corner",
+            "description": "It's too dark to see anything here.",
+            "tags": ["dark"],
+            "interactions": {
+                "shine": {
+                    "text": "The beam of your flashlight reveals a hidden safe!",
+                    "new_state": {
+                        "name": "Exposed Safe",
+                        "description": "A small safe, previously hidden in shadow."
+                    }
+                },
+                "use flashlight": {
+                     "text": "The beam of your flashlight reveals a hidden safe!",
+                    "new_state": {
+                        "name": "Exposed Safe",
+                        "description": "A small safe, previously hidden in shadow."
+                    }
+                }
+            }
+        },
+        "forensics kit": {
+            "name": "Forensics Kit",
+            "description": "Standard issue kit.",
+            "type": "tool",
+            "interactions": {
+                "collect": {
+                    "text": "You pick up the kit.",
+                    "yield_item": {
+                        "id": "forensics_kit",
+                        "name": "Forensics Kit",
+                        "type": "tool",
+                        "description": "Used for collecting samples.",
+                        "weight": 2.0,
+                        "slots": 1
+                    },
+                    "new_state": {
+                         "description": "Gone."
+                    }
+                }
+            }
+        },
+        "uv light": {
+            "name": "UV Light",
+            "description": "Portable UV emitter.",
+            "type": "tool",
+            "interactions": {
+                "collect": {
+                    "text": "You take the UV Light.",
+                    "yield_item": {
+                        "id": "uv_light",
+                        "name": "UV Light",
+                        "type": "tool",
+                        "description": "Reveals hidden fluids.",
+                        "weight": 0.5
+                    }
+                }
+            }
+        },
+        "flashlight": {
+            "name": "Flashlight",
+            "description": "Heavy duty flashlight.",
+            "type": "tool",
+            "interactions": {
+                "collect": {
+                    "text": "You take the flashlight.",
+                    "yield_item": {
+                        "id": "flashlight",
+                        "name": "Flashlight",
+                        "type": "tool",
+                        "description": "Illuminates dark areas.",
+                        "weight": 1.0
+                    }
+                }
+            }
+        }
+    },
+    "choices": [
+        {
+            "text": "Leave",
+            "next_scene": "bedroom"
+        }
+    ]
+}
