@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "condition.schema.json",
+  "title": "Condition",
+  "description": "An injury or condition affecting the player",
+  "type": "object",
+  "required": ["id", "name", "description"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the condition",
+      "pattern": "^cond_[a-z][a-z0-9_]*$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name of the condition"
+    },
+    "description": {
+      "type": "object",
+      "required": ["base"],
+      "properties": {
+        "base": {"type": "string", "description": "Objective description"},
+        "lens": {
+          "type": "object",
+          "properties": {
+            "believer": {"type": "string"},
+            "skeptic": {"type": "string"},
+            "haunted": {"type": "string"}
+          }
+        }
+      }
+    },
+    "category": {
+      "type": "string",
+      "enum": ["physical", "mental", "supernatural", "environmental"],
+      "description": "Type of condition"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["minor", "moderate", "severe", "critical"],
+      "default": "minor"
+    },
+    "mechanical_penalties": {
+      "type": "object",
+      "description": "Penalties applied while condition is active",
+      "properties": {
+        "skill_modifiers": {
+          "type": "object",
+          "additionalProperties": {"type": "integer"},
+          "description": "Skill penalties (negative values)"
+        },
+        "attribute_modifiers": {
+          "type": "object",
+          "additionalProperties": {"type": "integer"}
+        },
+        "max_sanity_modifier": {"type": "integer"},
+        "max_reality_modifier": {"type": "integer"},
+        "movement_penalty": {"type": "number", "description": "Multiplier on travel time"},
+        "attention_multiplier": {"type": "number", "description": "Multiplier on attention gain"}
+      }
+    },
+    "healing": {
+      "type": "object",
+      "properties": {
+        "natural_healing_hours": {
+          "type": "number",
+          "description": "Hours to heal naturally (0 = no natural healing)"
+        },
+        "treatment_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "description"],
+            "properties": {
+              "id": {"type": "string"},
+              "description": {"type": "string"},
+              "requires_item": {"type": "string"},
+              "requires_skill": {
+                "type": "object",
+                "properties": {
+                  "skill": {"type": "string"},
+                  "dc": {"type": "integer"}
+                }
+              },
+              "requires_npc": {"type": "string"},
+              "time_cost_minutes": {"type": "integer"},
+              "healing_reduction_hours": {"type": "number"},
+              "removes_immediately": {"type": "boolean", "default": false},
+              "side_effects": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Condition IDs that may be applied as side effects"
+              }
+            }
+          }
+        },
+        "worsens_without_treatment": {
+          "type": "object",
+          "properties": {
+            "hours_until_worse": {"type": "number"},
+            "becomes_condition": {"type": "string"}
+          }
+        }
+      }
+    },
+    "triggers": {
+      "type": "object",
+      "description": "Events that trigger special effects",
+      "properties": {
+        "on_acquire": {
+          "type": "array",
+          "items": {"type": "object"}
+        },
+        "on_heal": {
+          "type": "array",
+          "items": {"type": "object"}
+        },
+        "on_worsen": {
+          "type": "array",
+          "items": {"type": "object"}
+        }
+      }
+    },
+    "narrative_effects": {
+      "type": "object",
+      "properties": {
+        "scene_inserts": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Scene insert IDs triggered by this condition"
+        },
+        "dialogue_modifiers": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Dialogue tree modifications"
+        }
+      }
+    },
+    "stacks": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this condition can stack with itself"
+    },
+    "max_stacks": {
+      "type": "integer",
+      "default": 1
+    },
+    "visible_to_player": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

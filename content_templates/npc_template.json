@@ -1,0 +1,118 @@
+{
+  "_comment": "NPC TEMPLATE - Copy and fill in for each NPC",
+  "_instructions": [
+    "1. ID must start with 'npc_'",
+    "2. Trust starts at 50 (neutral) unless there's a reason otherwise",
+    "3. Knowledge gates what the NPC will share at trust thresholds",
+    "4. Secrets are revealed by specific triggers"
+  ],
+
+  "id": "npc_example_character",
+  "name": "Character Name",
+  "title": "Their Role (e.g., 'Local Sheriff', 'Hotel Manager')",
+
+  "description": {
+    "base": "OBJECTIVE APPEARANCE: Physical description, observable facts.",
+    "lens": {
+      "believer": "What the Believer notices—signs of hidden knowledge, fear of the unknown.",
+      "skeptic": "What the Skeptic notices—stress, pragmatism, mundane concerns.",
+      "haunted": "What the Haunted notices—resemblances, echoes, familiar pain."
+    }
+  },
+
+  "location_id": "loc_where_usually_found",
+
+  "schedule": {
+    "night": {"location": "loc_home", "available": false},
+    "twilight": {"location": "loc_office", "available": true},
+    "dawn": {"location": "loc_diner", "available": true}
+  },
+
+  "initial_trust": 50,
+  "initial_fear": 0,
+
+  "trust_thresholds": {
+    "hostile": 20,
+    "wary": 40,
+    "neutral": 50,
+    "friendly": 70,
+    "trusted": 85
+  },
+
+  "dialogue_trees": {
+    "hostile": "dialogue_example_hostile",
+    "wary": "dialogue_example_wary",
+    "neutral": "dialogue_example_neutral",
+    "friendly": "dialogue_example_friendly",
+    "trusted": "dialogue_example_trusted"
+  },
+
+  "knowledge": [
+    {
+      "topic": "recent_events",
+      "trust_required": 50,
+      "clue_revealed": null,
+      "one_time": false
+    },
+    {
+      "topic": "the_disappearances",
+      "trust_required": 70,
+      "clue_revealed": "clue_npc_testimony",
+      "one_time": true
+    },
+    {
+      "topic": "what_they_saw",
+      "trust_required": 85,
+      "clue_revealed": "clue_npc_witness",
+      "one_time": true
+    }
+  ],
+
+  "secrets": [
+    {
+      "id": "secret_npc_involvement",
+      "description": "They know more than they're saying about the disappearances.",
+      "revealed_by": {
+        "trust_level": 90,
+        "clue_presented": "clue_contradicting_testimony",
+        "theory_active": "conspiracy_of_silence"
+      }
+    }
+  ],
+
+  "flags": {
+    "alive": true,
+    "met": false,
+    "accused": false,
+    "saved": false
+  },
+
+  "reactions": {
+    "accused_of_lying": {
+      "trust_modifier": -25,
+      "fear_modifier": 10,
+      "dialogue_override": "dialogue_example_accused"
+    },
+    "saved_from_danger": {
+      "trust_modifier": 30,
+      "fear_modifier": -10
+    },
+    "showed_aurora_photo": {
+      "trust_modifier": -5,
+      "fear_modifier": 15
+    }
+  },
+
+  "critical_for": [
+    "ending_conspiracy",
+    "theory_the_missing_are_connected"
+  ],
+
+  "voice_style": "Short sentences. Avoids eye contact. Speaks in qualifiers—'maybe', 'I think', 'could be'.",
+
+  "_writing_notes": {
+    "motivation": "What do they want? What are they hiding? Why?",
+    "relationship_arc": "How does trust change what they reveal?",
+    "lens_appearance": "How do the three lenses perceive them differently?"
+  }
+}

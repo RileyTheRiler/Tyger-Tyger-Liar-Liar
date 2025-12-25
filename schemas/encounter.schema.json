@@ -1,0 +1,246 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "encounter.schema.json",
+  "title": "Encounter",
+  "description": "A tactical textual encounter with environment state and turn-based options",
+  "type": "object",
+  "required": ["id", "intro_text", "initial_state", "options", "exit_conditions"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the encounter",
+      "pattern": "^enc_[a-z][a-z0-9_]*$"
+    },
+    "intro_text": {
+      "type": "object",
+      "required": ["base"],
+      "properties": {
+        "base": {"type": "string"},
+        "lens": {
+          "type": "object",
+          "properties": {
+            "believer": {"type": "string"},
+            "skeptic": {"type": "string"},
+            "haunted": {"type": "string"}
+          }
+        }
+      }
+    },
+    "initial_state": {
+      "type": "object",
+      "description": "Starting environment and resource state",
+      "properties": {
+        "environment": {
+          "type": "object",
+          "properties": {
+            "visibility": {"type": "string", "enum": ["clear", "dim", "dark", "obscured"]},
+            "temperature": {"type": "string", "enum": ["warm", "cold", "freezing", "lethal"]},
+            "window_intact": {"type": "boolean"},
+            "door_locked": {"type": "boolean"},
+            "power_on": {"type": "boolean"},
+            "escape_route_open": {"type": "boolean"}
+          }
+        },
+        "player_resources": {
+          "type": "object",
+          "properties": {
+            "ammo": {"type": "integer"},
+            "flashlight_battery": {"type": "integer"},
+            "special_items": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "threat_state": {
+          "type": "object",
+          "properties": {
+            "distance": {"type": "string", "enum": ["far", "medium", "close", "adjacent"]},
+            "awareness": {"type": "string", "enum": ["unaware", "alerted", "hunting", "engaged"]},
+            "health": {"type": "integer", "description": "If applicable"}
+          }
+        },
+        "npc_state": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "panic_level": {"type": "integer", "minimum": 0, "maximum": 100},
+              "location": {"type": "string"},
+              "status": {"type": "string"}
+            }
+          }
+        },
+        "custom_flags": {
+          "type": "object",
+          "additionalProperties": {"type": ["boolean", "integer", "string"]}
+        }
+      }
+    },
+    "turn_structure": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "type": "array",
+          "items": {"type": "string", "enum": ["player", "threat", "environment", "npc"]},
+          "default": ["player", "threat", "environment"]
+        },
+        "max_turns": {
+          "type": "integer",
+          "description": "Maximum turns before forced resolution"
+        }
+      }
+    },
+    "options": {
+      "type": "array",
+      "description": "Available player actions",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "skill", "dc"],
+        "properties": {
+          "id": {"type": "string"},
+          "label": {"type": "string"},
+          "description": {"type": "string"},
+          "skill": {"type": "string"},
+          "dc": {"type": "integer"},
+          "available_when": {
+            "type": "object",
+            "description": "Conditions for this option to be available",
+            "properties": {
+              "state_flags": {"type": "object"},
+              "has_item": {"type": "string"},
+              "turn_gte": {"type": "integer"},
+              "turn_lte": {"type": "integer"}
+            }
+          },
+          "costs": {
+            "type": "object",
+            "properties": {
+              "ammo": {"type": "integer"},
+              "item": {"type": "string"},
+              "time": {"type": "integer"}
+            }
+          },
+          "outcomes": {
+            "type": "object",
+            "required": ["success", "failure"],
+            "properties": {
+              "success": {
+                "type": "object",
+                "properties": {
+                  "text": {"type": "string"},
+                  "state_changes": {"type": "object"},
+                  "effects": {"type": "array", "items": {"type": "object"}},
+                  "ends_encounter": {"type": "boolean"},
+                  "next_scene": {"type": "string"}
+                }
+              },
+              "failure": {
+                "type": "object",
+                "properties": {
+                  "text": {"type": "string"},
+                  "state_changes": {"type": "object"},
+                  "effects": {"type": "array", "items": {"type": "object"}}
+                }
+              },
+              "partial": {
+                "type": "object",
+                "description": "Partial success (fail by 1-2)",
+                "properties": {
+                  "text": {"type": "string"},
+                  "state_changes": {"type": "object"},
+                  "effects": {"type": "array", "items": {"type": "object"}}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "threat_behavior": {
+      "type": "array",
+      "description": "Threat actions based on state",
+      "items": {
+        "type": "object",
+        "required": ["condition", "action"],
+        "properties": {
+          "condition": {
+            "type": "object",
+            "properties": {
+              "distance": {"type": "string"},
+              "awareness": {"type": "string"},
+              "state_flags": {"type": "object"}
+            }
+          },
+          "action": {
+            "type": "object",
+            "properties": {
+              "text": {"type": "string"},
+              "state_changes": {"type": "object"},
+              "player_effects": {"type": "array", "items": {"type": "object"}}
+            }
+          }
+        }
+      }
+    },
+    "environment_tick": {
+      "type": "object",
+      "description": "Environmental effects each turn",
+      "properties": {
+        "cold_exposure": {
+          "type": "object",
+          "properties": {
+            "condition": {"type": "object"},
+            "effect": {"type": "object"}
+          }
+        },
+        "visibility_changes": {"type": "array", "items": {"type": "object"}},
+        "attention_gain": {"type": "integer"}
+      }
+    },
+    "exit_conditions": {
+      "type": "array",
+      "description": "Conditions that end the encounter",
+      "items": {
+        "type": "object",
+        "required": ["id", "condition"],
+        "properties": {
+          "id": {"type": "string"},
+          "condition": {
+            "type": "object",
+            "properties": {
+              "turns_survived": {"type": "integer"},
+              "threat_distance": {"type": "string"},
+              "state_flag": {"type": "object"},
+              "player_escaped": {"type": "boolean"},
+              "threat_defeated": {"type": "boolean"},
+              "npc_protected": {"type": "string"}
+            }
+          },
+          "result": {
+            "type": "object",
+            "properties": {
+              "type": {"type": "string", "enum": ["victory", "escape", "defeat", "draw"]},
+              "text": {"type": "string"},
+              "next_scene": {"type": "string"},
+              "effects": {"type": "array", "items": {"type": "object"}}
+            }
+          }
+        }
+      }
+    },
+    "defeat_condition": {
+      "type": "object",
+      "description": "What happens on total failure",
+      "properties": {
+        "condition": {"type": "object"},
+        "result": {
+          "type": "object",
+          "properties": {
+            "text": {"type": "string"},
+            "next_scene": {"type": "string"},
+            "effects": {"type": "array", "items": {"type": "object"}},
+            "game_over": {"type": "boolean"}
+          }
+        }
+      }
+    }
+  }
+}

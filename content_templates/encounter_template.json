@@ -1,0 +1,262 @@
+{
+  "_comment": "ENCOUNTER TEMPLATE - Copy and fill in for each tactical encounter",
+  "_instructions": [
+    "1. ID must start with 'enc_'",
+    "2. Encounters are textual and consequence-heavy",
+    "3. Environment changes on misses keep tension high",
+    "4. Always provide escape options"
+  ],
+
+  "id": "enc_example_threat",
+
+  "intro_text": {
+    "base": "OBJECTIVE SETUP: What the player faces. Cold facts, immediate danger.",
+    "lens": {
+      "believer": "The supernatural interpretation of the threat.",
+      "skeptic": "The rational (if terrifying) interpretation.",
+      "haunted": "The personal, traumatic connection to this moment."
+    }
+  },
+
+  "initial_state": {
+    "environment": {
+      "visibility": "dim",
+      "temperature": "cold",
+      "window_intact": true,
+      "door_locked": false,
+      "power_on": true,
+      "escape_route_open": true
+    },
+    "player_resources": {
+      "ammo": 6,
+      "flashlight_battery": 100
+    },
+    "threat_state": {
+      "distance": "medium",
+      "awareness": "alerted",
+      "health": 100
+    },
+    "npc_state": {
+      "npc_witness": {
+        "panic_level": 30,
+        "location": "behind_cover",
+        "status": "scared"
+      }
+    },
+    "custom_flags": {
+      "can_negotiate": true,
+      "backup_called": false
+    }
+  },
+
+  "turn_structure": {
+    "order": ["player", "threat", "environment"],
+    "max_turns": 10
+  },
+
+  "options": [
+    {
+      "id": "option_shoot",
+      "label": "Open fire",
+      "description": "Attempt to stop the threat with your weapon.",
+      "skill": "Firearms",
+      "dc": 9,
+      "available_when": {
+        "state_flags": {"ammo": 1}
+      },
+      "costs": {
+        "ammo": 1
+      },
+      "outcomes": {
+        "success": {
+          "text": "The shot connects. The threat staggers, wounded.",
+          "state_changes": {"threat_health": -40},
+          "effects": [{"type": "modify_attention", "value": 10}]
+        },
+        "failure": {
+          "text": "The shot goes wide. Glass shatters. Cold floods in.",
+          "state_changes": {"window_intact": false, "temperature": "freezing"}
+        },
+        "partial": {
+          "text": "A glancing hit. It's wounded but angry now.",
+          "state_changes": {"threat_health": -20, "threat_awareness": "hunting"},
+          "effects": [{"type": "add_condition", "target": "cond_shaken"}]
+        }
+      }
+    },
+    {
+      "id": "option_hide",
+      "label": "Take cover",
+      "description": "Try to hide and let it pass.",
+      "skill": "Stealth",
+      "dc": 11,
+      "outcomes": {
+        "success": {
+          "text": "You press into the shadows. It passes by, searching.",
+          "state_changes": {"threat_awareness": "searching", "threat_distance": "far"}
+        },
+        "failure": {
+          "text": "A floorboard creaks. It knows exactly where you are.",
+          "state_changes": {"threat_distance": "close", "threat_awareness": "engaged"}
+        },
+        "partial": {
+          "text": "You're hidden, but trapped. No clear escape now.",
+          "state_changes": {"escape_route_open": false}
+        }
+      }
+    },
+    {
+      "id": "option_escape",
+      "label": "Run for the exit",
+      "description": "Make a break for it.",
+      "skill": "Athletics",
+      "dc": 9,
+      "available_when": {
+        "state_flags": {"escape_route_open": true}
+      },
+      "outcomes": {
+        "success": {
+          "text": "You burst through the door into the cold night air.",
+          "ends_encounter": true,
+          "next_scene": "scene_escaped"
+        },
+        "failure": {
+          "text": "It catches you at the threshold. Pain lances through your side.",
+          "state_changes": {"threat_distance": "adjacent"},
+          "effects": [{"type": "add_condition", "target": "cond_bleeding"}]
+        },
+        "partial": {
+          "text": "You stumble out but it's right behind you.",
+          "ends_encounter": true,
+          "next_scene": "scene_pursued",
+          "effects": [{"type": "add_condition", "target": "cond_sprained_ankle"}]
+        }
+      }
+    },
+    {
+      "id": "option_protect_npc",
+      "label": "Shield the witness",
+      "description": "Put yourself between the threat and the civilian.",
+      "skill": "Composure",
+      "dc": 11,
+      "available_when": {
+        "state_flags": {"npc_witness_status": "scared"}
+      },
+      "outcomes": {
+        "success": {
+          "text": "You stand firm. 'Get behind me.' They trust you.",
+          "state_changes": {"npc_witness_panic_level": 10},
+          "effects": [{"type": "modify_trust", "target": "npc_witness", "value": 20}]
+        },
+        "failure": {
+          "text": "Your hesitation costs you. It reaches the witness first.",
+          "state_changes": {"npc_witness_status": "injured"},
+          "effects": [{"type": "modify_trust", "target": "npc_witness", "value": -15}]
+        }
+      }
+    }
+  ],
+
+  "threat_behavior": [
+    {
+      "condition": {"distance": "far", "awareness": "searching"},
+      "action": {
+        "text": "It prowls the room, sniffing the air. Getting closer.",
+        "state_changes": {"threat_distance": "medium"}
+      }
+    },
+    {
+      "condition": {"distance": "medium", "awareness": "alerted"},
+      "action": {
+        "text": "It lunges forward, closing the distance.",
+        "state_changes": {"threat_distance": "close"}
+      }
+    },
+    {
+      "condition": {"distance": "close", "awareness": "engaged"},
+      "action": {
+        "text": "It strikes. Pain. Cold. The world tilts.",
+        "player_effects": [
+          {"type": "modify_sanity", "value": -10},
+          {"type": "add_condition", "target": "cond_wounded"}
+        ]
+      }
+    },
+    {
+      "condition": {"threat_health": 0},
+      "action": {
+        "text": "It collapses. But is it truly stopped?",
+        "ends_encounter": true,
+        "next_scene": "scene_threat_down"
+      }
+    }
+  ],
+
+  "environment_tick": {
+    "cold_exposure": {
+      "condition": {"window_intact": false},
+      "effect": {
+        "text": "The cold bites deeper. Your fingers are going numb.",
+        "effects": [{"type": "skill_penalty", "skill": "Firearms", "value": -1}]
+      }
+    },
+    "visibility_changes": [
+      {
+        "turn": 3,
+        "effect": {
+          "text": "The power flickers. Darkness.",
+          "state_changes": {"visibility": "dark", "power_on": false}
+        }
+      }
+    ],
+    "attention_gain": 5
+  },
+
+  "exit_conditions": [
+    {
+      "id": "victory_threat_down",
+      "condition": {"threat_health": 0},
+      "result": {
+        "type": "victory",
+        "text": "The threat is neutralized. For now.",
+        "next_scene": "scene_aftermath_victory",
+        "effects": [{"type": "set_flag", "target": "defeated_threat", "value": true}]
+      }
+    },
+    {
+      "id": "escape_successful",
+      "condition": {"player_escaped": true},
+      "result": {
+        "type": "escape",
+        "text": "You made it out. But what about the witness?",
+        "next_scene": "scene_escaped"
+      }
+    },
+    {
+      "id": "survive_turns",
+      "condition": {"turns_survived": 10},
+      "result": {
+        "type": "draw",
+        "text": "Dawn breaks. The threat retreats from the light.",
+        "next_scene": "scene_dawn_survival"
+      }
+    }
+  ],
+
+  "defeat_condition": {
+    "condition": {"player_health": 0},
+    "result": {
+      "text": "Darkness takes you. Cold. So cold.",
+      "next_scene": "scene_defeat",
+      "effects": [{"type": "set_flag", "target": "died_in_encounter", "value": true}],
+      "game_over": false
+    }
+  },
+
+  "_design_notes": {
+    "purpose": "What narrative/mechanical purpose does this encounter serve?",
+    "stakes": "What can be won/lost?",
+    "escape_option": "Always provide a way out, even if costly",
+    "environment": "How does the environment escalate tension each turn?"
+  }
+}

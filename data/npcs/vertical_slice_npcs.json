@@ -1,0 +1,135 @@
+[
+  {
+    "id": "npc_sheriff_bergman",
+    "name": "Sheriff Erik Bergman",
+    "title": "Kaltvik Sheriff",
+    "description": {
+      "base": "A weathered man in his fifties with tired eyes and a permanent frown. His uniform is worn but clean. He moves like someone carrying an invisible weight.",
+      "lens": {
+        "believer": "His eyes dart nervously, as if he's seen things he can't explain. The cross around his neck is clutched too tightly.",
+        "skeptic": "A pragmatic lawman worn down by isolation and limited resources. The signs of stress are obvious—insomnia, weight loss.",
+        "haunted": "He reminds you of your father. Or someone else. The resemblance is unsettling in ways you can't articulate."
+      }
+    },
+    "location_id": "loc_sheriff_office",
+    "schedule": {
+      "night": {"location": "loc_sheriff_home", "available": false},
+      "twilight": {"location": "loc_sheriff_office", "available": true},
+      "dawn": {"location": "loc_diner", "available": true}
+    },
+    "initial_trust": 40,
+    "initial_fear": 0,
+    "knowledge": [
+      {
+        "topic": "recent_disappearances",
+        "trust_required": 50,
+        "clue_revealed": "clue_case_files",
+        "one_time": true
+      },
+      {
+        "topic": "aurora_sightings",
+        "trust_required": 70,
+        "clue_revealed": "clue_aurora_reports",
+        "one_time": true
+      },
+      {
+        "topic": "the_dewline_incident",
+        "trust_required": 85,
+        "clue_revealed": "clue_bergman_testimony",
+        "one_time": true
+      }
+    ],
+    "secrets": [
+      {
+        "id": "secret_bergman_daughter",
+        "description": "His daughter was among the first to disappear. He's been covering up leads to protect her memory.",
+        "revealed_by": {
+          "trust_level": 90,
+          "clue_presented": "clue_bergman_family_photo"
+        }
+      }
+    ],
+    "reactions": {
+      "accused_of_coverup": {
+        "trust_modifier": -25,
+        "fear_modifier": 5,
+        "dialogue_override": "dialogue_bergman_accused"
+      },
+      "showed_aurora_photo": {
+        "trust_modifier": -10,
+        "fear_modifier": 15
+      },
+      "saved_deputy": {
+        "trust_modifier": 30
+      }
+    },
+    "critical_for": ["ending_conspiracy", "the_missing_are_connected"],
+    "voice_style": "Terse. Official. Deflects personal questions. 'That's not relevant.' 'I've told you what I know.'"
+  },
+  {
+    "id": "npc_hotel_manager_elsa",
+    "name": "Elsa Lindqvist",
+    "title": "Hotel Manager",
+    "description": {
+      "base": "A thin woman in her sixties with sharp features and sharper eyes. She wears a faded floral dress under a heavy cardigan. Her hands never stop moving—adjusting things, straightening things.",
+      "lens": {
+        "believer": "She knows the old stories. The way she avoids the windows after dark isn't fear—it's respect. Or appeasement.",
+        "skeptic": "Classic anxiety disorder exacerbated by isolation. The compulsive tidying, the avoidance behaviors—textbook responses to trauma.",
+        "haunted": "Her hands move like your mother's did. Nervous energy that never found release."
+      }
+    },
+    "location_id": "loc_hotel_lobby",
+    "schedule": {
+      "night": {"location": "loc_hotel_lobby", "available": true},
+      "twilight": {"location": "loc_hotel_lobby", "available": true},
+      "dawn": {"location": "loc_hotel_kitchen", "available": true}
+    },
+    "initial_trust": 55,
+    "initial_fear": 10,
+    "knowledge": [
+      {
+        "topic": "hotel_guests",
+        "trust_required": 40,
+        "clue_revealed": null,
+        "one_time": false
+      },
+      {
+        "topic": "the_missing_researcher",
+        "trust_required": 60,
+        "clue_revealed": "clue_researcher_notes",
+        "one_time": true
+      },
+      {
+        "topic": "old_kaltvik_stories",
+        "trust_required": 75,
+        "clue_revealed": "clue_folklore_warning",
+        "one_time": true
+      }
+    ],
+    "secrets": [
+      {
+        "id": "secret_elsa_ritual",
+        "description": "She performs nightly rituals to 'keep them away.' Salt lines, prayers in old Swedish, doors locked in specific sequence.",
+        "revealed_by": {
+          "trust_level": 80,
+          "theory_active": "aurora_rules"
+        }
+      }
+    ],
+    "reactions": {
+      "mentioned_aurora": {
+        "trust_modifier": -5,
+        "fear_modifier": 10
+      },
+      "helped_with_task": {
+        "trust_modifier": 15
+      },
+      "caught_investigating_room": {
+        "trust_modifier": -20,
+        "dialogue_override": "dialogue_elsa_caught"
+      }
+    },
+    "critical_for": ["aurora_rules"],
+    "voice_style": "Soft-spoken but firm. Old world manners. 'You shouldn't be asking about that.' 'Some things are best left in the dark.'"
+  }
+]

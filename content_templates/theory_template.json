@@ -1,0 +1,62 @@
+{
+  "_comment": "THEORY TEMPLATE - Copy and fill in for each internalizable theory",
+  "_instructions": [
+    "1. Theories change how the player interprets evidence",
+    "2. Conflicting theories cannot both be active",
+    "3. Internalization takes real in-game time",
+    "4. Effects modify skills while theory is active"
+  ],
+
+  "id": "theory_example",
+  "name": "Example Theory Name",
+  "category": "conspiracy",
+
+  "description": "A one-paragraph description of what this theory proposes. What does the player believe if they internalize this?",
+
+  "requirements": {
+    "clues_required": ["clue_evidence_a", "clue_evidence_b"],
+    "flags_required": [],
+    "scenes_visited": [],
+    "theories_active": [],
+    "min_skill": {}
+  },
+
+  "internalize_time_hours": 4,
+
+  "effects": {
+    "Pattern Recognition": 1,
+    "Skepticism": -1
+  },
+
+  "hidden_effects": false,
+
+  "conflicts_with": ["theory_opposite_view"],
+
+  "auto_locks": ["theory_incompatible"],
+
+  "unlocks": {
+    "dialogue_options": ["dialogue_option_theory_specific"],
+    "scene_inserts": ["insert_theory_interpretation"],
+    "check_bonuses": {"Research": 1}
+  },
+
+  "on_internalize_effects": [
+    {"type": "set_flag", "target": "internalized_example_theory", "value": true},
+    {"type": "modify_attention", "value": 5}
+  ],
+
+  "degradation_rate": 10,
+
+  "critical_for_endgame": false,
+
+  "active_case": false,
+
+  "lens_bias": "believer",
+
+  "_design_notes": {
+    "what_it_explains": "What mysteries does this theory attempt to explain?",
+    "what_it_misses": "What evidence contradicts or complicates this theory?",
+    "player_impact": "How does believing this change the player's experience?",
+    "endgame_relevance": "Does this theory matter for endings? How?"
+  }
+}

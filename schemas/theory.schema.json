@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "theory.schema.json",
+  "title": "Theory",
+  "description": "A theory that can be internalized by the player",
+  "type": "object",
+  "required": ["id", "name", "category", "description"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the theory",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name of the theory"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["belief", "investigation", "conspiracy", "personal", "case"],
+      "description": "Category of the theory"
+    },
+    "description": {
+      "type": "string",
+      "description": "Full description of the theory"
+    },
+    "requirements": {
+      "type": "object",
+      "description": "Requirements to unlock/discover this theory",
+      "properties": {
+        "clues_required": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Clue IDs required to discover this theory"
+        },
+        "flags_required": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "scenes_visited": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "theories_active": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "min_skill": {
+          "type": "object",
+          "additionalProperties": {"type": "integer"}
+        }
+      }
+    },
+    "internalize_time_hours": {
+      "type": "number",
+      "minimum": 0.5,
+      "default": 4,
+      "description": "Hours required to internalize this theory"
+    },
+    "effects": {
+      "type": "object",
+      "additionalProperties": {"type": "integer"},
+      "description": "Skill modifiers applied when theory is active"
+    },
+    "hidden_effects": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether effects are hidden from player"
+    },
+    "conflicts_with": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Theory IDs that conflict with this theory"
+    },
+    "auto_locks": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Theory IDs locked when this is internalized"
+    },
+    "unlocks": {
+      "type": "object",
+      "properties": {
+        "dialogue_options": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Dialogue option IDs unlocked"
+        },
+        "scene_inserts": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Scene insert IDs unlocked"
+        },
+        "check_bonuses": {
+          "type": "object",
+          "additionalProperties": {"type": "integer"}
+        }
+      }
+    },
+    "on_internalize_effects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {"type": "string"},
+          "target": {"type": "string"},
+          "value": {}
+        }
+      }
+    },
+    "degradation_rate": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 10,
+      "description": "Health lost per contradiction"
+    },
+    "critical_for_endgame": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this theory affects ending determination"
+    },
+    "active_case": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is an active investigation case"
+    },
+    "lens_bias": {
+      "type": "string",
+      "enum": ["believer", "skeptic", "haunted", "neutral"],
+      "default": "neutral",
+      "description": "Which lens this theory biases toward"
+    }
+  }
+}

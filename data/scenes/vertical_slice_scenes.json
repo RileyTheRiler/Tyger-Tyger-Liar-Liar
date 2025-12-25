@@ -1,0 +1,182 @@
+[
+  {
+    "id": "scene_arrival",
+    "title": "Arrival in Kaltvik",
+    "location_id": "loc_town_entrance",
+    "time_cost": 0,
+    "text": {
+      "base": "The bus grinds to a halt at the edge of town. You're the only one getting off. The driver doesn't look at you as you step into the cold. The polar night has been going for three weeks now. Streetlights create islands of orange in an ocean of darkness. Population: 347, reads the sign. Someone has crossed out the last digit.",
+      "lens": {
+        "believer": "The darkness here is different. Heavier. It presses against the light like something alive, testing the boundaries. The crossed-out number feels like a prophecy.",
+        "skeptic": "A dying town in the Arctic winter. The vandalized sign is typical—teenagers, probably. Or someone processing grief through petty destruction.",
+        "haunted": "You've been here before. Not this town specifically, but places like it. Cold places where people disappear and no one asks too many questions."
+      },
+      "inserts": [
+        {
+          "id": "insert_perception_figure_distance",
+          "condition": {"skill_gte": {"Perception": 3}},
+          "text": "At the edge of the light, something moves. A silhouette that seems too tall, too thin. When you blink, it's gone. If it was ever there.",
+          "insert_at": "AFTER_LENS"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "Head to the hotel",
+        "next_scene": "scene_hotel_exterior",
+        "effects": [{"type": "add_time", "value": 10}]
+      },
+      {
+        "label": "Look for the sheriff's office",
+        "next_scene": "scene_sheriff_office_exterior",
+        "effects": [{"type": "add_time", "value": 15}]
+      },
+      {
+        "label": "Study the town sign",
+        "next_scene": "scene_town_sign",
+        "effects": [{"type": "add_time", "value": 5}]
+      }
+    ],
+    "on_entry_effects": [
+      {"type": "set_flag", "target": "arrived_in_kaltvik", "value": true}
+    ],
+    "connected_scenes": ["scene_hotel_exterior", "scene_sheriff_office_exterior", "scene_town_sign"]
+  },
+  {
+    "id": "scene_hotel_lobby",
+    "title": "Hotel Kaltvik - Lobby",
+    "location_id": "loc_hotel_lobby",
+    "time_cost": 5,
+    "text": {
+      "base": "The lobby is warmer than outside, but not by much. A single lamp illuminates the front desk. The floorboards creak with every step. A clock on the wall ticks loudly in the silence. The air smells of old coffee and something else—something metallic, underneath.",
+      "lens": {
+        "believer": "The shadows in the corners seem to shift when you're not looking directly at them. The clock's rhythm is wrong somehow. Counting down, not up.",
+        "skeptic": "Standard small-town hotel, probably built in the fifties. The metallic smell is probably from old radiators. Nothing here that can't be explained.",
+        "haunted": "You've been in this lobby before. The furniture was different then. Or was it? The clock's ticking sounds like a heartbeat. Whose?"
+      },
+      "inserts": [
+        {
+          "id": "insert_forensics_smell",
+          "condition": {"skill_gte": {"Forensics": 3}},
+          "text": "That metallic smell—blood. Old blood, mostly cleaned, but not well enough. Someone bled here recently.",
+          "insert_at": "AFTER_LENS"
+        },
+        {
+          "id": "insert_theory_government",
+          "condition": {"theory_active": "government_coverup"},
+          "text": "The guest register on the desk is open. Several pages have been carefully removed. The dates would match the disappearances.",
+          "insert_at": "BEFORE_CHOICES"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "Approach the front desk",
+        "next_scene": "scene_hotel_desk"
+      },
+      {
+        "label": "Talk to the manager",
+        "dialogue_id": "dialogue_elsa_first_meeting",
+        "visible_if": {"flag_not_set": "met_elsa"}
+      },
+      {
+        "label": "Examine the lobby more closely",
+        "next_scene": "scene_hotel_lobby_search",
+        "effects": [{"type": "add_time", "value": 15}]
+      },
+      {
+        "label": "Go to your room",
+        "next_scene": "scene_hotel_room",
+        "visible_if": {"flag_set": "has_room_key"}
+      },
+      {
+        "label": "Leave the hotel",
+        "next_scene": "scene_street_night"
+      }
+    ],
+    "passive_clues": [
+      {
+        "clue_id": "clue_blood_stain_lobby",
+        "visible_when": {
+          "skill_gte": {"Forensics": 4},
+          "equipment": "item_uv_light"
+        },
+        "reveal_text": "Under UV light, the carpet tells a different story. A large stain, roughly human-shaped, and droplets leading toward the exit."
+      }
+    ],
+    "on_entry_effects": [
+      {"type": "set_flag", "target": "visited_hotel_lobby", "value": true}
+    ],
+    "ambient_effects": {
+      "reality_drain_per_min": 0.1
+    },
+    "connected_scenes": ["scene_hotel_desk", "scene_hotel_room", "scene_street_night"]
+  },
+  {
+    "id": "scene_sheriff_office",
+    "title": "Sheriff's Office",
+    "location_id": "loc_sheriff_office",
+    "time_cost": 5,
+    "text": {
+      "base": "A cramped office lit by fluorescent tubes. Filing cabinets line the walls. A map of the region dominates one wall, covered in pins and string. Sheriff Bergman sits behind a desk cluttered with papers. He doesn't look up when you enter.",
+      "lens": {
+        "believer": "The map is a web. The pins cluster around certain locations—the forest, the old DEW line station, the lake. The pattern is almost organic. Growing.",
+        "skeptic": "Standard investigation methodology. Pin mapping, string connections. He's trying to find a pattern in the disappearances. Professional, if outdated.",
+        "haunted": "Your father had an office like this. Smaller. More desperate. The same weight of unsolved cases pressing down on everything."
+      },
+      "inserts": [
+        {
+          "id": "insert_pattern_recognition_map",
+          "condition": {"skill_gte": {"Pattern Recognition": 4}},
+          "text": "The pins form a shape. Not random at all. A spiral, centered on something in the forest. Each disappearance closer to the center than the last.",
+          "insert_at": "AFTER_LENS"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "label": "Introduce yourself officially",
+        "dialogue_id": "dialogue_bergman_first_meeting",
+        "visible_if": {"flag_not_set": "met_bergman"}
+      },
+      {
+        "label": "Ask about the case files",
+        "dialogue_id": "dialogue_bergman_cases",
+        "visible_if": {"flag_set": "met_bergman"}
+      },
+      {
+        "label": "[Authority] Demand to see the files",
+        "check": {
+          "skill": "Authority",
+          "dc": 11,
+          "success_scene": "scene_case_files_revealed",
+          "failure_scene": "scene_bergman_refuses"
+        },
+        "visible_if": {"flag_set": "met_bergman"}
+      },
+      {
+        "label": "Study the map on the wall",
+        "next_scene": "scene_investigation_map",
+        "effects": [{"type": "add_time", "value": 10}]
+      },
+      {
+        "label": "Leave",
+        "next_scene": "scene_street_twilight"
+      }
+    ],
+    "passive_clues": [
+      {
+        "clue_id": "clue_case_files",
+        "visible_when": {
+          "skill_gte": {"Research": 3},
+          "flag_set": "bergman_trust_60"
+        },
+        "reveal_text": "Bergman's guard is down. You notice a folder on his desk—'ACTIVE CASES: AURORA CORRELATION'. He sees you looking and quickly covers it."
+      }
+    ],
+    "on_entry_effects": [
+      {"type": "set_flag", "target": "visited_sheriff_office", "value": true}
+    ],
+    "connected_scenes": ["scene_investigation_map", "scene_street_twilight"]
+  }
+]

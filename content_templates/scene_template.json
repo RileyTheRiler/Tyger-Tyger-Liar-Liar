@@ -1,0 +1,141 @@
+{
+  "_comment": "SCENE TEMPLATE - Copy this file and fill in the fields",
+  "_instructions": [
+    "1. Replace 'scene_example' with a unique snake_case ID",
+    "2. Write base text first (objective, minimal)",
+    "3. Add lens variants that INTERPRET, don't contradict base facts",
+    "4. Add skill-gated inserts for additional details",
+    "5. Run validation before committing"
+  ],
+
+  "id": "scene_example",
+  "title": "Example Scene Title",
+  "location_id": "loc_hotel_lobby",
+
+  "time_cost": 15,
+
+  "prereqs": {
+    "flags": [],
+    "items": [],
+    "scenes_visited": [],
+    "theories_active": [],
+    "min_trust": {},
+    "time_block": ["night", "twilight", "dawn"]
+  },
+
+  "text": {
+    "base": "OBJECTIVE ANCHOR: What the player sees/experiences. Short, factual, sensory. Example: The lobby is empty. A clock ticks. The air smells of old coffee and something metallic.",
+
+    "lens": {
+      "believer": "BELIEVER INTERPRETATION: Same scene through supernatural lens. The shadows shift. The clock counts wrong. The smell is death, poorly masked.",
+      "skeptic": "SKEPTIC INTERPRETATION: Same scene through rational lens. Standard small-town hotel. Old radiators explain the smell. Nothing unusual.",
+      "haunted": "HAUNTED INTERPRETATION: Same scene filtered through personal trauma. You've been here before. The furniture was different. Or was it?"
+    },
+
+    "inserts": [
+      {
+        "id": "insert_forensics_smell",
+        "condition": {
+          "skill_gte": {"Forensics": 3}
+        },
+        "text": "That metallic smell—blood. Old blood, mostly cleaned, but not well enough.",
+        "insert_at": "AFTER_LENS"
+      },
+      {
+        "id": "insert_perception_figure",
+        "condition": {
+          "skill_gte": {"Perception": 4}
+        },
+        "text": "There's a reflection in the window. Someone behind you. When you turn, no one is there.",
+        "insert_at": "BEFORE_CHOICES"
+      },
+      {
+        "id": "insert_theory_government",
+        "condition": {
+          "theory_active": "government_coverup"
+        },
+        "text": "The guest register is missing several pages. The dates match the disappearances.",
+        "insert_at": "AFTER_LENS"
+      }
+    ]
+  },
+
+  "choices": [
+    {
+      "label": "Examine the front desk",
+      "next_scene": "scene_hotel_desk",
+      "effects": [
+        {"type": "add_time", "value": 5}
+      ]
+    },
+    {
+      "label": "Talk to the clerk",
+      "dialogue_id": "dialogue_hotel_clerk",
+      "visible_if": {
+        "flag_not_set": "clerk_fled"
+      }
+    },
+    {
+      "label": "[Charm] Ask about the missing guests",
+      "check": {
+        "skill": "Charm",
+        "dc": 9,
+        "check_type": "white",
+        "success_scene": "scene_clerk_reveals",
+        "failure_scene": "scene_clerk_suspicious",
+        "partial_scene": "scene_clerk_reluctant"
+      },
+      "visible_if": {
+        "skill_gte": {"Charm": 1}
+      },
+      "effects": [
+        {"type": "modify_trust", "target": "npc_hotel_clerk", "value": -5}
+      ]
+    },
+    {
+      "label": "Leave the hotel",
+      "next_scene": "scene_street_night"
+    }
+  ],
+
+  "passive_clues": [
+    {
+      "clue_id": "clue_guest_register",
+      "visible_when": {
+        "skill_gte": {"Research": 2}
+      },
+      "reveal_text": "The guest register lies open. Several pages have been carefully removed."
+    },
+    {
+      "clue_id": "clue_blood_carpet",
+      "visible_when": {
+        "skill_gte": {"Forensics": 4},
+        "equipment": "item_uv_light"
+      },
+      "reveal_text": "Under UV light, the carpet tells a different story. Someone bled here. A lot."
+    }
+  ],
+
+  "on_entry_effects": [
+    {"type": "set_flag", "target": "visited_hotel_lobby", "value": true},
+    {"type": "modify_attention", "value": 2}
+  ],
+
+  "ambient_effects": {
+    "sanity_drain_per_min": 0,
+    "reality_drain_per_min": 0.1,
+    "attention_gain_per_min": 0.5
+  },
+
+  "connected_scenes": [
+    "scene_hotel_desk",
+    "scene_hotel_stairs",
+    "scene_street_night"
+  ],
+
+  "_tone_checklist": {
+    "sensory_detail": "Clock ticking, coffee smell, metallic undertone",
+    "mundane_made_threatening": "Empty lobby at wrong hour, missing pages",
+    "ambiguity_hook": "Something metallic—interpretation varies by lens"
+  }
+}
