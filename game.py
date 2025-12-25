@@ -885,8 +885,6 @@ class Game:
         thermal_active = self.player_state.get("thermal_mode", False)
 
         # Pass reality checker if debug
-        composer = self.text_composer
-        # TODO: Inject reality checker into composer if I modify composer
 
         composed_result = self.text_composer.compose(text_data, archetype, self.player_state, thermal_mode=thermal_active)
 
