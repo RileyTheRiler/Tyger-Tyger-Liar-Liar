@@ -1,9 +1,11 @@
 
 import re
+from typing import List, Tuple, Optional
 
 class InputMode:
     DIALOGUE = "DIALOGUE"
     INVESTIGATION = "INVESTIGATION"
+    COMBAT = "COMBAT"
 
 class CommandParser:
     def __init__(self):

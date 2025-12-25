@@ -120,6 +120,7 @@ class Game:
         self.parser = CommandParser()
         self.input_mode = InputMode.INVESTIGATION 
         self.debug_mode = False
+        self.tutorial_mode = self.config.get("tutorial_mode", False)
         self.last_autosave_time = 0
         
         # Link Time System to Board
@@ -797,6 +798,12 @@ class Game:
         scene = self.scene_manager.current_scene_data
         self.print("\n" + "="*60)
         
+        # Tutorial Hint
+        if self.tutorial_mode:
+            self.print(f"{Colors.YELLOW}[TUTORIAL] Try: 'examine walls' or 'search' to investigate.{Colors.RESET}")
+            if self.board.get_active_or_internalizing_count() > 0:
+                 self.print(f"{Colors.YELLOW}[TUTORIAL] You have active theories! Check the (b)oard.{Colors.RESET}")
+
         # HUD
         san = self.player_state["sanity"]
         real = self.player_state["reality"]
@@ -1256,6 +1263,13 @@ class Game:
             self.print("[You pack your bags and prepare to leave Tyger Tyger...]")
             return "refresh"
 
+        # Feedback Tool
+        if clean.startswith('feedback'):
+            parts = raw.split(maxsplit=1)
+            comment = parts[1] if len(parts) > 1 else "No comment provided"
+            self.submit_feedback(comment)
+            return "refresh"
+
         # Numeric Choices
         if raw.isdigit():
             idx = int(raw) - 1
@@ -1608,7 +1622,13 @@ class Game:
                 # We use 'roll_check' but treat it silently unless success
                 result = self.skill_system.roll_check(skill_name, dc, manual_roll=None)
                 if result["success"]:
-                    self.print(f"\n[{skill_name.upper()} SUCCESS] {check['success_text']}")
+                    # Highlight for Tutorial
+                    if self.tutorial_mode:
+                        self.print(f"\n{Colors.CYAN}[PASSIVE CHECK: {skill_name.upper()} SUCCESS]{Colors.RESET}")
+                    else:
+                        self.print(f"\n[{skill_name.upper()} SUCCESS]")
+
+                    self.print(f"{check['success_text']}")
 
         # Interactions
         if "interactions" in obj_data:
@@ -1800,6 +1820,41 @@ class Game:
     def log_event(self, event_type: str, **details):
         """Log a significant game event."""
         self.event_log.add_event(event_type, **details)
+
+    def submit_feedback(self, comment):
+        """Save user feedback to a file, including state dump."""
+        import datetime
+        import json
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        log_entry = f"[{timestamp}] FEEDBACK: {comment}\n"
+        # Dump recent logs context
+        recent_logs = self.event_log.get_logs(limit=10)
+        log_entry += f"LOGS: {recent_logs}\n"
+
+        # Dump Player State
+        try:
+            # Create a serializable copy of player state
+            # Convert sets to lists
+            state_dump = {}
+            for k, v in self.player_state.items():
+                if isinstance(v, set):
+                    state_dump[k] = list(v)
+                else:
+                    state_dump[k] = v
+
+            log_entry += f"STATE: {json.dumps(state_dump, default=str)}\n"
+        except Exception as e:
+            log_entry += f"STATE ERROR: {str(e)}\n"
+
+        log_entry += "-"*40 + "\n"
+
+        try:
+            with open("feedback.log", "a", encoding="utf-8") as f:
+                f.write(log_entry)
+            self.print(f"[Feedback and state snapshot submitted. Thank you!]")
+        except Exception as e:
+            self.print(f"[Error saving feedback: {e}]")
 
     def process_choice(self, choice):
         # Handle Skill Checks
@@ -2033,6 +2088,10 @@ class Game:
     def show_board(self):
         """Display The Board with visual ASCII art."""
         print(self.board_ui.render())
+
+        if self.tutorial_mode:
+             print(f"{Colors.YELLOW}[TUTORIAL] Theories evolve as you find evidence. Use 'evidence <theory> <item>' to link.{Colors.RESET}")
+
         print("\nCommands: 'evidence <theory_id> <evidence_id>' | 'contradict <theory_id> <evidence_id>'")
         print("          'prove <theory_id>' | 'disprove <theory_id>'\n")
 

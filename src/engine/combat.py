@@ -59,6 +59,14 @@ class CombatManager:
             enemies: List of enemy dicts (if not using template)
             encounter_type: "combat" or "chase"
         """
+        # TEST BUILD: Combat Disabled
+        self.log = []
+        self.log_message(f"--- {encounter_type.upper()} [PLACEHOLDER] ---")
+        self.log_message("Combat is disabled in this test build.")
+        self.log_message("You manage to evade the conflict for now.")
+        self.active = False
+        return
+
         if encounter_id and encounter_id in self.encounter_templates:
             template = self.encounter_templates[encounter_id]
             self.enemies = [template.copy()]
