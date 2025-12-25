@@ -555,10 +555,16 @@ class DialogueTextComposer:
         self.composer = text_composer
 
     def compose_line(self, line_data: dict, archetype: Archetype,
-                     player_state: dict = None) -> Tuple[str, str]:
+                     player_state: dict = None, npc: Any = None) -> Tuple[str, str]:
         """
         Compose a dialogue line.
         Returns (speaker, composed_text).
+
+        Args:
+            line_data: The dialogue node data
+            archetype: Player's lens archetype
+            player_state: Player state dict
+            npc: Optional NPC object for tone modulation (Week 25)
         """
         speaker = line_data.get("speaker", "???")
 
@@ -567,15 +573,47 @@ class DialogueTextComposer:
         if isinstance(text_data, str):
             text_data = {"base": text_data}
 
-        result = self.composer.compose(text_data, archetype, player_state)
+        # Week 25: Tone Modulation
+        # Skills affect tone without direct player control.
+        # We append tone descriptors based on player skills if applicable.
 
-        # Apply speaker-specific lens (NPCs might speak differently based on player's lens)
+        mod_suffix = ""
+
+        if self.composer.skill_system:
+            # High Authority -> Commanding Tone perception
+            auth = self.composer.skill_system.get_skill_total("Authority")
+            if auth >= 5:
+                # If speaker is ambiguous or hostile, Authority clarifies dominance
+                if npc and npc.get_relationship_status() == "hostile":
+                    mod_suffix += " (submitting)"
+
+            # Low Composure -> Perception of chaos
+            comp = self.composer.skill_system.get_skill_total("Composure")
+            if comp <= 1:
+                # Player perceives things as more erratic
+                mod_suffix += " (distorted)"
+
+        result = self.composer.compose(text_data, archetype, player_state)
+        full_text = result.full_text
+
+        # Apply speaker-specific lens
         if archetype == Archetype.HAUNTED:
-            # In haunted lens, speakers might seem more suspicious
             if "lens" not in line_data.get("text", {}):
                 speaker = f"{speaker} (familiar)"
 
-        return speaker, result.full_text
+        # Week 25: NPC Response Modulation (Trust/Fear/Rapport)
+        if npc:
+            if npc.fear > 70:
+                mod_suffix += " (shaking)"
+            elif npc.trust < 20:
+                mod_suffix += " (cold)"
+            elif npc.rapport > 60:
+                mod_suffix += " (warm)"
+
+        if mod_suffix:
+            speaker += mod_suffix
+
+        return speaker, full_text
 
 
 # Debug mode helpers

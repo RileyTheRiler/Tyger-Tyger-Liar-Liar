@@ -2,6 +2,7 @@ import json
 import os
 import random
 from typing import Dict, List, Optional, Any, Tuple
+from engine.text_composer import TextComposer, DialogueTextComposer, Archetype
 
 class DialogueManager:
     def __init__(self, skill_system, board, player_state, npc_system=None):
@@ -10,6 +11,10 @@ class DialogueManager:
         self.player_state = player_state
         self.npc_system = npc_system  # Week 12: For relationship gates
         
+        # Initialize Text Composer (Week 25)
+        self.text_composer = TextComposer(skill_system, board, player_state)
+        self.dialogue_composer = DialogueTextComposer(self.text_composer)
+
         self.current_dialogue_id = None
         self.current_npc_id = None  # Track which NPC we're talking to
         self.nodes = {}
@@ -24,12 +29,18 @@ class DialogueManager:
         self.debug_show_hidden = False
 
     def _load_interrupt_lines(self):
-        """Loads passive interrupt lines from data/interrupt_lines.json."""
+        """Loads passive interrupt lines from data/interrupt_lines.json.
+           Also loads them into skill system if not already there,
+           ensuring consistency.
+        """
         path = os.path.join("data", "interrupt_lines.json")
         if os.path.exists(path):
             try:
                 with open(path, 'r', encoding='utf-8') as f:
                     self.interrupt_data = json.load(f)
+                    # Sync with skill system if needed
+                    if self.skill_system.interrupt_lines != self.interrupt_data:
+                        self.skill_system.interrupt_lines = self.interrupt_data
             except Exception as e:
                 print(f"ERROR loading interrupt_lines.json: {e}")
 
@@ -90,33 +101,49 @@ class DialogueManager:
     def _run_passive_checks(self, node: dict) -> List[str]:
         interjections = []
         
-        # Get NPC context if available
-        npc = None
-        if self.npc_system and self.current_npc_id:
-            npc = self.npc_system.get_npc(self.current_npc_id)
+        # 1. Use SkillSystem's unified passive check logic
+        # We construct a context string from the node text
+        context_text = node.get("text", "")
+        # Get current time if possible (stub for now as player_state doesn't have it explicitly updated every tick in test env)
+        current_time = 0.0
+        sanity = self.player_state.get("sanity", 100.0)
         
-        # New Week 5 passives format: ["Empathy", "Perception"]
-        passives = node.get("passives", [])
-        # Old format: [{"skill": "...", "dc": ..., "interjection": "..."}]
-        old_checks = node.get("passive_checks", [])
+        # We only check skills that are RELEVANT or explicitly listed
+        # Explicit passives get a bonus or forced check
+        explicit_passives = node.get("passives", [])
         
-        # Handle new format
-        for skill_name in passives:
-            # Default DC 9 as per prompt
+        # Standard random passives from SkillSystem
+        # We might want to limit this to avoid spamming every node
+        # But let's allow it for "reactive dialogue" feel
+        system_interrupts = self.skill_system.check_passive_interrupts(context_text, sanity, current_time)
+
+        for interrupt in system_interrupts:
+            # Format: {'skill': 'LOGIC', 'color': 'blue', 'text': '...', 'icon': ...}
+            # Handle potential KeyError if 'skill' is missing (though it shouldn't be based on mechanics.py)
+            if 'skill' in interrupt and 'text' in interrupt:
+                interjections.append(f"[{interrupt['skill']}] {interrupt['text']}")
+
+        # 2. Explicit Passives (Legacy support + forced checks)
+        for skill_name in explicit_passives:
+            # Check if we already have this skill in system_interrupts to avoid dupes?
+            # explicit ones usually have specific triggers or lower DCs
+            if any(i.get('skill', '').title() == skill_name.title() for i in system_interrupts):
+                continue
+
             res = self.skill_system.roll_check(skill_name, 9)
             if res["success"]:
-                # Get flavor text from interrupt_data
+                 # Get flavor text
                 skill_interrupts = self.interrupt_data.get(skill_name, [])
-                # interrupt_data is {skill: [list of strings]}, pick random one
                 if skill_interrupts:
                     text = random.choice(skill_interrupts)
                 else:
                     text = f"You notice something via {skill_name}."
-                interjections.append(f"[{skill_name}] {text}")
+                interjections.append(f"[{skill_name.upper()}] {text}")
             elif self.debug_show_hidden:
                 interjections.append(f"[DEBUG FAIL {skill_name}]")
-        
-        # Handle old format (keeping for compatibility)
+
+        # 3. Old Format support
+        old_checks = node.get("passive_checks", [])
         for check in old_checks:
             skill_name = check.get("skill")
             dc = check.get("dc", 10)
@@ -127,33 +154,32 @@ class DialogueManager:
                 interjections.append(text)
             elif self.debug_show_hidden:
                 interjections.append(f"[DEBUG FAIL {skill_name} vs {dc}] {text}")
+
+        # 4. NPC & Board Checks (Keep existing logic)
+        npc = None
+        if self.npc_system and self.current_npc_id:
+            npc = self.npc_system.get_npc(self.current_npc_id)
         
-        # Week 11: NPC-driven passive checks
         if npc:
-            # Empathy check for high fear
             if npc.fear > 70:
                 res = self.skill_system.roll_check("Empathy", 9)
                 if res["success"]:
                     interjections.append(f"[EMPATHY] {npc.name} is terrified. Their hands are shaking.")
             
-            # Profiling check for disposition
             if npc.trust < 30:
                 res = self.skill_system.roll_check("Profiling", 10)
                 if res["success"]:
                     interjections.append(f"[PROFILING] {npc.name} doesn't trust you. Watch for deception.")
             
-            # Authority check for relationship status
             status = npc.get_relationship_status()
             if status == "hostile":
                 res = self.skill_system.roll_check("Authority", 11)
                 if res["success"]:
                     interjections.append(f"[AUTHORITY] They're hostile. You'll need leverage to get cooperation.")
         
-        # Week 11: Board theory commentary
         if self.board:
             active_theories = [t for t in self.board.theories.values() if t.status == "active"]
             for theory in active_theories:
-                # Check if theory is relevant to this dialogue
                 if self.current_dialogue_id and theory.id in self.current_dialogue_id:
                     interjections.append(f"[{theory.name.upper()}] This conversation relates to your theory...")
                 
@@ -200,6 +226,15 @@ class DialogueManager:
             
         node = self.nodes[self.current_node_id]
         
+        # Get NPC context
+        npc = None
+        if self.npc_system and self.current_npc_id:
+            npc = self.npc_system.get_npc(self.current_npc_id)
+
+        # Use TextComposer to handle lenses, inserts, and NPC modulation
+        archetype = self.text_composer.calculate_dominant_lens(self.player_state)
+        speaker, composed_text = self.dialogue_composer.compose_line(node, archetype, self.player_state, npc=npc)
+
         # Filter/Process choices
         visible_choices = []
         for choice in node.get("choices", []):
@@ -212,8 +247,8 @@ class DialogueManager:
             })
             
         return {
-            "speaker": node.get("speaker", "???"),
-            "text": node.get("text", "..."),
+            "speaker": speaker,
+            "text": composed_text,
             "interjections": self.active_interjections,
             "choices": visible_choices
         }
@@ -396,3 +431,5 @@ class DialogueManager:
     def toggle_debug(self):
         self.debug_show_hidden = not self.debug_show_hidden
         print(f"[Dialogue Debug] Show Hidden: {self.debug_show_hidden}")
+        if self.text_composer:
+            self.text_composer.debug_mode = self.debug_show_hidden

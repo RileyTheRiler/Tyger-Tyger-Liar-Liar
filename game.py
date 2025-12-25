@@ -33,6 +33,7 @@ from endgame_manager import EndgameManager
 from memory_system import MemorySystem
 from scene_manager import SceneManager
 from input_system import CommandParser, InputMode
+from parser_memory import ParserMemory
 from content.dialogue_manager import DialogueManager
 from combat import CombatManager
 from corkboard_minigame import CorkboardMinigame
@@ -56,6 +57,7 @@ from engine.psychological_system import PsychologicalState
 from engine.fear_system import FearManager
 from engine.unreliable_narrator import HallucinationEngine
 from npc_system import NPCSystem
+from fracture_system import FractureSystem
 
 
 class Game:
@@ -72,7 +74,7 @@ class Game:
         self.player_state = {
             "sanity": 100.0,
             "reality": 100.0,
-            "archetype": Archetype.NEUTRAL,
+            "archetype": Archetype.NEUTRAL.value,
             "resonance_count": 347,
             "thermal_mode": False,
             "inventory": [],
@@ -117,7 +119,8 @@ class Game:
         self.corkboard = CorkboardMinigame(self.board, self.inventory_system)
         self.event_log = EventLog()
         self.save_system = SaveSystem()
-        self.parser = CommandParser()
+        self.parser_memory = ParserMemory()
+        self.parser = CommandParser(self.parser_memory)
         self.input_mode = InputMode.INVESTIGATION 
         self.debug_mode = False
         self.last_autosave_time = 0
@@ -209,7 +212,9 @@ class Game:
         hallucinations_path = resource_path(os.path.join('data', 'hallucinations'))
         self.hallucination_engine.load_hallucination_templates(hallucinations_path)
         
-        self.active_argument = None # Phase 4 internal debates
+        # Initialize Fracture System
+        self.fracture_system = FractureSystem(self.get_game_state())
+
         self.active_argument = None # Phase 4 internal debates
         self.current_autopsy = None # Phase 5 autopsies
         
@@ -1125,6 +1130,39 @@ class Game:
             self.print(f"Day: {date_data['day_name']}")
             return "refresh"
         
+        # Save/Load/Export Commands
+        if clean == 'save':
+            self.handle_save_menu()
+            return "refresh"
+
+        if clean == 'load':
+            self.handle_load_menu()
+            return "refresh"
+
+        if clean == 'export':
+            self.handle_export_menu()
+            return "refresh"
+
+        if clean.startswith('save '):
+            slot_id = clean.replace('save ', '').strip()
+            self.save_game(slot_id)
+            return "refresh"
+
+        if clean.startswith('load '):
+            slot_id = clean.replace('load ', '').strip()
+            self.load_game(slot_id)
+            return "refresh"
+
+        if clean.startswith('export '):
+            target = clean.replace('export ', '').strip()
+            if target == 'dossier':
+                self.export_dossier()
+            elif target == 'log':
+                self.export_log()
+            else:
+                self.print("Usage: export [dossier|log]")
+            return "refresh"
+
         # Wait Command
         if clean.startswith('wait'): # Changed from input() to args
             parts = clean.split()
@@ -1150,6 +1188,11 @@ class Game:
         if clean == 'debug':
             self.debug_mode = not self.debug_mode
             self.print(f"[DEBUG MODE: {'ON' if self.debug_mode else 'OFF'}]")
+            # Sync debug mode with Dialogue Manager
+            if hasattr(self.dialogue_manager, 'toggle_debug'):
+                self.dialogue_manager.debug_show_hidden = self.debug_mode
+                if hasattr(self.dialogue_manager, 'text_composer'):
+                    self.dialogue_manager.text_composer.debug_mode = self.debug_mode
             return "refresh"
         
         if clean == 'devmode':
@@ -1158,6 +1201,26 @@ class Game:
             return "refresh"
 
         if self.debug_mode:
+            # Debug: Show Dialogue Tree
+            if clean.startswith('debug_dialogue'):
+                parts = clean.split()
+                if len(parts) > 1:
+                    d_id = parts[1]
+                    self.print(f"\n--- DEBUG DIALOGUE TREE: {d_id} ---")
+                    # Try to load and inspect
+                    temp_dm = DialogueManager(self.skill_system, self.board, self.player_state)
+                    if temp_dm.load_dialogue(d_id, resource_path(os.path.join('data', 'dialogues'))):
+                        for node_id, node in temp_dm.nodes.items():
+                            self.print(f"[{node_id}] {node.get('text', '')[:50]}...")
+                            if "choices" in node:
+                                for c in node["choices"]:
+                                    self.print(f"  -> {c.get('text', '')} (Next: {c.get('next')})")
+                    else:
+                        self.print("Failed to load dialogue.")
+                else:
+                    self.print("Usage: debug_dialogue <dialogue_id>")
+                return "refresh"
+
             # Debug: Force Save
             if clean.startswith('forcesave'):
                 parts = clean.split()
@@ -1166,14 +1229,14 @@ class Game:
                 return "refresh"
             
             # Debug: Export Save
-            if clean.startswith('export'):
+            if clean.startswith('debugexport'):
                 parts = clean.split()
                 if len(parts) >= 3:
                     slot = parts[1]
                     path = parts[2]
                     self.save_system.export_save(slot, path)
                 else:
-                    self.print("Usage: export <slot_id> <output_path>")
+                    self.print("Usage: debugexport <slot_id> <output_path>")
                 return "refresh"
             
             # Debug: Set Sanity/Reality
@@ -1346,9 +1409,37 @@ class Game:
         print(f"[THERMAL OPTICS: {state}]")
 
     def handle_parser_command(self, verb, target):
+        # 1. Hallucination Interception (Week 15)
+        if self.psych_state.get_sanity_tier() <= 1: # Psychosis or Breakdown
+            # 20% chance to completely hallucinate the command response
+            if random.random() < 0.2:
+                self.print(f"\n[ACTION: {verb} {target or ''}]")
+                phantom_responses = [
+                    "You try, but your hands are covered in black oil.",
+                    "The object screams when you touch it.",
+                    "Why are you doing that? They are watching.",
+                    "It refuses to obey the laws of physics.",
+                    "You blink, and the moment is gone."
+                ]
+                self.print(random.choice(phantom_responses))
+                return
+
         scene = self.scene_manager.current_scene_data
         objects = scene.get("objects", {}) if scene else {}
         
+        # 2. Dynamic Verb Guessing (Context-Aware)
+        # If verb is implicit or generic, try to infer from target
+        if not verb and target:
+            # Check if target matches an object with a single interaction
+            obj_key, obj_data = self._resolve_object(target, objects)
+            if obj_data and "interactions" in obj_data:
+                interactions = obj_data["interactions"]
+                if len(interactions) == 1:
+                    # Auto-select the only available interaction
+                    inferred_verb = list(interactions.keys())[0].upper()
+                    self.print(f"(Assuming you meant {inferred_verb} {target})")
+                    verb = inferred_verb
+
         self.print(f"\n[ACTION: {verb} {target or ''}]")
 
         # --- NAVIGATION ---
@@ -1598,13 +1689,37 @@ class Game:
         """Helper to fuzzy match an object name in the current scene."""
         if not target_name: return None, None
         
-        # Exact match
+        target_lower = target_name.lower()
+
+        # 1. Exact match
         if target_name in objects:
             return target_name, objects[target_name]
             
-        # Partial match
+        # 2. Context-Merged Nouns (Synonyms)
+        # Map common synonyms to probable keys if they exist in the scene
+        noun_map = {
+            "blood": ["stain", "mark", "pool", "splatter"],
+            "stain": ["blood", "mark", "pool"],
+            "mark": ["blood", "stain", "scratch"],
+            "body": ["corpse", "victim", "cadaver"],
+            "corpse": ["body", "victim"],
+            "desk": ["table", "workstation"],
+            "door": ["exit", "entry", "gate"],
+            "light": ["lamp", "bulb", "fixture"],
+            "notebook": ["journal", "diary", "notes"],
+        }
+
+        # Check if target is a known synonym
+        possible_synonyms = noun_map.get(target_lower, [])
+        for syn in possible_synonyms:
+            # Check if any object key contains the synonym
+            for k, v in objects.items():
+                if syn in k.lower():
+                    return k, v
+
+        # 3. Partial match (Substring)
         for k, v in objects.items():
-            if target_name.lower() in k.lower():
+            if target_lower in k.lower():
                 return k, v
                 
         return None, None
@@ -1660,6 +1775,139 @@ class Game:
                     self.player_state["thoughts"].append(value)
                     print(f"[THOUGHT UNLOCKED: {value}]")
     
+    def handle_save_menu(self):
+        """Interactive save menu."""
+        self.print("\n=== SAVE GAME ===")
+        saves = self.save_system.list_saves()
+
+        # Display existing slots
+        if saves:
+             print_numbered_list("Existing Saves", [f"{s['slot_id']} ({s['datetime']}) - {s['summary']}" for s in saves])
+
+        self.print("\n(Use command: 'save <slot_name>')")
+
+    def handle_load_menu(self):
+        """Interactive load menu."""
+        self.print("\n=== LOAD GAME ===")
+        saves = self.save_system.list_saves()
+
+        if not saves:
+            self.print("No save files found.")
+            return
+
+        print_numbered_list("Available Saves", [f"{s['slot_id']} ({s['datetime']}) - {s['summary']}" for s in saves])
+        self.print("\n(Use command: 'load <slot_name>')")
+
+    def handle_export_menu(self):
+        """Interactive export menu."""
+        self.print("\n=== EXPORT DATA ===")
+        self.print("1. Export Dossier (HTML)")
+        self.print("2. Export Event Log (Text)")
+        self.print("\n(Use command: 'export dossier' or 'export log')")
+
+    def export_dossier(self):
+        """Generates an HTML dossier of the current investigation."""
+        timestamp = self.time_system.current_time.strftime("%Y-%m-%d_%H%M")
+        filename = f"dossier_{timestamp}.html"
+
+        # Gather Data
+        player = self.player_state
+        board = self.board
+
+        html_content = f"""
+        <html>
+        <head>
+            <title>Investigative Dossier - {timestamp}</title>
+            <style>
+                body {{ font-family: 'Courier New', monospace; background: #f4f4f4; color: #333; padding: 20px; }}
+                h1 {{ border-bottom: 2px solid #333; }}
+                .section {{ background: white; border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; }}
+                .warning {{ color: red; font-weight: bold; }}
+                .confidential {{ color: #888; font-size: 0.8em; }}
+            </style>
+        </head>
+        <body>
+            <h1>INVESTIGATIVE DOSSIER</h1>
+            <p class="confidential">CONFIDENTIAL // EYES ONLY // {timestamp}</p>
+
+            <div class="section">
+                <h2>INVESTIGATOR STATUS</h2>
+                <p><strong>Sanity:</strong> {player.get('sanity', 0):.1f}%</p>
+                <p><strong>Reality Stability:</strong> {player.get('reality', 0):.1f}%</p>
+                <p><strong>Archetype:</strong> {player.get('archetype', 'Unknown')}</p>
+                <p><strong>Attention Level:</strong> {self.attention_system.attention_level}%</p>
+            </div>
+
+            <div class="section">
+                <h2>BOARD STATUS</h2>
+                <p><strong>Active Theories:</strong> {len([t for t in board.theories.values() if t.status == 'active'])}</p>
+                <ul>
+        """
+
+        for t in board.theories.values():
+            if t.status in ['active', 'internalizing', 'proven']:
+                html_content += f"<li><strong>{t.name}</strong> ({t.status.upper()}): {t.description}</li>"
+
+        html_content += """
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>INVENTORY</h2>
+                <ul>
+        """
+
+        for item in self.inventory_system.carried_items:
+            html_content += f"<li>{item.name}</li>"
+
+        html_content += """
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>RECENT HISTORY</h2>
+                <pre>
+        """
+
+        logs = self.event_log.get_logs(limit=20)
+        for log in logs:
+            html_content += f"{log['timestamp']} - {log['type']}: {str(log)}\n"
+
+        html_content += """
+                </pre>
+            </div>
+        </body>
+        </html>
+        """
+
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(html_content)
+            self.print(f"\n[DOSSIER EXPORTED: {filename}]")
+        except Exception as e:
+            self.print(f"\n[ERROR EXPORTING DOSSIER: {e}]")
+
+    def export_log(self):
+        """Exports the event log to a text file."""
+        timestamp = self.time_system.current_time.strftime("%Y-%m-%d_%H%M")
+        filename = f"log_{timestamp}.txt"
+
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(f"EVENT LOG EXPORT - {timestamp}\n")
+                f.write("="*40 + "\n\n")
+
+                for log in self.event_log.get_logs():
+                    f.write(f"[{log['timestamp']}] {log['type'].upper()}\n")
+                    for k, v in log.items():
+                        if k not in ['timestamp', 'type']:
+                            f.write(f"  {k}: {v}\n")
+                    f.write("-" * 20 + "\n")
+
+            self.print(f"\n[LOG EXPORTED: {filename}]")
+        except Exception as e:
+            self.print(f"\n[ERROR EXPORTING LOG: {e}]")
+
     def save_game(self, slot_id: str, auto=False):
         """Save the current game state."""
         try:
@@ -1679,6 +1927,15 @@ class Game:
                 "scene_state": {
                     "current_scene_id": self.scene_manager.current_scene_id,
                     "visited_scenes": list(self.scene_manager.visited_scenes) if hasattr(self.scene_manager, 'visited_scenes') else []
+                },
+                "additional_systems": {
+                    "npc_system": self.npc_system.to_dict(),
+                    "integration_system": self.integration_system.to_dict(),
+                    "population_system": self.population_system.to_dict(),
+                    "attention_system": self.attention_system.to_dict(),
+                    "memory_system": self.memory_system.export_state(),
+                    "fracture_system": self.fracture_system.to_dict(),
+                    "psychological_system": self.psych_state.to_dict()
                 }
             }
             
@@ -1736,6 +1993,24 @@ class Game:
             # Restore scene
             if "scene" in save_data:
                 self.scene_manager.load_scene(save_data["scene"])
+
+            # Restore additional systems
+            if "additional_systems" in save_data:
+                systems = save_data["additional_systems"]
+                if "npc_system" in systems:
+                    self.npc_system.restore_states(systems["npc_system"])
+                if "integration_system" in systems:
+                    self.integration_system = IntegrationSystem.from_dict(systems["integration_system"])
+                if "population_system" in systems:
+                    self.population_system.restore_state(systems["population_system"])
+                if "attention_system" in systems:
+                    self.attention_system = AttentionSystem.from_dict(systems["attention_system"])
+                if "memory_system" in systems:
+                    self.memory_system.load_state(systems["memory_system"])
+                if "fracture_system" in systems:
+                    self.fracture_system.restore_state(systems["fracture_system"])
+                if "psychological_system" in systems:
+                    self.psych_state.restore_state(systems["psychological_system"])
             
             print(f"\n✓ Game loaded successfully from '{slot_id}'")
             print(f"   Location: {save_data.get('scene', 'Unknown')}")

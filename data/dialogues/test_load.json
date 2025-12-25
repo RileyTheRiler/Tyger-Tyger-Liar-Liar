@@ -1,0 +1,1 @@
+{"nodes": [{"id": "start", "text": "Hello", "choices": [{"text": "Hi", "next": "end"}]}, {"id": "end", "text": "Goodbye", "choices": []}]}
