@@ -5,6 +5,7 @@ Manages Sanity, Mental Load, Fear Level, and psychological effects.
 
 import random
 from typing import Dict, List, Tuple, Optional
+from engine.dream_system import DreamSystem
 
 
 class PsychologicalState:
@@ -33,7 +34,15 @@ class PsychologicalState:
             self.player_state["instability"] = False
         if "hallucination_history" not in self.player_state:
             self.player_state["hallucination_history"] = []
+        if "last_sleep_time" not in self.player_state:
+            self.player_state["last_sleep_time"] = 0
+
+        self.dream_system = None # initialized later via set_skill_system
     
+    def set_skill_system(self, skill_system):
+        """Initialize the DreamSystem with the SkillSystem reference."""
+        self.dream_system = DreamSystem(skill_system, self.player_state)
+
     # ==================== SANITY SYSTEM ====================
     
     def get_sanity_tier(self) -> int:
@@ -375,3 +384,63 @@ class PsychologicalState:
     def has_seen_hallucination(self, hallucination_id: str) -> bool:
         """Check if a specific hallucination has already been shown."""
         return hallucination_id in self.player_state.get("hallucination_history", [])
+
+    # ==================== SLEEP SYSTEM ====================
+
+    def attempt_sleep(self, location_safe: bool = True) -> Dict:
+        """
+        Attempt to sleep.
+
+        Args:
+            location_safe: Is the location secure?
+
+        Returns:
+            Dict with 'success', 'messages', 'effects', 'dream'
+        """
+        result = {
+            "success": True,
+            "messages": [],
+            "effects": [],
+            "dream": None
+        }
+
+        # 1. Check interruptions (Interrupted)
+        # 10% chance of interruption normally, 50% if unsafe
+        interrupt_chance = 0.5 if not location_safe else 0.1
+        if random.random() < interrupt_chance:
+            result["success"] = False
+            result["messages"].append("You jolt awake! Something is nearby.")
+            # Small penalty
+            self.add_fear(20, "Interrupted Sleep")
+            return result
+
+        # 2. Restorative Sleep
+        # Recover Sanity
+        sanity_recovery = 20 if location_safe else 10
+        sanity_res = self.modify_sanity(sanity_recovery, "Restful Sleep")
+        result["messages"].extend(sanity_res["messages"])
+
+        # Reduce Mental Load
+        load_res = self.reduce_mental_load(50, "Restful Sleep")
+        result["messages"].extend(load_res["messages"])
+
+        # Reset Exhaustion (implicit in time/sleep cycle, handled by caller mostly)
+        self.player_state["last_sleep_time"] = self.player_state.get("time_passed_minutes", 0) # Simplified, game.py manages actual time
+
+        # 3. Dream Generation (Haunted vs Normal)
+        if self.dream_system:
+            dream = self.dream_system.generate_dream()
+            result["dream"] = dream
+
+            if dream["type"] == "nightmare":
+                result["messages"].append("Your sleep was plagued by nightmares.")
+                # Nightmare reduces the sanity gain
+                self.modify_sanity(-5, "Nightmare")
+            elif dream["type"] == "prophetic":
+                result["messages"].append("You had a vivid, strange dream.")
+            elif dream["type"] == "suppressed":
+                result["messages"].append("Dark, dreamless sleep.")
+            else:
+                result["messages"].append("You dreamt.")
+
+        return result

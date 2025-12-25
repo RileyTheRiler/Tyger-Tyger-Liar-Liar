@@ -199,6 +199,7 @@ class Game:
         
         # Initialize Psychological Systems (Week 15)
         self.psych_state = PsychologicalState(self.player_state)
+        self.psych_state.set_skill_system(self.skill_system) # Week 23 Link
         
         self.fear_manager = FearManager()
         fear_events_path = resource_path(os.path.join('data', 'fear_events'))
@@ -226,6 +227,17 @@ class Game:
         self.output.print(str(text))
 
     def on_time_passed(self, minutes: int):
+        # Day Cycle Events (Week 23)
+        current_hour = self.time_system.current_time.hour
+        prev_time = self.time_system.current_time - timedelta(minutes=minutes)
+        if prev_time.hour != current_hour:
+             evt_desc = self.time_system.day_cycle_events.get(current_hour)
+             if evt_desc:
+                 self.print(f"\n[{evt_desc}]")
+                 # Temporal Vulnerability: Trigger random weirdness if unstable
+                 if self.player_state["sanity"] < 50 and random.random() < 0.3:
+                     self.print(f"{Colors.MAGENTA}The timeline flickers. Was that building there yesterday?{Colors.RESET}")
+
         msgs = self.board.on_time_passed(minutes)
         if msgs:
             self.print("\n*** BOARD UPDATE ***")
@@ -1119,13 +1131,62 @@ class Game:
         
         # Sleep Command
         if clean in ['s', 'sleep']:
-            self.print("... Sleeping (8 hours) ...")
-            # Advance 8 hours
-            self.time_system.advance_time(8 * 60)
-            # Recover sanity/stats here if needed
-            self.player_state['sanity'] = min(self.player_state['sanity'] + 20, 100)
-            self.print("You wake up feeling rested. (+20 Sanity)")
+            self.print("... Attempting to sleep (8 hours) ...")
+            # Check safety (placeholder logic)
+            is_safe = self.player_state.get("current_location") in ["bedroom", "office"]
+
+            # Execute Sleep via Psych State
+            sleep_result = self.psych_state.attempt_sleep(location_safe=is_safe)
+
+            # Advance Time (always advances, even if interrupted, though maybe less? keeping simple)
+            time_passed = 8 * 60 if sleep_result["success"] else 2 * 60
+            self.time_system.advance_time(time_passed)
+
+            for msg in sleep_result["messages"]:
+                self.print(f"> {msg}")
+
+            if sleep_result.get("dream"):
+                d = sleep_result["dream"]
+                self.print(f"\n{Colors.PURPLE}*** DREAM SEQUENCE ***{Colors.RESET}")
+                self.print(f"{d['description']}")
+                self.print(f"{Colors.PURPLE}**********************{Colors.RESET}")
+
             return "refresh"
+
+        # Week 23: Dream Recall / Vision
+        if clean in ['recall dream', 'recall']:
+            msg = self.psych_state.dream_system.recall_dream()
+            self.print(f"\n{msg}")
+            return "refresh"
+
+        if clean in ['write down vision', 'write vision', 'record dream']:
+            msg = self.psych_state.dream_system.write_down_vision()
+            self.print(f"\n{msg}")
+            return "refresh"
+
+        # Week 23: Sanity Commands
+        if clean in ['scream']:
+            self.print("\nYou scream into the void.")
+            if self.player_state["sanity"] < 50:
+                self.print("The void screams back.")
+                self.psych_state.modify_sanity(-2, "Screaming into the abyss")
+            else:
+                self.print("It feels cathartic, but changes nothing.")
+            return "refresh"
+
+        if clean in ['pray']:
+             self.print("\nYou whisper a prayer.")
+             if self.player_state["fear_level"] > 50:
+                 self.psych_state.reduce_mental_load(10, "Prayer")
+                 self.print("Your mind settles slightly.")
+             else:
+                 self.print("No one answers.")
+             return "refresh"
+
+        if clean in ['destroy evidence', 'destroy']:
+             # Requires target usually, but simple parser handle here
+             self.print("Destroy what? (Use 'destroy [item]')")
+             return "refresh"
         
         # Debug Mode Commands
         if clean == 'debug':
@@ -1170,6 +1231,19 @@ class Game:
                     xp = int(parts[1])
                     self.skill_system.add_xp(xp)
                     self.print(f"[DEBUG] Added {xp} XP")
+                return "refresh"
+
+            # Debug: Dream
+            if clean.startswith('debug dream'):
+                if self.psych_state.dream_system:
+                    d = self.psych_state.dream_system.generate_dream()
+                    self.print(f"[DEBUG DREAM]: {d['type']} - {d['description']}")
+                return "refresh"
+
+            # Debug: Sanity Panel
+            if clean.startswith('debug sanity'):
+                self.print(self.psych_state.get_psychological_summary())
+                self.print(f"Hallucination History: {self.player_state['hallucination_history']}")
                 return "refresh"
             
             # Debug: Teleport to scene
@@ -1502,6 +1576,23 @@ class Game:
         
         elif verb == "GROUND":
             self.perform_grounding_ritual()
+
+        elif verb == "DESTROY":
+            if not target:
+                self.print("Destroy what?")
+                return
+
+            # Check inventory
+            item = self.inventory_system.get_item_by_name(target)
+            if item:
+                if self.player_state["sanity"] < 40:
+                     self.inventory_system.remove_item(item.id)
+                     self.print(f"In a fit of mania, you destroy the {item.name}!")
+                     self.psych_state.modify_sanity(5, "Destruction of property") # Relief
+                else:
+                     self.print(f"You consider destroying the {item.name}, but you're too rational for that right now.")
+            else:
+                self.print(f"You don't have '{target}'.")
 
         else:
             self.print(f"You try to {verb} the {target or 'air'}, but nothing happens yet.")
