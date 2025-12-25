@@ -139,42 +139,42 @@ class Game:
         # For now, we apply to all as per "Environmental Narrative Layers" goal implying constant pressure
         weather_cond = self.weather_system.get_current_condition()
 
-        # Stamina/Sanity Drain from Weather
-        # We'll use a threshold: every 60 mins of exposure
-        # (This is a simplified implementation; ideally we'd track exposure time)
-        if minutes >= 15: # Only significant time passes
-            hours_passed = minutes / 60.0
+        hours_passed = minutes / 60.0
 
-            # Constitution check for cold
-            if weather_cond.stamina_drain > 0:
-                # DC = 10 + drain
-                dc = 10 + weather_cond.stamina_drain
-                # Passive check
-                check = self.skill_system.roll_check("Constitution", dc, manual_roll=None)
-                if not check["success"]:
-                     damage = 5 * hours_passed
-                     # We don't have HP, so we hit Sanity or apply Injury?
-                     # Request said "Con check (cold exposure)". Let's say it drains Sanity (misery)
-                     # or maybe adds an injury if severe.
-                     # For safety, let's drain Sanity as "Misery"
+        # Constitution check for cold
+        if weather_cond.stamina_drain > 0:
+            # DC = 10 + drain
+            dc = 10 + weather_cond.stamina_drain
+            # Passive check. We don't want to spam checks every minute.
+            # Logic: Roll check only if significant time passed OR roll against probability scaled by time.
+            # Simpler: Always roll check, but scale damage.
+            # Check success: No damage.
+            # Check fail: Damage scaled by time.
+
+            check = self.skill_system.roll_check("Constitution", dc, manual_roll=None)
+            if not check["success"]:
+                 damage = 5.0 * hours_passed
+                 if damage > 0.1: # Only apply meaningful damage
                      self.player_state["sanity"] -= damage
                      self.print(f"\n[WEATHER] The cold is biting. You feel your resolve stiffen. (Sanity -{damage:.1f})")
 
-            # Equipment Durability (Battery Drain)
-            # If weather is cold (<= 0F), electronics drain faster.
-            if weather_cond.visibility_mod < 0 or self.weather_system.temperature <= 0:
-                 # Check inventory for electronic tools
-                 for item in self.inventory_system.carried_items:
-                     if item.limited_use and item.uses > 0:
-                         # Heuristic: Check for 'battery', 'electric', 'light' in desc
-                         keywords = ['battery', 'electric', 'electronic', 'flashlight', 'radio', 'sensor']
-                         is_electronic = any(k in item.name.lower() or k in item.description.lower() for k in keywords)
+        # Equipment Durability (Battery Drain)
+        # If weather is cold (<= 0F), electronics drain faster.
+        if weather_cond.visibility_mod < 0 or self.weather_system.temperature <= 0:
+             # Check inventory for electronic tools
+             for item in self.inventory_system.carried_items:
+                 if item.limited_use and item.uses > 0:
+                     # Heuristic: Check for 'battery', 'electric', 'electronic', 'flashlight', 'radio', 'sensor'
+                     keywords = ['battery', 'electric', 'electronic', 'flashlight', 'radio', 'sensor']
+                     is_electronic = any(k in item.name.lower() or k in item.description.lower() for k in keywords)
 
-                         if is_electronic:
-                             # Chance to drain extra charge due to cold
-                             if random.random() < 0.2: # 20% chance per check (approx per hour if exposed)
-                                 item.uses -= 1
-                                 self.print(f"[{item.name}] The cold saps the battery. Charge drops.")
+                     if is_electronic:
+                         # Chance to drain extra charge due to cold
+                         # Base chance 20% per hour
+                         drain_chance = 0.2 * hours_passed
+                         if random.random() < drain_chance:
+                             item.uses -= 1
+                             self.print(f"[{item.name}] The cold saps the battery. Charge drops.")
 
         # Check Environmental Triggers
         # For now, just a generic check, or we need current location type from scene
@@ -291,9 +291,17 @@ class Game:
 
         # Audio (Perception for hearing?)
         if weather_cond.audio_mod != 0:
-            # Maybe applied to perception too if it's auditory?
-            # Or "Paranormal Sensitivity"?
-            pass
+            # Apply to Perception as well (Hearing)
+            perc = self.skill_system.get_skill("Perception")
+            if perc:
+                 scaled_mod = int(weather_cond.audio_mod / 10)
+                 if scaled_mod != 0:
+                     # Add to existing modifier if any (or overwrite? "Weather" key is unique)
+                     # Since we use one key "Weather", we should sum them up if we want both Vis and Audio to count.
+                     # But set_modifier overwrites.
+                     # Let's check if we already set it for visibility
+                     current = perc.modifiers.get("Weather", 0)
+                     perc.set_modifier("Weather", current + scaled_mod)
 
     def start_game(self, start_scene_id="bedroom"):
         self.output.clear()
@@ -343,6 +351,13 @@ class Game:
                           if not new_scene:
                               self.print(f"Cannot move to {next_id} (Locked or Missing).")
                           else:
+                              # Apply Travel Time
+                              # Base 15 mins * weather mod
+                              travel_mod = self.weather_system.get_current_condition().travel_mod
+                              travel_time = int(15 * travel_mod)
+                              self.print(f"... Traveling to {new_scene.get('name', 'Unknown')} ({travel_time} mins) ...")
+                              self.time_system.advance_time(travel_time)
+
                               # Log scene entry
                               self.log_event("scene_entry", scene_id=next_id, scene_name=new_scene.get("name", "Unknown"))
 
@@ -953,11 +968,16 @@ class Game:
                     print(f"[THERMAL READING: {temp:.1f}°F]")
                     
                     if temp > 99.1:
-                        print(">> ANOMALOUS HEAT DETECTED <<")
-                        # Passive Medicine Check
-                        check = self.skill_system.roll_check("Medicine", 10, manual_roll=None)
-                        if check["success"]:
-                            print("[MEDICINE] This heat isn't natural. It's radiating from the inside out.")
+                        # Check masking
+                        weather_mask = self.weather_system.get_current_condition().integration_mask
+                        if weather_mask:
+                             print(f"[WARNING] Thermal interference from {self.weather_system.current_condition_key}. Readings unreliable.")
+                        else:
+                            print(">> ANOMALOUS HEAT DETECTED <<")
+                            # Passive Medicine Check
+                            check = self.skill_system.roll_check("Medicine", 10, manual_roll=None)
+                            if check["success"]:
+                                print("[MEDICINE] This heat isn't natural. It's radiating from the inside out.")
                     
                 print(f"{desc}")
                 
@@ -1038,6 +1058,7 @@ class Game:
                 "board_state": self.board.to_dict(),
                 "inventory": self.inventory_system.to_dict(),
                 "time_system": self.time_system.to_dict(),
+                "weather_system": self.weather_system.to_dict(),
                 "event_log": self.event_log.to_dict(),
                 "scene_state": {
                     "current_scene_id": self.scene_manager.current_scene_id,
@@ -1087,6 +1108,12 @@ class Game:
                 self.time_system = TimeSystem.from_dict(save_data["time_system"])
                 # Re-register listener
                 self.time_system.add_listener(self.on_time_passed)
+
+            # Restore weather system
+            if "weather_system" in save_data:
+                self.weather_system.from_dict(save_data["weather_system"])
+                # Re-link time system hack
+                self.time_system.weather_system = self.weather_system
             
             # Restore inventory
             if "inventory" in save_data:
