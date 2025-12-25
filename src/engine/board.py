@@ -14,6 +14,10 @@ class Theory:
         self.active_case = data.get("active_case", False)
         self.critical_for_endgame = data.get("critical_for_endgame", False)
         
+        # Evolution mechanics
+        self.evolves_into = data.get("evolves_into") # Optional[str] - ID of theory it evolves to
+        self.evolution_threshold = data.get("evolution_threshold", 3) # Evidence needed to evolve
+
         # Week 14: Requirements for discovery
         self.requirements = data.get("requirements", {
             "clues_required": [],
@@ -60,6 +64,38 @@ class Board:
     def _load_theories(self):
         for key, data in THEORY_DATA.items():
             self.theories[key] = Theory(key, data)
+
+    def to_dict(self):
+        """Serialize board state for saving."""
+        theories_state = {}
+        for t_id, t in self.theories.items():
+            theories_state[t_id] = {
+                "status": t.status,
+                "internalization_progress_minutes": t.internalization_progress_minutes,
+                "health": t.health,
+                "proven": t.proven,
+                "evidence_count": t.evidence_count,
+                "contradictions": t.contradictions,
+                "linked_evidence": t.linked_evidence
+            }
+        return {"theories": theories_state}
+
+    @classmethod
+    def from_dict(cls, data):
+        """Restore board state from save."""
+        board = cls()
+        if "theories" in data:
+            for t_id, t_state in data["theories"].items():
+                if t_id in board.theories:
+                    theory = board.theories[t_id]
+                    theory.status = t_state.get("status", "available")
+                    theory.internalization_progress_minutes = t_state.get("internalization_progress_minutes", 0)
+                    theory.health = t_state.get("health", 100.0)
+                    theory.proven = t_state.get("proven")
+                    theory.evidence_count = t_state.get("evidence_count", 0)
+                    theory.contradictions = t_state.get("contradictions", 0)
+                    theory.linked_evidence = t_state.get("linked_evidence", [])
+        return board
 
     def get_theory(self, theory_id: str) -> Optional[Theory]:
         return self.theories.get(theory_id)
@@ -156,18 +192,45 @@ class Board:
         print(f"[BOARD] Theory '{theory.name}' marked as {'PROVEN' if is_proven else 'DISPROVEN'}")
         return True
 
-    def add_evidence_to_theory(self, theory_id: str, evidence_id: str) -> bool:
-        """Link supporting evidence to a theory."""
+    def add_evidence_to_theory(self, theory_id: str, evidence_id: str) -> dict:
+        """
+        Link supporting evidence to a theory.
+        Checks for evolution if threshold is met.
+        Returns dict with success, message, and any evolution details.
+        """
         theory = self.get_theory(theory_id)
         if not theory:
-            return False
+            return {"success": False, "message": "Theory not found"}
         
-        if evidence_id not in theory.linked_evidence:
-            theory.linked_evidence.append(evidence_id)
-            theory.evidence_count += 1
-            print(f"[BOARD] Evidence linked to '{theory.name}' ({theory.evidence_count} total)")
-            return True
-        return False
+        if evidence_id in theory.linked_evidence:
+             return {"success": False, "message": "Evidence already linked"}
+
+        theory.linked_evidence.append(evidence_id)
+        theory.evidence_count += 1
+        print(f"[BOARD] Evidence linked to '{theory.name}' ({theory.evidence_count} total)")
+
+        # Check for evolution
+        if theory.evolves_into and theory.evidence_count >= theory.evolution_threshold:
+            new_theory = self.get_theory(theory.evolves_into)
+            if new_theory:
+                # Evolve!
+                old_name = theory.name
+                theory.status = "closed"
+                theory.proven = True # Implied proven enough to evolve? Or just superseded.
+
+                # Check if we can activate the new one
+                # Usually evolution bypasses slot limits or replaces the slot
+                if new_theory.status == "locked" or new_theory.status == "available":
+                    new_theory.status = "active" # Immediate activation?
+                    # Transfer evidence? Optional. For now, keep history on old one.
+                    return {
+                        "success": True,
+                        "message": f"Theory '{old_name}' has EVOLVED into '{new_theory.name}'!",
+                        "evolved": True,
+                        "new_theory": new_theory.name
+                    }
+
+        return {"success": True, "message": "Evidence linked", "evolved": False}
 
     def add_contradiction_to_theory(self, theory_id: str, evidence_id: str) -> dict:
         """Link contradicting evidence to a theory and trigger degradation."""
@@ -272,10 +335,6 @@ class Board:
             "contradictions": theory.contradictions,
             "evidence_count": theory.evidence_count
         }
-
-        return proven
-
-        return {"nodes": nodes, "links": links}
 
     def get_board_data(self) -> dict:
         """

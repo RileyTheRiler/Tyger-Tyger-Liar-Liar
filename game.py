@@ -56,6 +56,7 @@ from engine.psychological_system import PsychologicalState
 from engine.fear_system import FearManager
 from engine.unreliable_narrator import HallucinationEngine
 from npc_system import NPCSystem
+from engine.case_file_system import CaseFileSystem
 
 
 class Game:
@@ -149,12 +150,16 @@ class Game:
         npcs_dir = resource_path(os.path.join('data', 'npcs'))
         self.npc_system = NPCSystem(npcs_dir if os.path.exists(npcs_dir) else None)
         
+        # Initialize Case File System (Week 28)
+        self.case_system = CaseFileSystem()
+
         # Initialize Dialogue Manager
         self.dialogue_manager = DialogueManager(
             self.skill_system,
             self.board,
             self.player_state,
-            self.npc_system  # Week 11: Pass NPC system
+            self.npc_system,  # Week 11: Pass NPC system
+            self.case_system  # Week 28: Pass Case System
         )
         self.in_dialogue = False
         
@@ -1023,6 +1028,10 @@ class Game:
             self.journal.display_journal() # Prints directly
             return "refresh"
         
+        if clean in ['cases', 'case']:
+            self.display_cases()
+            return "refresh"
+
         # Taboo Actions (Attention System)
         taboo_map = {
             'whistle': 'whistle_at_aurora',
@@ -1183,6 +1192,18 @@ class Game:
                         self.log_event("scene_entry", scene_id=scene_id, scene_name=new_scene.get("name", "Unknown"))
                     else:
                         self.print(f"[DEBUG] Scene '{scene_id}' not found")
+                return "refresh"
+
+            # Debug: Logic Mode (Week 28)
+            if clean == 'logic_debug':
+                self.print("\\n=== LOGIC DEBUG MODE ===")
+                for tid, t in self.board.theories.items():
+                    if t.status in ['active', 'internalizing']:
+                        self.print(f"Theory: {t.name} ({t.status})")
+                        self.print(f"  Health: {t.health}% | Contradictions: {t.contradictions}")
+                        self.print(f"  Evidence: {t.evidence_count} / {t.evolution_threshold if t.evolves_into else 'MAX'}")
+                        if t.evolves_into:
+                            self.print(f"  Evolves Into: {t.evolves_into}")
                 return "refresh"
         
         # Theory Resolution Commands
@@ -1644,6 +1665,7 @@ class Game:
                     "player_state": self.player_state.copy(),
                 },
                 "board_state": self.board.to_dict(),
+                "case_system": self.case_system.get_player_case_state(),
                 "inventory": self.inventory_system.to_dict(),
                 "time_system": self.time_system.to_dict(),
                 "event_log": self.event_log.to_dict(),
@@ -1690,6 +1712,10 @@ class Game:
             if "board_state" in save_data:
                 self.board = Board.from_dict(save_data["board_state"])
             
+            # Restore case system
+            if "case_system" in save_data:
+                self.case_system.load_player_case_state(save_data["case_system"])
+
             # Restore time system
             if "time_system" in save_data:
                 self.time_system = TimeSystem.from_dict(save_data["time_system"])
@@ -1742,6 +1768,38 @@ class Game:
         
         print("="*60 + "\n")
     
+    def display_cases(self):
+        self.print("\\n=== CASE FILES ===")
+        found_any = False
+        for cid, case in self.case_system.cases.items():
+            # Only show cases if player has discovered at least one piece of evidence or suspect?
+            # Or always show open cases? Let's show open cases.
+
+            # Filter evidence for what player has discovered
+            player_evidence = [eid for eid in case.evidence_ids if self.case_system.is_evidence_discovered(eid)]
+
+            status_icon = "[OPEN]" if case.status == "open" else "[CLOSED]"
+            self.print(f"{status_icon} {case.title} (ID: {cid})")
+            self.print(f"  {case.description}")
+            if case.suspects:
+                # TODO: Filter suspects by discovery too?
+                self.print(f"  Suspects: {', '.join(case.suspects)}")
+
+            if player_evidence:
+                self.print(f"  Evidence Collected: {len(player_evidence)} / {len(case.evidence_ids)}")
+                for eid in player_evidence:
+                    ev = self.case_system.get_evidence(eid)
+                    if ev:
+                        self.print(f"    - {ev.name}: {ev.description}")
+            else:
+                 self.print("  Evidence Collected: 0")
+
+            self.print("")
+            found_any = True
+
+        if not found_any:
+            self.print("No cases on file.")
+
     def show_event_log(self, limit=20):
         """Display recent events from the event log."""
         events = self.event_log.get_logs(limit=limit)
