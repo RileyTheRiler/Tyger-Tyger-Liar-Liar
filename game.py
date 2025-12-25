@@ -240,8 +240,19 @@ class Game:
     def run(self, start_scene_id):
         # Initial Load
         scene = self.scene_manager.load_scene(start_scene_id)
+
+        # Fallback if specific scene not found
         if not scene:
-            print("Failed to load initial scene.")
+            # Try 'arrival_bus' for vertical slice
+            scene = self.scene_manager.load_scene("arrival_bus")
+            if scene:
+                start_scene_id = "arrival_bus"
+            else:
+                 # Try first available?
+                 pass
+
+        if not scene:
+            print(f"Failed to load initial scene '{start_scene_id}'.")
             return
         
         # Log initial scene entry
@@ -443,13 +454,14 @@ class Game:
         state = self._get_composer_state()
 
         # 1. Passive Clue Detection
+        scene_passive = self.scene_manager.current_scene_data.get("passive_clues", [])
         passive_clues = self.clue_system.evaluate_passive_clues(
-            scene_id=self.scene_manager.current_scene_id,
+            scene_passive_clues=scene_passive,
             player_state=state
         )
-        for clue in passive_clues:
-            print(f"\n[PASSIVE: {clue.get('text', 'Something catches your eye...')}]")
-            # Auto-add clue to board logic could go here if not handled by ClueSystem internal state
+        for clue, text in passive_clues:
+            print(f"\n[PASSIVE: {text}]")
+            # Auto-add clue to board logic is handled by ClueSystem.acquire_clue
 
         # 2. Text Composition with Lens
         # Lens is now part of composer logic mostly, but we still pass it for now
@@ -466,19 +478,24 @@ class Game:
         archetype_map = {
             "believer": Archetype.BELIEVER,
             "skeptic": Archetype.SKEPTIC,
-            "balanced": Archetype.BALANCED,
+            "balanced": Archetype.NEUTRAL,
             "haunted": Archetype.HAUNTED
         }
-        arch = archetype_map.get(current_lens, Archetype.BALANCED)
+        arch = archetype_map.get(current_lens, Archetype.NEUTRAL)
 
-        composed_text = self.text_composer.compose(
-            base_text,
-            variants,
-            state,
-            current_lens=arch
+        text_data = {
+            "base": base_text,
+            "lens": variants,
+            "inserts": scene.get("inserts", [])
+        }
+
+        result = self.text_composer.compose(
+            text_data,
+            archetype=arch,
+            player_state=state
         )
 
-        display_text = self.apply_reality_distortion(composed_text)
+        display_text = self.apply_reality_distortion(result.full_text)
         print("\n" + display_text + "\n")
         
         # Show specific ambient indicators

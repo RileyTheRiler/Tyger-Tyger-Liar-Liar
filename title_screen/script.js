@@ -69,27 +69,35 @@ class TitleScreen {
     constructor() {
         this.audio = new AudioSystem();
         this.state = 'intro'; // intro, main_menu, transition, game
+        this.socket = null;
 
         // Elements
         this.titleOverlay = document.querySelector('.main-title-glitch');
         this.menuOverlay = document.querySelector('.main-menu');
         this.crtContainer = document.querySelector('.crt-screen-container');
         this.menuItems = document.querySelectorAll('.main-menu li');
-
-        // CRT Elements
         this.crtContent = document.querySelector('.crt-inner-content');
 
         this.selectedIndex = 0;
+        this.inputBuffer = "";
 
         this.init();
     }
 
     init() {
+        // Connect Socket
+        if (typeof io !== 'undefined') {
+            this.socket = io();
+            this.setupSocketListeners();
+        } else {
+            console.warn("Socket.io not found. Game mode will not work.");
+        }
+
         // Initial State
         this.titleOverlay.style.opacity = '0';
         this.menuOverlay.style.opacity = '0';
         this.crtContainer.style.opacity = '0';
-        this.crtContainer.style.display = 'none'; // Hide initially
+        this.crtContainer.style.display = 'none';
 
         // Setup Inputs
         document.addEventListener('keydown', (e) => this.handleInput(e));
@@ -113,16 +121,28 @@ class TitleScreen {
         setTimeout(() => this.startIntro(), 500);
     }
 
+    setupSocketListeners() {
+        this.socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        this.socket.on('game_output', (msg) => {
+            this.appendGameOutput(msg.data);
+        });
+
+        this.socket.on('game_started', () => {
+            console.log('Game Process Started');
+        });
+    }
+
     startIntro() {
         this.audio.playIntroDrone();
 
-        // Phase 2: Title
         setTimeout(() => {
             this.titleOverlay.style.transition = 'opacity 2s ease-in';
             this.titleOverlay.style.opacity = '1';
         }, 1000);
 
-        // Phase 3: Menu
         setTimeout(() => {
             this.state = 'main_menu';
             this.menuOverlay.style.transition = 'opacity 1s ease';
@@ -132,20 +152,58 @@ class TitleScreen {
     }
 
     handleInput(e) {
-        if (this.state !== 'main_menu') return;
+        if (this.state === 'main_menu') {
+            if (e.key === 'ArrowUp') {
+                this.selectedIndex--;
+                if (this.selectedIndex < 0) this.selectedIndex = this.menuItems.length - 1;
+                this.updateSelection();
+                this.audio.playHover();
+            } else if (e.key === 'ArrowDown') {
+                this.selectedIndex++;
+                if (this.selectedIndex >= this.menuItems.length) this.selectedIndex = 0;
+                this.updateSelection();
+                this.audio.playHover();
+            } else if (e.key === 'Enter') {
+                this.selectItem();
+            }
+        } else if (this.state === 'game') {
+            // Handle Game Input
+            if (e.key === 'Enter') {
+                this.sendInput(this.inputBuffer);
+                this.inputBuffer = "";
+                // Append locally for immediate feedback?
+                // Better wait for echo or handle manually if server doesn't echo input
+                // this.appendGameOutput('> ' + this.inputBuffer + '\n');
+            } else if (e.key === 'Backspace') {
+                this.inputBuffer = this.inputBuffer.slice(0, -1);
+                this.updateInputLine();
+            } else if (e.key.length === 1) {
+                this.inputBuffer += e.key;
+                this.updateInputLine();
+            }
+        }
+    }
 
-        if (e.key === 'ArrowUp') {
-            this.selectedIndex--;
-            if (this.selectedIndex < 0) this.selectedIndex = this.menuItems.length - 1;
-            this.updateSelection();
-            this.audio.playHover();
-        } else if (e.key === 'ArrowDown') {
-            this.selectedIndex++;
-            if (this.selectedIndex >= this.menuItems.length) this.selectedIndex = 0;
-            this.updateSelection();
-            this.audio.playHover();
-        } else if (e.key === 'Enter') {
-            this.selectItem();
+    updateInputLine() {
+        let inputLine = document.getElementById('input-line');
+        if (!inputLine) {
+             const div = document.createElement('div');
+             div.id = 'input-line';
+             this.crtContent.appendChild(div);
+             inputLine = div;
+        }
+        inputLine.innerText = '> ' + this.inputBuffer + '_';
+        // Scroll to bottom
+        this.crtContent.scrollTop = this.crtContent.scrollHeight;
+    }
+
+    sendInput(text) {
+        if (this.socket) {
+            this.socket.emit('player_input', { input: text });
+            // Remove the temporary input line or reset it
+            const inputLine = document.getElementById('input-line');
+            if (inputLine) inputLine.innerText = '> ' + text; // Freeze it
+            inputLine.id = ''; // remove id so new one is created
         }
     }
 
@@ -175,46 +233,115 @@ class TitleScreen {
     transitionToCRT() {
         this.state = 'transition';
 
-        // Fade out overlays
         this.titleOverlay.style.transition = 'opacity 1s ease';
         this.titleOverlay.style.opacity = '0';
 
         this.menuOverlay.style.transition = 'opacity 1s ease';
         this.menuOverlay.style.opacity = '0';
 
-        // Show CRT and Zoom
         this.crtContainer.style.display = 'block';
-
-        // Force reflow
         void this.crtContainer.offsetWidth;
 
         this.crtContainer.style.transition = 'opacity 2s ease, transform 2s ease-out';
         this.crtContainer.style.opacity = '1';
-        this.crtContainer.style.transform = 'perspective(1000px) rotateX(0deg) scale(1.0)'; // Reset perspective to look like full screen or keep it styled?
-
-        // Let's actually keep the monitor look but center it better or just fade it in
-        // The CSS has it at rotateX(2deg) and scaled.
-        // If we want to "Enter" the monitor, we should scale it UP to cover the screen.
-
-        this.crtContainer.style.transform = 'perspective(1000px) rotateX(0deg) scale(3) translate(-5%, -5%)'; // Zoom in
+        this.crtContainer.style.transform = 'perspective(1000px) rotateX(0deg) scale(3) translate(-5%, -5%)';
 
         setTimeout(() => {
             this.state = 'game';
-            // Here we would clear the CRT menu and show game text
-            const crtInner = document.querySelector('.crt-inner-content');
-            crtInner.innerHTML = '<div style="padding: 2rem; color: #50FF50; font-size: 1.5rem;">INITIALIZING NEURAL LINK...<br>CONNECTING TO TYGER PROTOCOL...<br><br>>_</div>';
+            this.crtContent.innerHTML = ''; // Clear content
+            if (this.socket) {
+                this.socket.emit('start_game');
+            } else {
+                this.crtContent.innerHTML = 'Socket connection failed.';
+            }
         }, 2000);
+    }
+
+    appendGameOutput(text) {
+        // Convert ANSI to HTML
+        const html = this.ansiToHtml(text);
+
+        // Append to content
+        // If there's an active input line, insert before it
+        const inputLine = document.getElementById('input-line');
+        const span = document.createElement('span');
+        span.innerHTML = html;
+
+        if (inputLine) {
+            this.crtContent.insertBefore(span, inputLine);
+        } else {
+            this.crtContent.appendChild(span);
+        }
+
+        // Scroll
+        this.crtContent.scrollTop = this.crtContent.scrollHeight;
+    }
+
+    ansiToHtml(text) {
+        // Simple ANSI parser for the colors we used
+        // \033[91m -> <span style="color:red">
+        // \033[0m -> </span>
+
+        if (!text) return "";
+
+        let html = text
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
+
+        // Colors from src/interface.py
+        const colors = {
+            '91': 'var(--red-term)', // Red
+            '92': 'var(--green-term)', // Green
+            '93': 'yellow', // Yellow
+            '94': '#5050FF', // Blue
+            '95': 'magenta', // Magenta
+            '96': 'cyan', // Cyan
+            '97': 'white', // White
+            '36': 'cyan', // Sanity
+            '35': 'magenta', // Reality
+            '33': 'yellow', // Skill
+            '32': 'var(--green-term)', // Item
+            '1': 'font-weight:bold', // Bold
+            '4': 'text-decoration:underline', // Underline
+        };
+
+        // Regex for ANSI codes: \033[...m
+        html = html.replace(/\033\[([0-9;]+)m/g, (match, codes) => {
+            const codeList = codes.split(';');
+            let style = "";
+            let reset = false;
+
+            for (let c of codeList) {
+                if (c === '0') {
+                    reset = true;
+                } else if (colors[c]) {
+                    if (c === '1' || c === '4') {
+                        style += colors[c] + ';';
+                    } else {
+                        style += `color:${colors[c]};`;
+                    }
+                }
+            }
+
+            if (reset) {
+                return '</span>';
+            } else {
+                return `<span style="${style}">`;
+            }
+        });
+
+        return html;
     }
 }
 
-// Start on click to allow AudioContext (browsers block auto audio)
+// Start on click
 document.addEventListener('click', () => {
     if (!window.gameApp) {
         window.gameApp = new TitleScreen();
     }
 }, { once: true });
 
-// Also add a visible prompt to click if needed, or rely on user interaction
 const prompt = document.createElement('div');
 prompt.innerText = '[ CLICK TO START ]';
 prompt.style.position = 'absolute';

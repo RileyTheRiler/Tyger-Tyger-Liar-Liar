@@ -225,8 +225,12 @@ class TextComposer:
         flag_set = condition.get("flag_set")
         if flag_set:
             flags = player_state.get("flags", {})
-            if not flags.get(flag_set, False):
-                return False
+            if isinstance(flags, set):
+                if flag_set not in flags:
+                    return False
+            elif isinstance(flags, dict):
+                if not flags.get(flag_set, False):
+                    return False
 
         # Theory active check
         theory_active = condition.get("theory_active")
@@ -280,8 +284,12 @@ class TextComposer:
         """
         # Check explicit fracture flag
         flags = player_state.get("flags", {})
-        if flags.get("trigger_fracture", False):
-            return True
+        if isinstance(flags, set):
+            if "trigger_fracture" in flags:
+                return True
+        elif isinstance(flags, dict):
+            if flags.get("trigger_fracture", False):
+                return True
 
         # Check attention threshold
         attention = player_state.get("attention", 0)
