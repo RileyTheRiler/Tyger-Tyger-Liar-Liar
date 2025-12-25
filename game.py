@@ -1606,6 +1606,7 @@ class Game:
             self.print("\n-=- AVAILABLE COMMANDS -=-")
             self.print(" INVESTIGATION: EXAMINE [target], SEARCH, COLLECT [item], EQUIP [item], ANALYZE [evidence]")
             self.print(" ACTIONS: PHOTOGRAPH [target], USE [target] (on [target])")
+            self.print(" MEMORY: RECALL [topic] (or 'list'), RECALL false_memory (debug)")
             self.print(" NAVIGATION: MAP, WHERE, [number], GO [location]")
             self.print(" SYSTEM: (b)oard, (c)haracter, (i)nventory, (e)vidence, (w)ait, (s)leep, (q)uit")
             self.print("--------------------------")
