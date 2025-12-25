@@ -13,11 +13,18 @@ def verify_interaction():
 
         print(f"Loading: {url}")
         page.goto(url)
-        page.wait_for_timeout(1000)
 
-        # Check initial state (first item active)
+        # Wait for Intro to complete (last item visible)
+        last_item = page.locator(".main-menu li").last
+        print("Waiting for intro sequence...")
+        last_item.wait_for(state="visible", timeout=8000)
+
+        # Wait for initialization to finish (first item becomes active)
         first_item = page.locator(".main-menu li").first
-        first_crt = page.locator(".crt-menu li").first
+        try:
+            page.wait_for_function("document.querySelector('.main-menu li').classList.contains('active')", timeout=2000)
+        except Exception as e:
+            print("Timed out waiting for active class.")
 
         # get_attribute("class") might return None or "some-class active"
         cls = first_item.get_attribute("class") or ""
@@ -25,7 +32,7 @@ def verify_interaction():
             print(f"FAILURE: First item not active initially. Class: '{cls}'")
             sys.exit(1)
 
-        cls_crt = first_crt.get_attribute("class") or ""
+        cls_crt = page.locator(".crt-menu li").first.get_attribute("class") or ""
         if "active" not in cls_crt:
             print(f"FAILURE: First CRT item not active initially. Class: '{cls_crt}'")
             sys.exit(1)
