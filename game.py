@@ -41,6 +41,7 @@ from engine.flashback_system import FlashbackManager
 from ui.io_system import OutputBuffer
 from inventory_system import InventoryManager, Item, Evidence
 from save_system import EventLog, SaveSystem
+from engine.pdf_exporter import PDFExporter
 from journal_system import JournalManager
 from ui.interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result, Colors
 from engine.text_composer import TextComposer, Archetype
@@ -403,6 +404,16 @@ class Game:
             "reality": self.player_state["reality"]
         }
 
+    def get_game_state_for_export(self):
+        """Full game state for export tools."""
+        return {
+            "player_state": self.player_state,
+            "board": self.board,
+            "inventory_system": self.inventory_system,
+            "time_system": self.time_system,
+            "skill_system": self.skill_system
+        }
+
     def apply_trigger_effects(self, trigger):
         """Apply the effects of a fired trigger."""
         effects = trigger.get("effects", {})
@@ -709,6 +720,8 @@ class Game:
         mode_str = "DIALOGUE" if self.input_mode == InputMode.DIALOGUE else "INVESTIGATION"
         debug_str = " [DEBUG]" if self.debug_mode else ""
         print_separator("-", 64, printer=self.print)
+        # Week 14: Show active theory summary
+        self.print(self.board.get_theory_summary())
         self.print(f"[{mode_str} MODE{debug_str}] - (b)oard, (c)haracter, (i)nventory, (e)vidence")
         self.print("                   (w)ait, (s)leep, (h)elp, (q)uit, [switch]")
         print_separator("-", 64, printer=self.print)
@@ -1254,6 +1267,14 @@ class Game:
         if clean in ['leave_town', 'leave']:
             self.player_state["event_flags"].add("leave_town")
             self.print("[You pack your bags and prepare to leave Tyger Tyger...]")
+            return "refresh"
+
+        if clean in ['export', 'dossier', 'export_dossier']:
+            self.print("[Creating Case Dossier...]")
+            exporter = PDFExporter(self.get_game_state_for_export())
+            filename = f"case_dossier_{int(time.time())}.html"
+            exporter.generate_report(filename)
+            self.print(f"[DOSSIER EXPORTED TO: {filename}]")
             return "refresh"
 
         # Numeric Choices
