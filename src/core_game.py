@@ -11,12 +11,14 @@ def resource_path(relative_path):
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
+        # If running from src/main.py, we might need to go up one level
+        # But if we run via run_game.py in root, '.' is root.
         base_path = os.path.abspath(".")
 
     path = os.path.join(base_path, relative_path)
     return path
 
-sys.path.append(resource_path('src'))
+# sys.path.append(resource_path('src')) # Already handled by run_game.py or caller
 
 from mechanics import SkillSystem, CharacterSheetUI
 from board import Board
@@ -32,9 +34,9 @@ from input_system import CommandParser, InputMode
 from dialogue_manager import DialogueManager
 from combat import CombatManager
 from corkboard_minigame import CorkboardMinigame
-from src.inventory_system import InventoryManager, Item, Evidence
-from src.save_system import EventLog, SaveSystem
-from src.journal_system import JournalManager
+from inventory_system import InventoryManager, Item, Evidence
+from save_system import EventLog, SaveSystem
+from journal_system import JournalManager
 from interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result
 
 class Game:
@@ -1094,6 +1096,8 @@ class Game:
                     print(f"[THOUGHT UNLOCKED: {value}]")
 
 if __name__ == "__main__":
+    # If run directly from src/main.py, we might need to adjust path
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     game = Game()
     start_id = sys.argv[1] if len(sys.argv) > 1 else "bedroom"
     game.run(start_id)

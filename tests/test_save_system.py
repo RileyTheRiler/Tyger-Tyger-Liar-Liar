@@ -5,7 +5,7 @@ This script tests the serialization and deserialization of game systems.
 
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
 from mechanics import SkillSystem, Attribute, Skill
 from time_system import TimeSystem

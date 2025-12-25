@@ -4,7 +4,7 @@ Test script for Phase 2.1: Lens System Core Engine.
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
 from mechanics import SkillSystem
 from board import Board

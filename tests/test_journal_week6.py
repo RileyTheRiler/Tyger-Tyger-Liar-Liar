@@ -4,7 +4,7 @@ Test script for Week 6 Journal and Evidence System
 
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
 from journal_system import JournalManager
 from inventory_system import Evidence, InventoryManager
