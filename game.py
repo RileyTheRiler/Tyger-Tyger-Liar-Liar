@@ -33,6 +33,7 @@ from endgame_manager import EndgameManager
 from memory_system import MemorySystem
 from scene_manager import SceneManager
 from input_system import CommandParser, InputMode
+from parser_memory import ParserMemory
 from content.dialogue_manager import DialogueManager
 from combat import CombatManager
 from corkboard_minigame import CorkboardMinigame
@@ -118,7 +119,8 @@ class Game:
         self.corkboard = CorkboardMinigame(self.board, self.inventory_system)
         self.event_log = EventLog()
         self.save_system = SaveSystem()
-        self.parser = CommandParser()
+        self.parser_memory = ParserMemory()
+        self.parser = CommandParser(self.parser_memory)
         self.input_mode = InputMode.INVESTIGATION 
         self.debug_mode = False
         self.last_autosave_time = 0
@@ -1353,9 +1355,37 @@ class Game:
         print(f"[THERMAL OPTICS: {state}]")
 
     def handle_parser_command(self, verb, target):
+        # 1. Hallucination Interception (Week 15)
+        if self.psych_state.get_sanity_tier() <= 1: # Psychosis or Breakdown
+            # 20% chance to completely hallucinate the command response
+            if random.random() < 0.2:
+                self.print(f"\n[ACTION: {verb} {target or ''}]")
+                phantom_responses = [
+                    "You try, but your hands are covered in black oil.",
+                    "The object screams when you touch it.",
+                    "Why are you doing that? They are watching.",
+                    "It refuses to obey the laws of physics.",
+                    "You blink, and the moment is gone."
+                ]
+                self.print(random.choice(phantom_responses))
+                return
+
         scene = self.scene_manager.current_scene_data
         objects = scene.get("objects", {})
         
+        # 2. Dynamic Verb Guessing (Context-Aware)
+        # If verb is implicit or generic, try to infer from target
+        if not verb and target:
+            # Check if target matches an object with a single interaction
+            obj_key, obj_data = self._resolve_object(target, objects)
+            if obj_data and "interactions" in obj_data:
+                interactions = obj_data["interactions"]
+                if len(interactions) == 1:
+                    # Auto-select the only available interaction
+                    inferred_verb = list(interactions.keys())[0].upper()
+                    self.print(f"(Assuming you meant {inferred_verb} {target})")
+                    verb = inferred_verb
+
         self.print(f"\n[ACTION: {verb} {target or ''}]")
 
         # --- NAVIGATION ---
@@ -1605,13 +1635,37 @@ class Game:
         """Helper to fuzzy match an object name in the current scene."""
         if not target_name: return None, None
         
-        # Exact match
+        target_lower = target_name.lower()
+
+        # 1. Exact match
         if target_name in objects:
             return target_name, objects[target_name]
             
-        # Partial match
+        # 2. Context-Merged Nouns (Synonyms)
+        # Map common synonyms to probable keys if they exist in the scene
+        noun_map = {
+            "blood": ["stain", "mark", "pool", "splatter"],
+            "stain": ["blood", "mark", "pool"],
+            "mark": ["blood", "stain", "scratch"],
+            "body": ["corpse", "victim", "cadaver"],
+            "corpse": ["body", "victim"],
+            "desk": ["table", "workstation"],
+            "door": ["exit", "entry", "gate"],
+            "light": ["lamp", "bulb", "fixture"],
+            "notebook": ["journal", "diary", "notes"],
+        }
+
+        # Check if target is a known synonym
+        possible_synonyms = noun_map.get(target_lower, [])
+        for syn in possible_synonyms:
+            # Check if any object key contains the synonym
+            for k, v in objects.items():
+                if syn in k.lower():
+                    return k, v
+
+        # 3. Partial match (Substring)
         for k, v in objects.items():
-            if target_name.lower() in k.lower():
+            if target_lower in k.lower():
                 return k, v
                 
         return None, None

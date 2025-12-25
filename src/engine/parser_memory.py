@@ -7,7 +7,7 @@ for dynamic scene branching based on player exploration and dialogue.
 
 import re
 from collections import deque
-from typing import List, Set, Optional
+from typing import List, Set, Optional, Dict
 
 
 class ParserMemory:
