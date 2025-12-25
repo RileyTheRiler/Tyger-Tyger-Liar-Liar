@@ -282,6 +282,12 @@ class DialogueManager:
             npc = self.npc_system.get_npc(self.current_npc_id)
             if npc and required_flag not in npc.emotional_flags:
                 return False, f"[Requires: {required_flag}]"
+
+        # Week 28: Evidence requirements (Present Evidence)
+        if "evidence_required" in choice and self.case_system:
+            ev_id = choice["evidence_required"]
+            if not self.case_system.is_evidence_discovered(ev_id):
+                return False, f"[Requires Evidence: {ev_id}]"
                 
         return True, ""
 
