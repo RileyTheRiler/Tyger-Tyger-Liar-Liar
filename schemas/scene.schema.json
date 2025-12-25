@@ -103,6 +103,52 @@
         }
       }
     },
+    "dynamic_inserts": {
+      "type": "array",
+      "description": "Modular inserts with simplified triggers",
+      "items": {
+        "type": "object",
+        "required": ["trigger", "text"],
+        "properties": {
+          "trigger": {
+             "type": ["string", "object"],
+             "description": "Condition string (e.g. 'Skill > 5') or object"
+          },
+          "text": { "type": "string" },
+          "insert_at": { "type": "string" }
+        }
+      }
+    },
+    "parser_triggers": {
+      "type": "array",
+      "description": "Responses to specific parser inputs in this scene",
+      "items": {
+        "type": "object",
+        "required": ["command", "response"],
+        "properties": {
+          "command": { "type": "string" },
+          "response": { "type": "string" },
+          "effects": { "type": "object" },
+          "required_flags": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "event_flags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Flags to set upon entering this scene"
+    },
+    "exit_conditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+             "target": { "type": "string" },
+             "condition": { "type": "string" },
+             "locked_message": { "type": "string" }
+        }
+      }
+    },
     "effects": {
       "type": "array",
       "items": {

@@ -2,7 +2,7 @@ import json
 import os
 import sys
 import random
-from typing import Optional
+from typing import Optional, Dict, Any
 
 class SceneManager:
     def __init__(self, time_system, board, skill_system, player_state, flashback_manager):
@@ -49,16 +49,20 @@ class SceneManager:
         if not scene:
             return None
 
-        # Check Conditions
+        # Check Access Conditions (Conditions + Exit Conditions of previous scene potentially?)
+        # NOTE: Game.py should probably call check_exit_conditions before allowing navigation away.
+        # But here we assume if we are loading it, we are trying to enter.
+
         if not self._check_conditions(scene):
             # If not accessible, return None (Game loop handles "Blocked")
-            # For now, simplistic approach
-            pass
+            return None
 
         self.current_scene_id = scene_id
-        self.current_scene_data = scene
         
-        # Flashback Handling (Phase 6)
+        # Normalize Scene Data: Merge dynamic_inserts into text.inserts
+        self.current_scene_data = self._normalize_scene_data(scene)
+
+        # Flashback Handling
         if scene.get("type") == "flashback":
              pov_data = scene.get("pov_data", {})
              self.flashback_manager.enter_flashback(pov_data)
@@ -74,7 +78,74 @@ class SceneManager:
 
         return self.current_scene_data
 
+    def _normalize_scene_data(self, scene_data: dict) -> dict:
+        """
+        Pre-process scene data to merge modular dynamic_inserts into the format
+        TextComposer expects.
+        """
+        # Copy to avoid mutating original
+        scene = scene_data.copy()
+
+        # Handle dynamic_inserts
+        if "dynamic_inserts" in scene:
+            text_data = scene.get("text", {})
+            # Ensure text_data is a dict
+            if isinstance(text_data, str):
+                text_data = {"base": text_data}
+
+            existing_inserts = text_data.get("inserts", [])
+            new_inserts = []
+
+            for d_insert in scene["dynamic_inserts"]:
+                trigger = d_insert.get("trigger")
+                parsed_condition = self._parse_trigger_string(trigger)
+
+                new_inserts.append({
+                    "id": d_insert.get("id", f"dyn_{random.randint(1000,9999)}"),
+                    "text": d_insert.get("text", ""),
+                    "insert_at": d_insert.get("insert_at", "AFTER_BASE"),
+                    "condition": parsed_condition
+                })
+
+            text_data["inserts"] = existing_inserts + new_inserts
+            scene["text"] = text_data
+
+        return scene
+
+    def _parse_trigger_string(self, trigger: Any) -> Dict:
+        """
+        Convert a trigger string (e.g. "Skill > 5") or object into TextComposer condition dict.
+        """
+        if isinstance(trigger, dict):
+            return trigger
+
+        if not isinstance(trigger, str):
+            return {}
+
+        # Simple parser for "Attribute Operator Value" or function-like calls
+        trigger = trigger.strip()
+
+        # Case 1: has_item('item_name')
+        if trigger.startswith("has_item("):
+            item_name = trigger[9:-1].strip("'\"")
+            return {"equipment": item_name} # TextComposer uses 'equipment' key
+
+        # Case 2: Skill > Value
+        if ">" in trigger:
+            parts = trigger.split(">")
+            if len(parts) == 2:
+                skill = parts[0].strip()
+                try:
+                    val = int(parts[1].strip())
+                    return {"skill_gte": {skill: val}} # Assuming > is >= or close enough
+                except ValueError:
+                    pass
+
+        # TODO: Add more parsers as needed
+        return {}
+
     def _apply_on_entry_effects(self, scene):
+        # 1. Standard Effects
         effects = scene.get("effects")
         if effects:
             # We need a way to communicate these back to Game? 
@@ -86,6 +157,91 @@ class SceneManager:
                 elif key == "reality":
                     self.player_state["reality"] = max(0, min(100, self.player_state["reality"] + value))
                     print(f"[REALITY ENTRY CHANGE] {value}")
+
+        # 2. Event Flags
+        event_flags = scene.get("event_flags", [])
+        for flag in event_flags:
+            self.player_state["event_flags"].add(flag)
+
+    def check_parser_triggers(self, verb: str, target: str) -> Optional[dict]:
+        """
+        Check if the player's input triggers a special event in the current scene.
+        """
+        if not self.current_scene_data:
+            return None
+
+        triggers = self.current_scene_data.get("parser_triggers", [])
+        if not triggers:
+            return None
+
+        full_command = f"{verb} {target}".strip().lower()
+
+        for trigger in triggers:
+            # Check command match
+            t_cmd = trigger.get("command", "").lower()
+            if full_command == t_cmd or (verb.lower() == t_cmd and not target):
+                # Check required flags
+                req_flags = trigger.get("required_flags", [])
+                if req_flags:
+                    player_flags = self.player_state.get("event_flags", set())
+                    if not all(f in player_flags for f in req_flags):
+                        continue
+
+                # Trigger matches!
+                return trigger
+
+        return None
+
+    def check_exit_conditions(self, target_scene_id: str) -> Optional[str]:
+        """
+        Check if leaving the scene is blocked.
+        Returns None if allowed, or a message string if blocked.
+        """
+        if not self.current_scene_data:
+            return None
+
+        exits = self.current_scene_data.get("exit_conditions", [])
+        for condition in exits:
+            # Check if this condition applies to the target (or all if target is "*")
+            t_target = condition.get("target", "*")
+            if t_target != "*" and t_target != target_scene_id:
+                continue
+
+            cond_str = condition.get("condition", "")
+
+            # Parse condition
+            blocked = False
+
+            # "requires_flag('flag_name')"
+            if cond_str.startswith("requires_flag("):
+                flag = cond_str[14:-1].strip("'\"")
+                if flag not in self.player_state.get("event_flags", set()):
+                    blocked = True
+
+            # "theory_active('theory_id')"
+            elif cond_str.startswith("theory_active("):
+                tid = cond_str[14:-1].strip("'\"")
+                theory = self.board.get_theory(tid)
+                if not theory or theory.status != "active":
+                    blocked = True
+
+            # "sanity_lt(20)"
+            elif cond_str.startswith("sanity_lt("):
+                try:
+                    val = int(cond_str[10:-1])
+                    if self.player_state["sanity"] >= val:
+                        blocked = True # Blocked if sanity is NOT low enough? Or implies "Locked if sanity < 20"?
+                        # Usually "condition" implies "requirement to PASS".
+                        # But exit_conditions usually define BLOCKS.
+                        # Let's assume "condition" is the BLOCK condition.
+                        pass
+                except ValueError:
+                    pass
+
+            if blocked:
+                return condition.get("locked_message", "The way is blocked.")
+
+        return None
 
     def _check_conditions(self, scene) -> bool:
         conditions = scene.get("conditions", {})

@@ -1294,7 +1294,17 @@ class Game:
             if parsed_commands:
                 for verb, target in parsed_commands:
                     if verb:
-                        self.handle_parser_command(verb, target)
+                        # Check Scene Parser Triggers First (Week 29)
+                        trigger = self.scene_manager.check_parser_triggers(verb, target)
+                        if trigger:
+                             self.print(f"\n[ACTION: {verb} {target or ''}]")
+                             self.print(f"{trigger.get('response', '')}")
+                             if "effects" in trigger:
+                                 self.apply_effects(trigger["effects"])
+                             # Trigger effects might include scene change via flag/logic,
+                             # but usually just text/state.
+                        else:
+                             self.handle_parser_command(verb, target)
                 return "refresh" # Stay in same scene (or refresh state)
             else:
                 self.print("I don't understand that command.")
@@ -1328,22 +1338,44 @@ class Game:
                 self.print("Go where?")
                 return
             
+            # Check Exit Conditions (Week 29)
+            # If trying to leave current scene (general check for any movement)
+            # NOTE: We check specific target if we can, but general blocks apply too.
+            # Assuming 'GO' implies leaving.
+
             # Check locations
             loc_id = self.location_manager.find_location_by_name(target)
             if loc_id:
+                exit_msg = self.scene_manager.check_exit_conditions("LEAVE_LOCATION") # Or check specifically?
+                if exit_msg:
+                    self.print(exit_msg)
+                    return
                 self.go_to_location(loc_id)
                 return
             
             # Check local scene paths
             connected = self.scene_manager.get_available_scenes()
+            target_lower = target.lower()
+            found_route = None
+
             for route in connected:
-                if target.lower() in route["name"].lower():
-                    if route["accessible"]:
-                        self.scene_manager.load_scene(route["id"])
-                        return
-                    else:
-                        self.print(f"The path to {route['name']} is blocked.")
-                        return
+                if target_lower in route["name"].lower():
+                    found_route = route
+                    break
+
+            if found_route:
+                # Check scene exit conditions specifically for this target
+                exit_msg = self.scene_manager.check_exit_conditions(found_route["id"])
+                if exit_msg:
+                    self.print(exit_msg)
+                    return
+
+                if found_route["accessible"]:
+                    self.scene_manager.load_scene(found_route["id"])
+                    return
+                else:
+                    self.print(f"The path to {found_route['name']} is blocked.")
+                    return
 
             self.print(f"You can't go to '{target}' from here.")
             return
@@ -1829,6 +1861,11 @@ class Game:
             self.apply_effects(choice["effects"])
             
         if "next_scene" in choice:
+             # Check exit conditions before transitioning
+             exit_msg = self.scene_manager.check_exit_conditions(choice["next_scene"])
+             if exit_msg:
+                 self.print(f"\n{exit_msg}")
+                 return None
              return choice["next_scene"]
             
         return None
