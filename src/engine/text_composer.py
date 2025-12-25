@@ -7,6 +7,10 @@ Allows writing one scene with multiple interpretations without tripling workload
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
 from enum import Enum
+import logging
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 # Import Colors for theory commentary formatting
 try:
@@ -15,6 +19,7 @@ except ImportError:
     # Fallback if running standalone
     class Colors:
         MAGENTA = "\033[35m"
+        CYAN = "\033[36m"
         RESET = "\033[0m"
 
 
@@ -84,10 +89,11 @@ class TextComposer:
     4. Fracture layer: Rare reality glitches (triggered by attention/flags)
     """
 
-    def __init__(self, skill_system=None, board=None, game_state=None):
+    def __init__(self, skill_system=None, board=None, game_state=None, lens_system=None):
         self.skill_system = skill_system
         self.board = board
         self.game_state = game_state
+        self.lens_system = lens_system
         self.debug_mode = False
         self.developer_commentary = False
         self.fracture_chance = 0.0  # Base chance for random fractures
@@ -95,14 +101,19 @@ class TextComposer:
     def calculate_dominant_lens(self, player_state: dict = None) -> Archetype:
         """
         Calculate the dominant lens based on player's skills and active theories.
-        Week 12: Dynamic lens selection.
-        
-        Returns:
-            Archetype based on dominant attribute and active theories
+        If lens_system is available, delegates to it.
         """
+        if self.lens_system:
+            lens_str = self.lens_system.calculate_lens()
+            try:
+                return Archetype(lens_str)
+            except ValueError:
+                return Archetype.NEUTRAL
+
         if not self.skill_system or player_state is None:
             return Archetype.NEUTRAL
         
+        # Fallback logic if lens_system is not provided
         # Calculate dominant attribute: Intuition vs Reason
         intuition_skills = ["Paranormal Sensitivity", "Instinct", "Subconscious", "Pattern Recognition"]
         reason_skills = ["Logic", "Skepticism", "Forensics", "Research"]
@@ -176,8 +187,6 @@ class TextComposer:
         thermal_text = text_data.get("thermal", "")
         
         # Thermal Logic: If active and available, it usually replaces or heavily modifies base
-        # But we might want to keep base if thermal is just an add-on. 
-        # Design implies profound shift. Let's prioritize thermal if present.
         if thermal_mode and thermal_text:
             text_to_use = thermal_text
             debug_info["layers"].append("thermal_base")
@@ -197,24 +206,34 @@ class TextComposer:
         result_parts = []
         result_parts.append(text_to_use)
 
-        # === LAYER 2: LENS OVERLAY ===
-        # Lenses might still apply in thermal mode, but maybe filtered?
-        # A "Believer" sees ghosts in the heat signatures. 
-        # So yes, we keep Lens layers.
+        # === LAYER 2: LENS OVERLAY (RESOLVED VIA LENS SYSTEM IF AVAILABLE) ===
         lens_text = None
         lens_data = text_data.get("lens", {})
 
-        if archetype != Archetype.NEUTRAL and archetype.value in lens_data:
-            lens_text = lens_data[archetype.value]
-            result_parts.append("\n\n" + lens_text)
-            debug_info["layers"].append(f"lens:{archetype.value}")
-        elif archetype != Archetype.NEUTRAL:
-            # Apply micro-overlay if no full lens text
-            # In thermal mode, micro-overlays might be weird, but let's keep for consistency
-            micro = self._apply_micro_overlay(text_to_use, archetype)
-            if micro != text_to_use:
-                result_parts.append("\n\n" + micro)
-                debug_info["layers"].append(f"micro_overlay:{archetype.value}")
+        if lens_data and self.lens_system:
+            # Use the new resolver
+            stress = 0
+            if self.game_state:
+                stress = 100 - self.game_state.sanity
+            elif player_state:
+                stress = 100 - player_state.get("sanity", 100)
+
+            lens_text = self.lens_system.resolve_text(archetype.value, stress, lens_data)
+            if lens_text:
+                result_parts.append("\n\n" + lens_text)
+                debug_info["layers"].append(f"lens_resolved:{archetype.value}")
+        else:
+            # Legacy/Fallback behavior
+            if archetype != Archetype.NEUTRAL and archetype.value in lens_data:
+                lens_text = lens_data[archetype.value]
+                result_parts.append("\n\n" + lens_text)
+                debug_info["layers"].append(f"lens:{archetype.value}")
+            elif archetype != Archetype.NEUTRAL:
+                # Apply micro-overlay if no full lens text
+                micro = self._apply_micro_overlay(text_to_use, archetype)
+                if micro != text_to_use:
+                    result_parts.append("\n\n" + micro)
+                    debug_info["layers"].append(f"micro_overlay:{archetype.value}")
 
         # === LAYER 3: CONDITIONAL INSERTS ===
         inserts_applied = []
@@ -263,9 +282,8 @@ class TextComposer:
         # Lens text
         if lens_text:
             final_parts.append("\n\n" + lens_text)
-        elif archetype != Archetype.NEUTRAL and "micro_overlay" in str(debug_info["layers"]):
-            micro = self._apply_micro_overlay(base_text, archetype) # Use base for micro context?
-            # Actually strictly adding atmosphere string
+        elif not lens_text and not lens_data and archetype != Archetype.NEUTRAL and "micro_overlay" in str(debug_info["layers"]):
+            # Only apply generic atmosphere if no specific lens text was found/resolved
             final_parts.append("\n\n" + MICRO_OVERLAYS[archetype]["atmosphere"])
 
         # After lens inserts
@@ -279,14 +297,11 @@ class TextComposer:
         full_text = "".join(final_parts)
 
         # === LAYER 3.5: THEORY COMMENTARY ===
-        # Internalized theories can inject thoughts directly into the flow
         theory_commentary = []
         if self.skill_system and player_state.get("active_theories"):
             theory_commentary = self.skill_system.check_theory_commentary(player_state["active_theories"])
             
         for comm in theory_commentary:
-            # Inject as a "Subconscious" interjection if it matches the style
-            # UX Polish: Standardized theory interrupt format
             comm_text = f"\n\n{Colors.MAGENTA}[{comm['skill'].upper()}]: \"{comm['text']}\"{Colors.RESET}"
             full_text += comm_text
             debug_info["layers"].append(f"theory:{comm['skill']}")
@@ -319,10 +334,6 @@ class TextComposer:
             if dev_note:
                 full_text += f"\n\n{Colors.CYAN}[DEV NOTE: {dev_note}]{Colors.RESET}"
 
-            # Show active flags affecting this scene?
-            # Or insert conditions?
-            # Maybe too verbose. Just explicit dev_note is good.
-
         return ComposedText(
             full_text=full_text.strip(),
             base_used=True,
@@ -335,8 +346,6 @@ class TextComposer:
     def _apply_micro_overlay(self, text: str, archetype: Archetype) -> str:
         """
         Apply subtle lens adjectives when full lens text isn't available.
-        This ensures archetype always affects perception without requiring
-        full alternate text for every scene.
         """
         if archetype not in MICRO_OVERLAYS:
             return text
