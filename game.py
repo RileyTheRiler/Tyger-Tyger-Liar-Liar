@@ -55,6 +55,7 @@ from engine.environmental_effects import EnvironmentalEffects
 from engine.psychological_system import PsychologicalState
 from engine.fear_system import FearManager
 from engine.unreliable_narrator import HallucinationEngine
+from engine.parser_hallucination import ParserHallucinationEngine
 from npc_system import NPCSystem
 
 
@@ -208,6 +209,8 @@ class Game:
         hallucinations_path = resource_path(os.path.join('data', 'hallucinations'))
         self.hallucination_engine.load_hallucination_templates(hallucinations_path)
         
+        self.parser_hallucination = ParserHallucinationEngine(self.psych_state)
+
         self.active_argument = None # Phase 4 internal debates
         self.active_argument = None # Phase 4 internal debates
         self.current_autopsy = None # Phase 5 autopsies
@@ -715,16 +718,33 @@ class Game:
 
     def apply_reality_distortion(self, text):
         reality = self.player_state["reality"]
-        if reality >= 75:
+        sanity = self.player_state.get("sanity", 100.0)
+
+        # New Conditions: Integration, Attention, Dream Residue
+        integration_level = self.integration_system.integration_progress
+        attention_level = self.attention_system.attention_level
+        dream_residue = self.player_state.get("dream_residue", False)
+        # Determine distortion intensity
+        intensity = 0
+        if reality < 25 or sanity < 25 or integration_level > 80:
+             intensity = 3
+        elif reality < 50 or sanity < 50 or attention_level > 50:
+             intensity = 2
+        elif reality < 75 or dream_residue:
+             intensity = 1
+
+        if intensity == 0:
             return text
-            
-        # Level 1 Distortion (74-50): Minor sensory additions
-        if reality < 75 and reality >= 50:
-            if random.random() < 0.3:
+
+        # Level 1 Distortion: Minor sensory additions & Dream Residue
+        if intensity >= 1:
+            if dream_residue and random.random() < 0.4:
+                text += f" {Colors.CYAN}(The air smells like ozone and old blood.){Colors.RESET}"
+            elif random.random() < 0.3:
                 text += " (Did the shadows just move?)"
                 
-        # Level 2 Distortion (49-25): Word replacements
-        if reality < 50:
+        # Level 2 Distortion: Word replacements
+        if intensity >= 2:
             replacements = {
                 "door": "mouth",
                 "window": "eyes",
@@ -741,27 +761,17 @@ class Game:
                 lower_word = word.lower().strip('.,!?')
                 if lower_word in replacements and random.random() < 0.4:
                     new_words.append(replacements[lower_word].upper())
-        # Level 2 Distortion (25-50): Word jumbling and subtle corruption
-        if reality < 50:
-            words = text.split()
-            new_words = []
-            for word in words:
-                if random.random() < 0.1: # 10% chance to corrupt word
-                    if random.random() < 0.5:
-                        # Jumble
-                        w_list = list(word)
-                        random.shuffle(w_list)
-                        new_words.append("".join(w_list))
-                    else:
-                        # Corrupt with static
-                        noise = ["▓", "▒", "░", "█"]
-                        new_words.append(random.choice(noise) * len(word))
                 else:
                     new_words.append(word)
             text = " ".join(new_words)
 
-        # Level 3 Distortion (<25): Hallucinated sentences, redacting blocks, and reversals
-        if reality < 25:
+        # Level 2+ Extra: Integration Proximity (Static)
+        if integration_level > 60 and random.random() < 0.3:
+             noise = ["▓", "▒", "░"]
+             text = text.replace(" ", random.choice(noise), 2) # Replace a couple of spaces with static
+
+        # Level 3 Distortion: Hallucinations, Redaction, Entity Attention
+        if intensity >= 3:
             if random.random() < 0.5:
                 hallucinations = [
                     "\nTHEY ARE WATCHING YOU.",
@@ -770,6 +780,11 @@ class Game:
                     "\nYOU ARE NOT ALONE.",
                     "\nTHE BLUE FLUID IS HUNGRY."
                 ]
+                # Entity specific
+                if attention_level > 70:
+                    hallucinations.append("\nHE SEES YOU.")
+                    hallucinations.append("\nRUN.")
+
                 text += f"\n{Colors.RED}{random.choice(hallucinations)}{Colors.RESET}"
             
             # Block redaction
@@ -779,12 +794,9 @@ class Game:
                      idx = random.randint(0, len(paragraphs)-1)
                      paragraphs[idx] = "█" * len(paragraphs[idx])
                      text = "\n\n".join(paragraphs)
-                     
-        # Sanity effects (different from reality)
-        sanity = self.player_state.get("sanity", 100.0)
-        if sanity < 20:
-            # Randomly reverse a sentence
-            if random.random() < 0.4:
+
+            # Sanity Reversals
+            if sanity < 20 and random.random() < 0.4:
                 sentences = text.split(". ")
                 if sentences:
                     idx = random.randint(0, len(sentences)-1)
@@ -1317,6 +1329,23 @@ class Game:
         print(f"[THERMAL OPTICS: {state}]")
 
     def handle_parser_command(self, verb, target):
+        # Check for Hallucination Interception
+        intercept, response = self.parser_hallucination.check_interception(verb, target)
+        if intercept:
+             self.print(f"\n[ACTION: {verb} {target or ''}]")
+             self.print(response)
+             # Trigger queue update
+             msgs = self.parser_hallucination.process_queue()
+             for m in msgs: self.print(m)
+             return
+
+        # Queue parser trigger for delayed hallucinations
+        self.parser_hallucination.queue_trigger("parser_trigger", {"verb": verb, "target": target})
+
+        # Process delayed hallucinations
+        msgs = self.parser_hallucination.process_queue()
+        for m in msgs: self.print(m)
+
         scene = self.scene_manager.current_scene_data
         objects = scene.get("objects", {})
         
@@ -1480,6 +1509,12 @@ class Game:
             self.print(" ACTIONS: PHOTOGRAPH [target], USE [target] (on [target])")
             self.print(" NAVIGATION: MAP, WHERE, [number], GO [location]")
             self.print(" SYSTEM: (b)oard, (c)haracter, (i)nventory, (e)vidence, (w)ait, (s)leep, (q)uit")
+
+            # Hallucinated Verbs Injection
+            false_verbs = self.parser_hallucination.suggest_verbs()
+            if false_verbs:
+                self.print(f" {Colors.RED}UNKNOWN: {', '.join(false_verbs).upper()}{Colors.RESET}")
+
             self.print("--------------------------")
 
         elif verb == "TALK" or verb == "ASK":
