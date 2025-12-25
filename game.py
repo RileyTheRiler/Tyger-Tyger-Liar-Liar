@@ -57,6 +57,7 @@ from engine.fear_system import FearManager
 from engine.unreliable_narrator import HallucinationEngine
 from npc_system import NPCSystem
 from engine.interaction_system import InteractionManager
+from engine.developer_tools import EvidenceTracker
 
 
 class Game:
@@ -1187,6 +1188,12 @@ class Game:
                         self.log_event("scene_entry", scene_id=scene_id, scene_name=new_scene.get("name", "Unknown"))
                     else:
                         self.print(f"[DEBUG] Scene '{scene_id}' not found")
+                return "refresh"
+
+            # Debug: Evidence Tracker
+            if clean.startswith('tracker'):
+                tracker = EvidenceTracker(self.inventory_system.board, self.player_state)
+                tracker.print_tracker() # Prints directly to stdout, might need capture if using self.print
                 return "refresh"
         
         # Theory Resolution Commands

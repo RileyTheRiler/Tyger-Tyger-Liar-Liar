@@ -5,16 +5,21 @@ class Item:
     def __init__(self, id: str, name: str, type: str, description: str,
                  effects: Dict[str, Any] = None, usable_in: List[str] = None,
                  limited_use: bool = False, uses: int = 0, tags: List[str] = None,
-                 weight: float = 0.0, slots: int = 1):
+                 weight: float = 0.0, slots: int = 1,
+                 storage_slots: int = 0, storage_weight: float = 0.0):
         self.id = id
         self.name = name
-        self.type = type  # tool, weapon, evidence, consumable, kit
+        self.type = type  # tool, weapon, evidence, consumable, kit, container
         self.description = description
         self.effects = effects or {} 
         self.tags = tags or []
         self.equipped = False
         self.weight = weight
         self.slots = slots
+
+        # New capacity modifiers
+        self.storage_slots = storage_slots
+        self.storage_weight = storage_weight
 
         # effects example: {"skill_modifiers": {"Perception": 1}}
         
@@ -50,7 +55,9 @@ class Item:
             "tags": self.tags,
             "equipped": self.equipped,
             "weight": self.weight,
-            "slots": self.slots
+            "slots": self.slots,
+            "storage_slots": self.storage_slots,
+            "storage_weight": self.storage_weight
         }
 
     def get_temperature_status(self) -> str:
@@ -227,14 +234,24 @@ class EvidenceBoard:
 
 
 class InventoryManager:
-    def __init__(self, max_weight: float = 20.0, max_slots: int = 10):
+    def __init__(self, base_weight: float = 20.0, base_slots: int = 10):
         self.carried_items: List[Item] = []
         self.evidence_collection: Dict[str, Evidence] = {}
         self.board = EvidenceBoard()
         self.documents: List[Dict] = []
-        self.max_weight = max_weight
-        self.max_slots = max_slots
+        self.base_weight = base_weight
+        self.base_slots = base_slots
     
+    @property
+    def max_weight(self) -> float:
+        bonus = sum(item.storage_weight for item in self.carried_items if item.equipped)
+        return self.base_weight + bonus
+
+    @property
+    def max_slots(self) -> int:
+        bonus = sum(item.storage_slots for item in self.carried_items if item.equipped)
+        return self.base_slots + bonus
+
     @property
     def current_weight(self) -> float:
         return sum(item.weight for item in self.carried_items)
@@ -312,10 +329,22 @@ class InventoryManager:
         """Unequip an item by name or ID. Returns True if successful."""
         for item in self.carried_items:
             if item.id == item_id or item.name.lower() == item_id.lower():
-                if item.equipped:
-                    item.equipped = False
-                    print(f"[Inventory] Unequipped: {item.name}")
-                    return True
+                # Check if unequipping would exceed capacity
+                # Temporarily unequip to check limits
+                item.equipped = False
+
+                # If removing the storage bonus makes us over-encumbered, we might want to warn
+                # But typically games allow unequipping, just not adding more.
+                # However, logic: if I drop my backpack contents, they don't disappear.
+                # If I take OFF my backpack, I am still CARRYING it (so weight is same),
+                # BUT I lose the 'equipped' capacity bonus.
+                # So if current > max (after removing bonus), technically I am overencumbered.
+
+                print(f"[Inventory] Unequipped: {item.name}")
+                if self.current_weight > self.max_weight or self.current_slots > self.max_slots:
+                    print(f"[WARNING] You are now over-encumbered!")
+
+                return True
         return False
 
     def update_evidence_aging(self, hours_passed: float):
@@ -350,7 +379,12 @@ class InventoryManager:
         for item in self.carried_items:
             uses_str = f" ({item.uses} uses left)" if item.limited_use else ""
             equip_str = " [EQUIPPED]" if item.equipped else ""
-            print(f"- {item.name} [{item.type}]{uses_str}{equip_str}: {item.description}")
+
+            storage_str = ""
+            if item.storage_slots > 0 or item.storage_weight > 0:
+                storage_str = f" [Capacity: +{item.storage_slots} slots, +{item.storage_weight}kg]"
+
+            print(f"- {item.name} [{item.type}]{uses_str}{equip_str}{storage_str}: {item.description}")
             if item.effects:
                  print(f"  Effects: {item.effects}")
                  
@@ -363,15 +397,15 @@ class InventoryManager:
             "evidence_collection": {k: v.to_dict() for k, v in self.evidence_collection.items()},
             "board": self.board.to_dict(),
             "documents": self.documents,
-            "max_weight": self.max_weight,
-            "max_slots": self.max_slots
+            "max_weight": self.base_weight, # Save base, max is calc property
+            "max_slots": self.base_slots
         }
     
     @classmethod
     def from_dict(cls, data):
         obj = cls(
-            max_weight=data.get("max_weight", 20.0),
-            max_slots=data.get("max_slots", 10)
+            base_weight=data.get("max_weight", 20.0),
+            base_slots=data.get("max_slots", 10)
         )
         obj.carried_items = [Item.from_dict(i) for i in data.get("carried_items", [])]
         obj.evidence_collection = {k: Evidence.from_dict(v) for k, v in data.get("evidence_collection", {}).items()}

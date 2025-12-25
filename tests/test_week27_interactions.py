@@ -53,6 +53,11 @@ def test_interactions():
 
     # 4. Test Swab (Verb)
     print("\n--- TEST: SWAB VERB ---")
+    # Boost Forensics to ensure success (DC 8)
+    # Must raise Attribute (REASON) to allow skill level > 1
+    game.skill_system.attributes["REASON"].value = 6
+    game.skill_system.get_skill("Forensics").base_level = 10
+
     game.process_command("swab blood stain", [])
 
     # Verify Evidence

@@ -25,6 +25,12 @@ class CommandParser:
             "ANALYZE": ["analyze", "study", "research", "test", "investigate"],
             "COMBINE": ["combine", "merge", "mix", "use with"],
             
+            # Week 27: Tool Commands
+            "SWAB": ["swab", "sample"],
+            "RECORD": ["record", "tape", "evp"],
+            "SHINE": ["shine", "illuminate", "light"],
+            "SCAN": ["scan", "thermal"],
+
             # Week 13: Combat Commands
             "FIGHT": ["fight", "attack", "strike", "hit", "shoot"],
             "DODGE": ["dodge", "evade", "duck", "weave"],
