@@ -992,6 +992,11 @@ class Game:
     def save_game(self, slot_id: str, auto=False):
         """Save the current game state."""
         try:
+            # Convert event_flags set to list for JSON serialization
+            player_state_copy = self.player_state.copy()
+            if "event_flags" in player_state_copy and isinstance(player_state_copy["event_flags"], set):
+                player_state_copy["event_flags"] = list(player_state_copy["event_flags"])
+
             # Gather all state data
             state_data = {
                 "scene": self.scene_manager.current_scene_id if self.scene_manager.current_scene_id else "bedroom",
@@ -999,7 +1004,7 @@ class Game:
                 "summary": self._generate_save_summary(),
                 "character_state": {
                     "skill_system": self.skill_system.to_dict(),
-                    "player_state": self.player_state.copy(),
+                    "player_state": player_state_copy,
                 },
                 "board_state": self.board.to_dict(),
                 "inventory": self.inventory_system.to_dict(),
@@ -1008,7 +1013,15 @@ class Game:
                 "scene_state": {
                     "current_scene_id": self.scene_manager.current_scene_id,
                     "visited_scenes": list(self.scene_manager.visited_scenes) if hasattr(self.scene_manager, 'visited_scenes') else []
-                }
+                },
+                # === NEW SYSTEMS ===
+                "npc_system": self.npc_system.to_dict(),
+                "condition_system": self.condition_system.to_dict(),
+                "population_system": self.population_system.to_dict(),
+                "clue_system": self.clue_system.to_dict(),
+                "fracture_system": self.fracture_system.to_dict(),
+                "lens_system": self.lens_system.to_dict(),
+                "player_archetype": self.player_archetype.value if self.player_archetype else "neutral"
             }
             
             success = self.save_system.save_game(slot_id, state_data)
@@ -1061,11 +1074,50 @@ class Game:
             # Restore event log
             if "event_log" in save_data:
                 self.event_log = EventLog.from_dict(save_data["event_log"])
-            
+
+            # === RESTORE NEW SYSTEMS ===
+
+            # Restore NPC System
+            if "npc_system" in save_data:
+                self.npc_system.restore_state(save_data["npc_system"])
+
+            # Restore Condition System
+            if "condition_system" in save_data:
+                self.condition_system.restore_state(save_data["condition_system"])
+
+            # Restore Population System
+            if "population_system" in save_data:
+                self.population_system.restore_state(save_data["population_system"])
+
+            # Restore Clue System
+            if "clue_system" in save_data:
+                self.clue_system.restore_state(save_data["clue_system"])
+
+            # Restore Fracture System
+            if "fracture_system" in save_data:
+                self.fracture_system.restore_state(save_data["fracture_system"])
+
+            # Restore Lens System
+            if "lens_system" in save_data:
+                self.lens_system.locked = save_data["lens_system"].get("locked", False)
+                self.lens_system.current_lens = save_data["lens_system"].get("current_lens", "neutral")
+
+            # Restore Player Archetype
+            if "player_archetype" in save_data:
+                archetype_value = save_data["player_archetype"]
+                if archetype_value and archetype_value != "neutral":
+                    self.player_archetype = Archetype(archetype_value)
+                else:
+                    self.player_archetype = None
+
+            # Convert event_flags back to set
+            if "event_flags" in self.player_state and isinstance(self.player_state["event_flags"], list):
+                self.player_state["event_flags"] = set(self.player_state["event_flags"])
+
             # Restore scene
             if "scene" in save_data:
                 self.scene_manager.load_scene(save_data["scene"])
-            
+
             print(f"\n✓ Game loaded successfully from '{slot_id}'")
             print(f"   Location: {save_data.get('scene', 'Unknown')}")
             print(f"   Time: {save_data.get('datetime', 'Unknown')}")
