@@ -53,10 +53,11 @@ from engine.injury_system import InjurySystem
 from engine.trauma_system import TraumaSystem
 from engine.chase_system import ChaseSystem
 from engine.environmental_effects import EnvironmentalEffects
-from engine.psychological_system import PsychologicalState
+from engine.psychological_system import PsychologicalState, FailureType
 from engine.fear_system import FearManager
 from engine.unreliable_narrator import HallucinationEngine
 from engine.narrative_memory_system import NarrativeMemorySystem
+from engine.parser_hallucination import ParserHallucinationEngine
 from npc_system import NPCSystem
 from fracture_system import FractureSystem
 
@@ -213,6 +214,8 @@ class Game:
         hallucinations_path = resource_path(os.path.join('data', 'hallucinations'))
         self.hallucination_engine.load_hallucination_templates(hallucinations_path)
         
+        self.parser_hallucination_engine = ParserHallucinationEngine()
+
         # Initialize Fracture System
         self.fracture_system = FractureSystem(self.get_game_state())
 
@@ -625,7 +628,34 @@ class Game:
     def get_ui_state(self):
         """Return structured state for the UI frontend."""
         scene = self.scene_manager.current_scene_data or {}
-        # Filter choices validation if needed, or just send raw
+
+        # Get base choices
+        choices = list(scene.get("choices", []))
+
+        # Soft Failure: Filter choices if Investigative Paralysis is active
+        if self.psych_state.is_failure_active(FailureType.INVESTIGATIVE_PARALYSIS):
+            # Limit complex options, keep simple ones
+            filtered_choices = []
+            for c in choices:
+                txt = c.get("text", "").lower()
+                if any(x in txt for x in ["leave", "wait", "run", "hide", "look"]):
+                    filtered_choices.append(c)
+                elif "skill_check" not in c: # Keep basic interaction
+                    filtered_choices.append(c)
+            # If we filtered everything, keep one
+            if not filtered_choices and choices:
+                filtered_choices.append(choices[0])
+            choices = filtered_choices
+
+        # Soft Failure / Sanity: Inject Hallucinations
+        if self.psych_state.get_sanity_tier() <= 1 or self.psych_state.is_failure_active(FailureType.COGNITIVE_OVERLOAD):
+             if random.random() < 0.4:
+                 fake = self.parser_hallucination_engine.get_hallucinated_choices(choices)
+                 # Insert randomly
+                 for f in fake:
+                     idx = random.randint(0, len(choices))
+                     choices.insert(idx, f)
+
         # Capture SFX queue before clearing
         sfx_to_play = list(self.sfx_queue)
         self.sfx_queue.clear() # Clear transient queue
@@ -643,10 +673,11 @@ class Game:
             "population_status": self.population_system.get_population_status(),
             "theories_active": self.board.get_active_or_internalizing_count(),
             "input_mode": self.input_mode.name if hasattr(self.input_mode, 'name') else str(self.input_mode),
-            "choices": scene.get("choices", []),
+            "choices": choices,
             "board_data": self.board.get_board_data(),
             "music": self.current_music,
-            "sfx_queue": sfx_to_play
+            "sfx_queue": sfx_to_play,
+            "active_failures": self.player_state.get("active_failures", [])
         }
 
     def run_passive_mechanics(self):
@@ -700,11 +731,18 @@ class Game:
             self.print("\n>> SANITY CRITICAL: You collapse under the weight of your own mind. <<")
             self.player_state["sanity"] = 10 
             self.log_event("breakdown", breakdown_type="sanity")
+        # 3. Breakdowns & Soft Failures
+        theory_count = self.board.get_active_or_internalizing_count()
+        new_failures = self.psych_state.check_soft_failures(theory_count)
 
-        if self.player_state["reality"] <= 0:
-            self.print("\n>> REALITY FRACTURE: The world dissolves. Who are you? <<")
-            self.player_state["reality"] = 10
-            self.log_event("breakdown", breakdown_type="reality")
+        # We do not notify explicitly, but we log it
+        if new_failures:
+            for nf in new_failures:
+                self.log_event("soft_failure", failure_type=nf.value)
+
+        # Hard cap safety (still keep 1 to prevent math errors elsewhere)
+        if self.player_state["sanity"] < 1: self.player_state["sanity"] = 1
+        if self.player_state["reality"] < 1: self.player_state["reality"] = 1
             
         return False
 
@@ -746,6 +784,10 @@ class Game:
         print_separator("-", 64, printer=self.print)
         self.print(f"[{mode_str} MODE{debug_str}] - (b)oard, (c)haracter, (i)nventory, (e)vidence")
         self.print("                   (w)ait, (s)leep, (h)elp, (q)uit, [switch]")
+
+        # We do not notify explicitly about failures here.
+        # Effects are handled via text distortion and choice limitation.
+
         print_separator("-", 64, printer=self.print)
 
     def apply_reality_distortion(self, text):
@@ -1196,9 +1238,48 @@ class Game:
             self.time_system.advance_time(8 * 60)
             # Recover sanity/stats here if needed
             self.player_state['sanity'] = min(self.player_state['sanity'] + 20, 100)
+
+            # Recovery from Failures
+            if self.psych_state.is_failure_active(FailureType.COGNITIVE_OVERLOAD):
+                res = self.psych_state.recover_from_failure(FailureType.COGNITIVE_OVERLOAD)
+                self.print(f"\n{res['message']}")
+
+            # Social Breakdown recovery if alone (implicit in sleep)
+            if self.psych_state.is_failure_active(FailureType.SOCIAL_BREAKDOWN):
+                # Decay fear significantly
+                self.player_state["fear_level"] = max(0, self.player_state["fear_level"] - 40)
+                if self.player_state["fear_level"] < 50:
+                    res = self.psych_state.recover_from_failure(FailureType.SOCIAL_BREAKDOWN)
+                    self.print(f"\n{res['message']}")
+
+            # Paralysis recovery if reality stabilizes
+            if self.psych_state.is_failure_active(FailureType.INVESTIGATIVE_PARALYSIS):
+                 # Sleeping helps reset the mind
+                 res = self.psych_state.recover_from_failure(FailureType.INVESTIGATIVE_PARALYSIS)
+                 self.print(f"\n{res['message']}")
+
             self.print("You wake up feeling rested. (+20 Sanity)")
             return "refresh"
         
+        if clean in ['meditate', 'calm']:
+            self.print("... You try to center your mind (30 mins) ...")
+            self.time_system.advance_time(30)
+            self.player_state["sanity"] = min(self.player_state["sanity"] + 5, 100)
+            self.psych_state.reduce_mental_load(20, "Meditation")
+
+            # Attempt recovery
+            if self.psych_state.is_failure_active(FailureType.COGNITIVE_OVERLOAD):
+                 res = self.psych_state.recover_from_failure(FailureType.COGNITIVE_OVERLOAD)
+                 self.print(f"\n{res['message']}")
+
+            if self.psych_state.is_failure_active(FailureType.SOCIAL_BREAKDOWN):
+                 self.player_state["fear_level"] -= 10
+                 if self.player_state["fear_level"] < 50:
+                    res = self.psych_state.recover_from_failure(FailureType.SOCIAL_BREAKDOWN)
+                    self.print(f"\n{res['message']}")
+
+            return "refresh"
+
         # Debug Mode Commands
         if clean == 'debug':
             self.debug_mode = not self.debug_mode
@@ -1392,6 +1473,13 @@ class Game:
 
         # Parser Handling
         if self.input_mode == InputMode.INVESTIGATION:
+            # Check for Soft Failure limitations
+            if self.psych_state.is_failure_active(FailureType.INVESTIGATIVE_PARALYSIS):
+                # Chance to reject complex commands
+                if random.random() < 0.4:
+                    self.print("You can't focus on that. It's too much. Keep it simple.")
+                    return "refresh"
+
             parsed_commands = self.parser.normalize(raw)
             if parsed_commands:
                 for verb, target in parsed_commands:
@@ -1577,7 +1665,16 @@ class Game:
                 self.print(f"You aren't equipping a '{target}'.")
 
         elif verb == "ANALYZE":
+             if self.psych_state.is_failure_active(FailureType.COGNITIVE_OVERLOAD):
+                 self.print("The words swim before your eyes. You can't focus enough to analyze anything.")
+                 return
              self.handle_analyze(target)
+
+        elif verb == "READ":
+             if self.psych_state.is_failure_active(FailureType.COGNITIVE_OVERLOAD):
+                 self.print("The text refuses to hold still.")
+                 return
+             self.print(f"You try to read the {target}...")
 
         elif verb == "COMBINE":
              self.print("You try to combine them, but nothing happens. (Not implemented yet)")
@@ -1619,6 +1716,10 @@ class Game:
             self.print("--------------------------")
 
         elif verb == "TALK" or verb == "ASK":
+             if self.psych_state.is_failure_active(FailureType.SOCIAL_BREAKDOWN):
+                 self.print("You can't bring yourself to speak to them. You know they're listening.")
+                 return
+
              # Need to restore TALK/ASK because it's in original
              if not target:
                 self.print("Talk to whom?")

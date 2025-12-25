@@ -1,11 +1,18 @@
 """
 Psychological State System - Week 15
 Manages Sanity, Mental Load, Fear Level, and psychological effects.
+Week 20 Update: Added Soft Failure States.
 """
 
 import random
 from typing import Dict, List, Tuple, Optional
+from enum import Enum
 
+class FailureType(Enum):
+    NONE = "none"
+    COGNITIVE_OVERLOAD = "cognitive_overload"
+    SOCIAL_BREAKDOWN = "social_breakdown"
+    INVESTIGATIVE_PARALYSIS = "investigative_paralysis"
 
 class PsychologicalState:
     """
@@ -33,7 +40,107 @@ class PsychologicalState:
             self.player_state["instability"] = False
         if "hallucination_history" not in self.player_state:
             self.player_state["hallucination_history"] = []
+        if "active_failures" not in self.player_state:
+            self.player_state["active_failures"] = []
     
+    # ==================== SOFT FAILURE SYSTEM ====================
+
+    def check_soft_failures(self, board_theory_count: int = 0) -> List[FailureType]:
+        """
+        Check for conditions triggering soft failure states.
+        Returns list of newly triggered failures.
+        """
+        new_failures = []
+        current_failures = set(self.player_state.get("active_failures", []))
+
+        # 1. Cognitive Overload
+        # Trigger: Mental Load >= 100
+        if self.player_state["mental_load"] >= 100:
+            if FailureType.COGNITIVE_OVERLOAD.value not in current_failures:
+                self.trigger_failure(FailureType.COGNITIVE_OVERLOAD)
+                new_failures.append(FailureType.COGNITIVE_OVERLOAD)
+
+        # 2. Social Breakdown
+        # Trigger: Fear Level >= 90 AND Sanity < 30
+        if self.player_state["fear_level"] >= 90 and self.player_state["sanity"] < 30:
+            if FailureType.SOCIAL_BREAKDOWN.value not in current_failures:
+                self.trigger_failure(FailureType.SOCIAL_BREAKDOWN)
+                new_failures.append(FailureType.SOCIAL_BREAKDOWN)
+
+        # 3. Investigative Paralysis
+        # Trigger: Reality < 10 OR (Active Theories > 5 AND Mental Load > 80)
+        # Note: Active theories passed in as arg since board isn't stored here
+        reality = self.player_state.get("reality", 100)
+        load = self.player_state["mental_load"]
+
+        if reality < 10 or (board_theory_count > 5 and load > 80):
+            if FailureType.INVESTIGATIVE_PARALYSIS.value not in current_failures:
+                self.trigger_failure(FailureType.INVESTIGATIVE_PARALYSIS)
+                new_failures.append(FailureType.INVESTIGATIVE_PARALYSIS)
+
+        return new_failures
+
+    def trigger_failure(self, failure: FailureType):
+        """Activate a soft failure state."""
+        if "active_failures" not in self.player_state:
+            self.player_state["active_failures"] = []
+
+        if failure.value not in self.player_state["active_failures"]:
+            self.player_state["active_failures"].append(failure.value)
+
+            # Immediate effects?
+            # We don't notify explicitly ("No explicit notification"), but effects apply
+            pass
+
+    def recover_from_failure(self, failure: FailureType) -> Dict:
+        """
+        Attempt to recover from a failure state.
+        Applies permanent cost.
+        """
+        if "active_failures" not in self.player_state:
+            return {"success": False, "message": "No active failures."}
+
+        if failure.value in self.player_state["active_failures"]:
+            self.player_state["active_failures"].remove(failure.value)
+
+            # Permanent Cost
+            cost_msg = ""
+            if failure == FailureType.COGNITIVE_OVERLOAD:
+                # Permanent max mental load reduction? Or just sanity hit?
+                # Let's say: Permanent Scar
+                if "scars" not in self.player_state: self.player_state["scars"] = []
+                self.player_state["scars"].append("Frayed Nerves")
+                cost_msg = "You feel permanently frayed."
+
+            elif failure == FailureType.SOCIAL_BREAKDOWN:
+                if "scars" not in self.player_state: self.player_state["scars"] = []
+                self.player_state["scars"].append("Paranoid")
+                cost_msg = "You can't trust anyone fully anymore."
+
+            elif failure == FailureType.INVESTIGATIVE_PARALYSIS:
+                if "scars" not in self.player_state: self.player_state["scars"] = []
+                self.player_state["scars"].append("Hesitant")
+                cost_msg = "You doubt your own conclusions."
+
+            # Reset relevant stats to safe levels
+            if failure == FailureType.COGNITIVE_OVERLOAD:
+                self.player_state["mental_load"] = 50
+            elif failure == FailureType.SOCIAL_BREAKDOWN:
+                self.player_state["fear_level"] = 50
+            elif failure == FailureType.INVESTIGATIVE_PARALYSIS:
+                if self.player_state["reality"] < 20:
+                    self.player_state["reality"] = 30
+
+            return {
+                "success": True,
+                "message": f"You have recovered from {failure.value.replace('_', ' ')}. {cost_msg}"
+            }
+
+        return {"success": False, "message": "Failure state not active."}
+
+    def is_failure_active(self, failure: FailureType) -> bool:
+        return failure.value in self.player_state.get("active_failures", [])
+
     # ==================== SANITY SYSTEM ====================
     
     def get_sanity_tier(self) -> int:
@@ -108,6 +215,7 @@ class PsychologicalState:
             
             # Trigger tier-specific effects
             if new_tier == 0:
+                # Soft failure check happens in game loop, but we flag breakdown
                 result["effects"].append(("breakdown", None))
             elif new_tier == 1:
                 result["effects"].append(("visual_hallucinations_enabled", True))
@@ -326,6 +434,7 @@ class PsychologicalState:
         fear = self.player_state.get("fear_level", 0)
         disoriented = self.player_state.get("disorientation", False)
         unstable = self.player_state.get("instability", False)
+        active_failures = self.player_state.get("active_failures", [])
         
         lines = [
             "=== PSYCHOLOGICAL STATE ===",
@@ -336,12 +445,14 @@ class PsychologicalState:
         ]
         
         # Status flags
-        if disoriented or unstable:
+        if disoriented or unstable or active_failures:
             lines.append("Status Effects:")
             if disoriented:
                 lines.append("  • DISORIENTED - Perception may be unreliable")
             if unstable:
                 lines.append("  • UNSTABLE - Internal voices competing")
+            for af in active_failures:
+                lines.append(f"  • {af.upper().replace('_', ' ')} - Functionality compromised")
         
         # Penalties
         penalty = self.get_mental_load_penalty()
@@ -355,17 +466,21 @@ class PsychologicalState:
     def is_hallucinating(self) -> bool:
         """Check if player should experience hallucinations."""
         tier = self.get_sanity_tier()
-        return tier <= 2  # Sanity < 50
+        # Also trigger if soft failures active
+        active_failures = self.player_state.get("active_failures", [])
+        return tier <= 2 or len(active_failures) > 0
     
     def can_have_visual_hallucinations(self) -> bool:
         """Check if player can have visual hallucinations."""
         tier = self.get_sanity_tier()
-        return tier <= 1  # Sanity < 25
+        active_failures = self.player_state.get("active_failures", [])
+        return tier <= 1 or FailureType.COGNITIVE_OVERLOAD.value in active_failures
     
     def can_have_auditory_hallucinations(self) -> bool:
         """Check if player can have auditory hallucinations."""
         tier = self.get_sanity_tier()
-        return tier <= 2  # Sanity < 50
+        active_failures = self.player_state.get("active_failures", [])
+        return tier <= 2 or FailureType.SOCIAL_BREAKDOWN.value in active_failures
     
     def record_hallucination(self, hallucination_id: str):
         """Record that a hallucination has been shown to avoid repetition."""
