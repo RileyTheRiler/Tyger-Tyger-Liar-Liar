@@ -89,9 +89,11 @@ class SceneManager:
         # Handle dynamic_inserts
         if "dynamic_inserts" in scene:
             text_data = scene.get("text", {})
-            # Ensure text_data is a dict
+            # Ensure text_data is a dict and we copy it to avoid mutating cache
             if isinstance(text_data, str):
                 text_data = {"base": text_data}
+            else:
+                text_data = text_data.copy()
 
             existing_inserts = text_data.get("inserts", [])
             new_inserts = []
