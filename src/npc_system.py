@@ -83,6 +83,10 @@ class NPC:
         self.flags.setdefault("alive", True)
         self.flags.setdefault("met", False)
 
+        # Integration Status (Week 19)
+        self.integration_stage = data.get("integration_stage", 0) # 0=Unaware, 1=Marked, 2=Integrated
+        self.integration_symptoms = data.get("integration_symptoms", [])
+
         # Reactions to player actions/flags
         self.reactions = data.get("reactions", {})
 
@@ -247,6 +251,16 @@ class NPC:
             return self.description.get("base", "")
         return str(self.description)
 
+    def set_integration_stage(self, stage: int):
+        """Update integration stage and manage symptoms."""
+        self.integration_stage = stage
+        if stage == 1: # Marked
+            self.integration_symptoms = ["micro_pause", "glitch_text"]
+        elif stage >= 2: # Integrated
+            self.integration_symptoms = ["thermal_drift", "language_tell", "memory_blank", "hostile_gaze"]
+        else:
+            self.integration_symptoms = []
+
     def to_dict(self) -> dict:
         """Serialize NPC state for saving."""
         return {
@@ -255,7 +269,9 @@ class NPC:
             "fear": self.fear,
             "flags": self.flags,
             "knowledge_revealed": [k.topic for k in self.knowledge if k.revealed],
-            "secrets_revealed": [s.id for s in self.secrets if s.revealed]
+            "secrets_revealed": [s.id for s in self.secrets if s.revealed],
+            "integration_stage": self.integration_stage,
+            "integration_symptoms": self.integration_symptoms
         }
 
     @staticmethod
@@ -264,6 +280,8 @@ class NPC:
         npc.trust = state.get("trust", npc.trust)
         npc.fear = state.get("fear", npc.fear)
         npc.flags = state.get("flags", npc.flags)
+        npc.integration_stage = state.get("integration_stage", 0)
+        npc.integration_symptoms = state.get("integration_symptoms", [])
 
         for topic in state.get("knowledge_revealed", []):
             for k in npc.knowledge:
@@ -461,6 +479,11 @@ if __name__ == "__main__":
 
     # Check available knowledge
     print(f"Available knowledge: {[k.topic for k in npc.get_available_knowledge()]}")
+
+    # Test Integration Status
+    npc.set_integration_stage(1)
+    print(f"Integration Stage: {npc.integration_stage}")
+    print(f"Symptoms: {npc.integration_symptoms}")
 
     # Test serialization
     state = npc.to_dict()

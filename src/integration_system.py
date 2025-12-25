@@ -1,6 +1,7 @@
 """
 Integration Stages - Progressive Possession System.
 Tracks the player's gradual assimilation by the Entity.
+Also manages NPC integration candidates and signs.
 """
 
 from typing import Dict, List, Optional
@@ -42,9 +43,10 @@ INTEGRATION_STAGES = {
 
 
 class IntegrationSystem:
-    """Manages progressive possession mechanics."""
+    """Manages progressive possession mechanics for Player and NPCs."""
     
     def __init__(self):
+        # Player State
         self.current_stage = 0
         self.integration_progress = 0.0  # 0-100 within current stage
         self.last_memory_gap_time = 0
@@ -52,6 +54,10 @@ class IntegrationSystem:
         self.compulsion_command = None
         self.restricted_dialogue_options = []
         
+        # NPC Integration Management
+        self.npc_candidates = [] # List of NPC IDs
+        self.active_integrated_npcs = [] # List of NPC IDs
+
     def update_from_attention(self, attention_level: int):
         """
         Updates integration stage based on attention level.
@@ -180,6 +186,38 @@ class IntegrationSystem:
         
         return f"[INTEGRATION: Stage {self.current_stage} - {stage_data['name']} {bar}]"
     
+    # NPC Integration Logic
+
+    def register_candidate(self, npc_id: str):
+        """Add an NPC to the list of potential integration targets."""
+        if npc_id not in self.npc_candidates:
+            self.npc_candidates.append(npc_id)
+
+    def select_integration_candidate(self) -> Optional[str]:
+        """Selects a candidate to become integrated."""
+        if not self.npc_candidates:
+            return None
+
+        candidate = random.choice(self.npc_candidates)
+        if candidate not in self.active_integrated_npcs:
+             self.active_integrated_npcs.append(candidate)
+             return candidate
+        return None
+
+    def detect_integration_signs(self, npc_stage: int) -> List[str]:
+        """Returns signs of integration based on NPC stage."""
+        signs = []
+        if npc_stage >= 1: # Marked
+             if random.random() < 0.4: signs.append("micro_pause")
+             if random.random() < 0.2: signs.append("glitch_text")
+
+        if npc_stage >= 2: # Integrated
+             signs.append("thermal_drift") # Always present if checked
+             if random.random() < 0.5: signs.append("language_tell")
+             if random.random() < 0.3: signs.append("hostile_gaze")
+
+        return signs
+
     def to_dict(self) -> Dict:
         """Serialize for save system."""
         return {
@@ -188,7 +226,9 @@ class IntegrationSystem:
             "last_memory_gap_time": self.last_memory_gap_time,
             "compulsion_active": self.compulsion_active,
             "compulsion_command": self.compulsion_command,
-            "restricted_dialogue_options": self.restricted_dialogue_options
+            "restricted_dialogue_options": self.restricted_dialogue_options,
+            "npc_candidates": self.npc_candidates,
+            "active_integrated_npcs": self.active_integrated_npcs
         }
     
     @classmethod
@@ -201,6 +241,8 @@ class IntegrationSystem:
         system.compulsion_active = data.get("compulsion_active", False)
         system.compulsion_command = data.get("compulsion_command")
         system.restricted_dialogue_options = data.get("restricted_dialogue_options", [])
+        system.npc_candidates = data.get("npc_candidates", [])
+        system.active_integrated_npcs = data.get("active_integrated_npcs", [])
         return system
 
 
@@ -239,6 +281,15 @@ def demo_integration():
             print(f"  {comp['description']}")
             print(f"  Must execute: '{comp['command']}'")
     
+    # Test NPC logic
+    print("\n[Testing NPC Integration...]")
+    integration.register_candidate("npc_bob")
+    integration.register_candidate("npc_alice")
+    target = integration.select_integration_candidate()
+    print(f"  Selected target: {target}")
+    signs = integration.detect_integration_signs(2)
+    print(f"  Signs detected (Stage 2): {signs}")
+
     print("\n" + "=" * 60)
     print("DEMO COMPLETE")
     print("=" * 60)

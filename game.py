@@ -24,6 +24,7 @@ from board_ui import BoardUI
 from lens_system import LensSystem
 from attention_system import AttentionSystem
 from integration_system import IntegrationSystem
+from npc_system import NPCSystem
 from time_system import TimeSystem
 from endgame_manager import EndgameManager
 from memory_system import MemorySystem
@@ -71,6 +72,7 @@ class Game:
         self.lens_system = LensSystem(self.skill_system, self.board)
         self.attention_system = AttentionSystem()
         self.integration_system = IntegrationSystem()
+        self.npc_system = NPCSystem(resource_path(os.path.join('data', 'npcs'))) # Week 19: NPC System Integration
         self.char_ui = CharacterSheetUI(self.skill_system)
         self.inventory_system = InventoryManager()
         self.corkboard = CorkboardMinigame(self.board, self.inventory_system)
@@ -101,6 +103,20 @@ class Game:
             self.board,
             self.player_state
         )
+        # Link NPC System to Dialogue Manager (if supported, otherwise SceneManager needs it)
+        # Currently SceneManager and DialogueManager handle NPCs via data, but central NPC system is better.
+        # Week 19: Register NPCs as integration candidates
+        for npc_id in self.npc_system.npcs.keys():
+             self.integration_system.register_candidate(npc_id)
+
+        # Select initial integrated NPC if none active
+        if not self.integration_system.active_integrated_npcs:
+             target = self.integration_system.select_integration_candidate()
+             if target:
+                  npc = self.npc_system.get_npc(target)
+                  if npc:
+                       npc.set_integration_stage(2) # Fully Integrated
+                       self.print(f"[DEBUG: {npc.name} has been replaced.]")
         self.in_dialogue = False
         
         # Initialize Endgame and Memory Systems
@@ -133,6 +149,23 @@ class Game:
         # Attention decay
         hours = minutes / 60.0
         self.attention_system.decay_attention(hours)
+
+        # Curfew Check (Week 19)
+        # Assuming 22:00 (22) to 06:00 (6) is curfew
+        current_hour = self.time_system.current_time.hour
+        if (current_hour >= 22 or current_hour < 6):
+            # Check if outdoors (Scene name or tags needed)
+            scene = self.scene_manager.current_scene_data
+            # Simple heuristic: if 'outdoors' in tags or description implies it
+            # For now, let's assume if scene has 'street', 'road', 'forest', 'outside' in id or name
+            scene_id = self.scene_manager.current_scene_id.lower()
+            if any(x in scene_id for x in ['street', 'road', 'forest', 'outside', 'path', 'dock']):
+                 # Trigger curfew violation
+                 res = self.attention_system.perform_taboo("curfew_violation")
+                 if res['success'] and res['attention_gained'] > 0:
+                      # Only warn once per hour to avoid spam?
+                      # Logic for throttling needed, but for now just print warning
+                      self.print(f"[CURFEW: {res['warning'] or 'The Entity watches.'}]")
         
         # Integration progression
         self.integration_system.update_from_attention(self.attention_system.attention_level)
@@ -585,6 +618,17 @@ class Game:
             return "refresh"
         
         if self.debug_mode:
+            # Debug: Entity Info
+            if clean == 'debug_entity':
+                att = self.attention_system
+                integ = self.integration_system
+                self.print("\n=== ENTITY DEBUG ===")
+                self.print(f"Attention: {att.attention_level}% ({att.get_status_display()})")
+                self.print(f"Integration Stage: {integ.current_stage}")
+                self.print(f"Integration Progress: {integ.integration_progress}%")
+                self.print(f"Integrated NPCs: {integ.active_integrated_npcs}")
+                return "refresh"
+
             # Debug: Force Save
             if clean.startswith('forcesave'):
                 parts = clean.split()
@@ -643,6 +687,10 @@ class Game:
                 theory_id = parts[1].strip()
                 if self.board.resolve_theory(theory_id, True):
                     self.print(f"[THEORY PROVEN: {theory_id}]")
+                    # Internalizing/Proving theories attracts attention
+                    res = self.attention_system.perform_taboo("internalize_theory")
+                    if res['success']:
+                         self.print(f"[{res['warning'] or 'The Entity notices your realization.'}]")
                 else:
                     self.print(f"[ERROR: Theory '{theory_id}' not found]")
             return "refresh"
@@ -837,6 +885,68 @@ class Game:
 
         elif verb == "INVENTORY":
             self.inventory_system.list_inventory()
+
+        elif verb == "SCAN":
+             # Scan for possession
+             if target and ("possession" in target or "sign" in target or "entity" in target):
+                  print("You focus your senses, looking for the tell-tale signs of Integration.")
+                  # Check current location for NPCs
+                  npcs = self.npc_system.get_npcs_at_location(self.scene_manager.current_scene_id)
+                  found_something = False
+
+                  # Roll Observation
+                  check = self.skill_system.roll_check("Perception", 10)
+
+                  if check['success']:
+                       for npc in npcs:
+                            if npc.integration_stage > 0:
+                                 signs = self.integration_system.detect_integration_signs(npc.integration_stage)
+                                 if signs:
+                                      found_something = True
+                                      desc = f"{npc.name} seems off."
+                                      if "thermal_drift" in signs: desc += " Their skin is flushed despite the cold."
+                                      if "micro_pause" in signs: desc += " They pause unnaturally between sentences."
+                                      if "hostile_gaze" in signs: desc += " They are staring at you with zero empathy."
+                                      print(f"[{Colors.RED}WARNING{Colors.RESET}] {desc}")
+
+                  if not found_something:
+                       print("You don't detect anything unusual about the people here.")
+             else:
+                  print("Scan what?")
+
+        elif verb == "ASK":
+             # "Ask [NPC] where we first met" / "Ask [NPC] origin"
+             # Simplified parser for this specific command structure
+             # Expecting: ASK <NPC> <TOPIC>
+             parts = target.split(' ', 1) if target else []
+             if len(parts) >= 1:
+                  npc_name_query = parts[0]
+                  topic = parts[1] if len(parts) > 1 else ""
+
+                  # Find NPC
+                  npcs = self.npc_system.get_npcs_at_location(self.scene_manager.current_scene_id)
+                  target_npc = None
+                  for n in npcs:
+                       if npc_name_query.lower() in n.name.lower():
+                            target_npc = n
+                            break
+
+                  if target_npc:
+                       if "met" in topic or "origin" in topic or "first" in topic:
+                            print(f"You ask {target_npc.name} where you first met.")
+                            if target_npc.integration_stage >= 2:
+                                 # Integrated NPC fails this test or lies poorly
+                                 print(f"{target_npc.name} blinks. \"Why, at the... town hall? Of course.\"")
+                                 print(f"[{Colors.CYAN}INTUITION{Colors.RESET}] That's a lie. You met at the diner.") # Hardcoded for flavor demo
+                                 # Increase attention/knowledge?
+                            else:
+                                 print(f"{target_npc.name} smiles. \"Don't you remember? At the diner, last Tuesday.\"")
+                       else:
+                            print(f"You ask {target_npc.name} about {topic}, but they have nothing to say.")
+                  else:
+                       print(f"There is no one named '{npc_name_query}' here.")
+             else:
+                  print("Ask who what?")
 
         else:
             print(f"You try to {verb} the {target or 'air'}, but nothing happens yet.")

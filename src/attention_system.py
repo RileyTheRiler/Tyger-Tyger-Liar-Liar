@@ -47,6 +47,27 @@ class AttentionSystem:
             "dance": {
                 "cost": 14,
                 "description": "You dance beneath the aurora. It mirrors your movements."
+            },
+            # New Triggers
+            "read_redacted": {
+                "cost": 15,
+                "description": "You read words that were never meant to be seen. The page feels warm."
+            },
+            "discuss_forbidden": {
+                "cost": 10,
+                "description": "You speak of forbidden things. The shadows lean closer."
+            },
+            "curfew_violation": {
+                "cost": 10, # Per hour (handled by caller logic usually)
+                "description": "You are out past curfew. The Entity watches the empty streets."
+            },
+            "intuition_sacred": {
+                "cost": 20,
+                "description": "You open your mind in a sacred place. Something else floods in."
+            },
+            "internalize_theory": {
+                "cost": 5,
+                "description": "As the theory takes root in your mind, you feel a connection snap into place."
             }
         }
     
@@ -154,7 +175,13 @@ def demo_attention():
     print(f"  Current level: {result['current_level']}%")
     print(f"  {attention.get_status_display()}")
     
-    print("\n[TEST 3] Making eye contact...")
+    print("\n[TEST 3] Reading redacted files...")
+    result = attention.perform_taboo("read_redacted")
+    print(f"  {result['action_description']}")
+    print(f"  Attention gained: +{result['attention_gained']}")
+    print(f"  Current level: {result['current_level']}%")
+
+    print("\n[TEST 4] Making eye contact...")
     result = attention.perform_taboo("make_eye_contact")
     print(f"  {result['action_description']}")
     print(f"  Current level: {result['current_level']}%")
@@ -162,8 +189,8 @@ def demo_attention():
     print(f"  Threshold crossed: {result['threshold_crossed']}")
     print(f"  {attention.get_status_display()}")
     
-    # Test 4: Decay
-    print("\n[TEST 4] Laying low for 10 hours...")
+    # Test 5: Decay
+    print("\n[TEST 5] Laying low for 10 hours...")
     attention.decay_attention(10)
     print(f"  Current level: {attention.attention_level}%")
     print(f"  {attention.get_status_display()}")
