@@ -4,21 +4,21 @@
         {
             "id": "start",
             "speaker": "Dr. Keats",
-            "text": "I already told the police everything.",
+            "text": "He doesn't offer you a seat. He's polishing his glasses with a surgical grace. \"The police took my statement. It was exhaustive. And exhausting.\"",
             "choices": [
                 {
                     "id": "push",
-                    "text": "Push harder",
-                    "next": "push1"
+                    "text": "“They missed the mud on your boots, Doctor.”",
+                    "next": "mud_reveal"
                 },
                 {
-                    "id": "empathize",
-                    "text": "Say you understand",
-                    "next": "soft1"
+                    "id": "silence",
+                    "text": "Say nothing. Just look at the glasses.",
+                    "next": "silence_pressure"
                 },
                 {
                     "id": "theory_push",
-                    "text": "[Theory] Bring up the Tyger",
+                    "text": "[Theory] “The statement was a fabrication. To protect the project.”",
                     "next": "tyger_reveal",
                     "require_theory": "The Tyger is Real"
                 }
@@ -29,9 +29,9 @@
             ]
         },
         {
-            "id": "push1",
-            "speaker": "You",
-            "text": "You and I both know there's more than that.",
+            "id": "mud_reveal",
+            "speaker": "Dr. Keats",
+            "text": "The polishing stops. He holds the glasses up to the light. \"I take walks. Is walking a crime now, Detective? Or do you prefer 'Inquisitor'?\"",
             "check": {
                 "skill": "Interrogation",
                 "dc": 12,
@@ -41,13 +41,25 @@
             }
         },
         {
+            "id": "silence_pressure",
+            "speaker": "Dr. Keats",
+            "text": "He puts the glasses back on. The lenses magnify his eyes—too large, too wet. \"You're waiting for a crack. A slip. I don't slip.\"",
+            "choices": [
+                {
+                    "id": "slip_retort",
+                    "text": "“You just did.”",
+                    "next": "confess"
+                }
+            ]
+        },
+        {
             "id": "confess",
             "speaker": "Dr. Keats",
-            "text": "Fine. I saw... something in the woods. But I won't go back there.",
+            "text": "\"Fine.\" He sits, finally. The leather chair groans. \"The clearing. I saw lights. Not electrical. Biological. Bioluminescence on a macro scale.\"",
             "choices": [
                 {
                     "id": "exit",
-                    "text": "Thank him and leave",
+                    "text": "Note it down. Leave without a word.",
                     "next": "EXIT_DIALOGUE"
                 }
             ]
@@ -55,7 +67,7 @@
         {
             "id": "resist",
             "speaker": "Dr. Keats",
-            "text": "I have nothing more to say. Get out.",
+            "text": "\"Get out of my house. Before I call the Sheriff. He owes me a favor.\"",
             "choices": [
                 {
                     "id": "exit",
@@ -65,21 +77,9 @@
             ]
         },
         {
-            "id": "soft1",
-            "speaker": "You",
-            "text": "It's okay. We all have secrets.",
-            "choices": [
-                {
-                    "id": "next",
-                    "text": "Continue",
-                    "next": "start"
-                }
-            ]
-        },
-        {
             "id": "tyger_reveal",
             "speaker": "Dr. Keats",
-            "text": "So you know about the Tyger too? God help us.",
+            "text": "He turns very pale. \"You shouldn't say that name. Not here. The wood loves that name.\"",
             "choices": [
                 {
                     "id": "exit",

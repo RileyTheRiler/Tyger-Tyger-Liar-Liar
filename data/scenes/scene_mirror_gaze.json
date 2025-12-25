@@ -1,10 +1,74 @@
 {
     "id": "scene_mirror_gaze",
-    "text": "You look into the glass. A stranger stares back. Or... no one does. You can't quite focus on the features. It's like looking at a thumbprint smudge. Panic rises in your throat.",
+    "title": "The Stranger in the Glass",
+    "location_id": "hotel_bathroom",
+    "time_cost": 5,
+    "text": {
+        "base": "The bathroom light hums, a dying insect trapped in amber. You grip the porcelain sink. It's cracked. You look up. The face in the mirror is familiar, but the eyes are strangers.",
+        "lens": {
+            "believer": "The reflection lags. Just for a microsecond. The thing in the glass moves *after* you do. It's watching you from the other side.",
+            "skeptic": "Dilated pupils. Capillaries burst in the left sclera. Impact trauma vs. chemical agent. You look like a man who just walked away from a car crash.",
+            "haunted": "You expect to see the Detective. The Hero. But you see Him. The man who froze in the Boathouse. The coward."
+        }
+    },
+    "connected_scenes": [
+        "scene_wakeup",
+        "intro_arrival"
+    ],
+    "board_updates": [
+        {
+            "node_type": "theory",
+            "action": "add",
+            "id": "theory_doppelganger",
+            "label": "The Mirror Lag",
+            "description": "My reflection didn't move in sync with me. Suggests dissociation or... something worse."
+        }
+    ],
     "choices": [
         {
-            "text": "Back away.",
-            "next_scene": "scene_wakeup"
+            "label": "I see a Detective. Cold, rational, seeking facts. [Set REASON: High]",
+            "next_scene": "intro_arrival",
+            "effects": [
+                {
+                    "type": "attribute",
+                    "target": "REASON",
+                    "value": 2
+                },
+                {
+                    "type": "sanity",
+                    "value": 5
+                }
+            ]
+        },
+        {
+            "label": "I see a Conduit. Sensitive, open to the unseen. [Set INTUITION: High]",
+            "next_scene": "intro_arrival",
+            "effects": [
+                {
+                    "type": "attribute",
+                    "target": "INTUITION",
+                    "value": 2
+                },
+                {
+                    "type": "sanity",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "label": "I see a Survivor. Haunted by the past, but still standing. [Set PRESENCE: High]",
+            "next_scene": "intro_arrival",
+            "effects": [
+                {
+                    "type": "attribute",
+                    "target": "PRESENCE",
+                    "value": 2
+                },
+                {
+                    "type": "sanity",
+                    "value": -5
+                }
+            ]
         }
     ]
 }

@@ -1,0 +1,55 @@
+{
+    "id": "clinic_bed",
+    "title": "Recovery Room 4",
+    "location_id": "clinic_ward",
+    "time_cost": 60,
+    "text": {
+        "base": "Sterile. White. The smell of ammonia suppresses the smell of the woods. You are strapped to the bed. For your own safety, they said. The straps are leather, old and soft with use.",
+        "lens": {
+            "believer": "This isn't a hospital. It's a Faraday cage. The buzzing in your head has stopped, but so has the feeling in your fingers.",
+            "skeptic": "IV drip. Saline. Sedative. They are keeping you compliant. But why are the windows bricked over?",
+            "haunted": "Safety is a cage. You are safe here. Nothing can get in. But you can't get out."
+        }
+    },
+    "choices": [
+        {
+            "label": "Rest (Recover Sanity)",
+            "next_scene": "clinic_bed_rest",
+            "effects": [
+                {
+                    "type": "sanity",
+                    "value": 10
+                },
+                {
+                    "type": "time",
+                    "value": 120
+                }
+            ]
+        },
+        {
+            "label": "Struggle against the straps",
+            "check": {
+                "skill": "Volition",
+                "dc": 14
+            },
+            "on_success": {
+                "text": "The leather groans. You find the weak point. You are free, but you are bleeding.",
+                "effects": [
+                    {
+                        "type": "health",
+                        "value": -5
+                    },
+                    {
+                        "type": "flag",
+                        "target": "escaped_clinic",
+                        "value": true
+                    }
+                ],
+                "next_scene": "clinic_corridor"
+            },
+            "on_fail": {
+                "text": "The straps hold. The nurse is coming."
+            }
+        }
+    ]
+}

@@ -2,7 +2,7 @@
     {
         "id": "thought_amnesia_face",
         "name": "I Don't Remember My Face",
-        "description": "You reached for the memory of your own visage, but found only a smooth, terrifying blankness. Who are you?",
+        "description": "The mirror shows a stranger who knows your secrets. The eyes are familiar, like a pattern you've seen in a dream or a crime scene photo. But the name attached to them is gone.",
         "temporary_effects": {
             "Logic": -2
         },
@@ -12,6 +12,6 @@
             "Sanity_Max": -5
         },
         "internalization_time_seconds": 15,
-        "completion_text": "The fog lifts slightly. You are not a ghost. You are a man who has forgotten he is a man. That is a start."
+        "completion_text": "You are a collection of scars held together by gravity. That will have to do. The face isn't yours, but the hands... the hands remember how to make a fist."
     }
 ]

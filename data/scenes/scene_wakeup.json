@@ -1,32 +1,50 @@
 {
     "id": "scene_wakeup",
-    "text": "You wake up on a cold floor. The ceiling is spinning. The air smells of stale ozone and dust. You have no idea where you are.",
+    "title": "The Cold Floor",
+    "location_id": "hotel_room",
+    "time_cost": 0,
+    "text": {
+        "base": "The floor is cold. Not cool—cold. It sucks the heat from your cheek like a lamprey. The air tastes of copper and stale electricity. You try to sit up, but the room tilts, sliding away from your center of gravity.",
+        "lens": {
+            "believer": "This isn't waking up. This is a reinsertion. You were somewhere else—somewhere vast and screaming—and you've been shoved back into this meat like a hand into a tight glove.",
+            "skeptic": "Symptom check: Photophobia. Nausea. Metallic taste. Classic post-ictal state or acute toxicity. You've been drugged, or you've had a seizure. Prioritize hydration and weapon acquisition.",
+            "haunted": "The copper taste... it's the exact same taste as that night in the Boathouse. You swore you'd never feel this weak again. You lied."
+        }
+    },
     "choices": [
         {
-            "text": "Inspect the mirror on the wall.",
+            "label": "Crawl to the mirror. Confront the damage.",
             "next_scene": "scene_mirror_gaze",
-            "effects": {
-                "unlock_thought": "thought_amnesia_face",
-                "sanity": -5
-            }
+            "effects": [
+                {
+                    "type": "sanity",
+                    "value": -2
+                }
+            ]
         },
         {
-            "text": "Check your pockets.",
+            "label": "Check your pockets. Who are you?",
             "next_scene": "scene_pockets"
         },
         {
-            "text": "[Logic (Medium)] Try to deduce where you are based on the smell.",
-            "skill_check": {
+            "label": "[Logic (Hard)] Reconstruct the timeline.",
+            "check": {
                 "skill": "Logic",
-                "difficulty": 10,
-                "on_success": {
-                    "next_scene": "scene_deduction_success"
-                },
-                "on_fail": {
-                    "next_scene": "scene_deduction_failure"
-                }
+                "dc": 10
+            },
+            "on_success": {
+                "text": "The ferry dock. The fog. Maude's eyes. You didn't drink. You came up here to sleep. This isn't a hangover.",
+                "effects": [
+                    {
+                        "type": "flag",
+                        "target": "clue_no_hangover",
+                        "value": true
+                    }
+                ]
+            },
+            "on_fail": {
+                "text": "It's a blur of gray fog and yellow streetlights. You might have been drinking. You usually are."
             }
         }
-    ],
-    "events": []
+    ]
 }

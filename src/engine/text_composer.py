@@ -17,6 +17,8 @@ except ImportError:
         MAGENTA = "\033[35m"
         RESET = "\033[0m"
 
+from engine.distortion_rules import DistortionManager
+
 
 class InsertPosition(Enum):
     BEFORE_CHOICES = "BEFORE_CHOICES"
@@ -46,6 +48,7 @@ class TextInsert:
 class ComposedText:
     """The result of text composition."""
     full_text: str
+    raw_text: Optional[str] = None # Pre-distortion text for side-by-side comparison
     base_used: bool
     lens_used: Optional[str]
     inserts_applied: List[str]
@@ -90,7 +93,9 @@ class TextComposer:
         self.game_state = game_state
         self.debug_mode = False
         self.developer_commentary = False
-        self.fracture_chance = 0.0  # Base chance for random fractures
+        self.distortion_manager = DistortionManager()
+        self.fracture_chance = 0.01  # Base chance for reality glitches
+
     
     def calculate_dominant_lens(self, player_state: dict = None) -> Archetype:
         """
@@ -306,7 +311,8 @@ class TextComposer:
                     except (ValueError, IndexError):
                         pass
 
-        # === LAYER 4: FRACTURE EFFECTS & SOFT FAILURES ===
+        # === LAYER 4: FRACTURE EFFECTS & DISTORTION ===
+        raw_text_content = full_text
         fracture_applied = False
 
         # Check for active failures
@@ -327,10 +333,19 @@ class TextComposer:
             full_text = self._apply_paralysis_loops(full_text)
             debug_info["layers"].append("investigative_paralysis")
 
+        # Reality Fractures
         if self._should_apply_fracture(player_state):
             full_text = self._apply_fracture_effect(full_text, player_state)
-            fracture_applied = True
             debug_info["layers"].append("fracture")
+
+        # Stress-based Distortions
+        if self.distortion_manager and player_state:
+            full_text = self.distortion_manager.apply_distortions(full_text, player_state)
+
+        fracture_applied = (full_text != raw_text_content)
+        if fracture_applied and "fracture" not in debug_info["layers"]:
+            debug_info["layers"].append("distortion")
+
 
         # === LAYER 5: DEVELOPER COMMENTARY ===
         if self.developer_commentary:
@@ -344,6 +359,7 @@ class TextComposer:
 
         return ComposedText(
             full_text=full_text.strip(),
+            raw_text=raw_text_content.strip(),
             base_used=True,
             lens_used=archetype.value if lens_text else None,
             inserts_applied=inserts_applied,
@@ -462,7 +478,7 @@ class TextComposer:
             return random.random() < 0.15  # 15% chance at high attention
 
         # Base random chance (very low)
-        if self.fracture_chance > 0:
+        if hasattr(self, 'fracture_chance') and self.fracture_chance > 0:
             import random
             return random.random() < self.fracture_chance
 

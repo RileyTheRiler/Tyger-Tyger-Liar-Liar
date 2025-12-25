@@ -7,10 +7,28 @@ def clear_screen():
     """Clears the terminal screen."""
     os.system('cls' if os.name == 'nt' else 'clear')
 
+# IO Handler
+output_callback = print
+
+def set_output_handler(callback):
+    global output_callback
+    output_callback = callback
+
 def print_text(text: str, color: str = None, speed: float = 0.0):
     """
-    Prints text to the console, wrapping it to the window width.
+    Prints text to the console or registered handler, wrapping it.
     """
+    # If we are using a custom handler (not print), we might just send the raw text
+    # But for now let's keep the wrapping logic for consistency, or maybe pass raw text?
+    # Let's pass the processed lines to the handler.
+    
+    if output_callback != print:
+         # For API, we often want the full text blob, possibly with color metadata
+         # But the simplest refactor is to just send the string.
+         # Let's send the full text to the callback if it's not print.
+         output_callback(text, color)
+         return
+
     width = shutil.get_terminal_size().columns
     width = min(width, 100) # Cap width for readability
     

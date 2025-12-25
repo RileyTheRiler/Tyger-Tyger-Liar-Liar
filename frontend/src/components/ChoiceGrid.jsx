@@ -12,7 +12,7 @@ const ChoiceGrid = ({ choices, handleChoice, loading }) => {
                     key={index}
                     choice={choice}
                     index={index}
-                    onClick={() => handleChoice(choice.id)}
+                    onClick={() => handleChoice(String(index + 1))}
                     disabled={loading}
                 />
             ))}
@@ -37,8 +37,8 @@ const ChoiceButton = ({ choice, index, onClick, disabled }) => {
             whileHover={{
                 scale: 1.02,
                 backgroundColor: "rgba(255, 159, 28, 0.1)", // Generic orange tint
-                borderColor: "var(--tyger-orange)",
-                textShadow: "0 0 8px var(--tyger-orange)"
+                borderColor: "#ff9f1c",
+                textShadow: "0 0 8px #ff9f1c"
             }}
             whileTap={{ scale: 0.98 }}
         >

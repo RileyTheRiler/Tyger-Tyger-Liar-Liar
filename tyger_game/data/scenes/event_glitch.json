@@ -1,0 +1,28 @@
+{
+    "id": "corridor_glitch",
+    "title": "Corridor 2F",
+    "description": "You walk up the stairs. The carpet is a dizzying geometric pattern of maroon and gold. You reach the top.",
+    "lens_descriptions": {
+        "SENSITIVITY": "You walk up the stairs. The air gets colder with every step. The carpet pattern seems to writhe if you look at it too long. You reach the top, and the silence rings in your ears."
+    },
+    "exits": {
+        "room": "intro"
+    },
+    "interactables": {
+        "carpet": "It smells of dust and something metallic. Copper?",
+        "door": "Room 203. Your key is in your pocket."
+    },
+    "events": [
+        {
+            "trigger": "on_enter",
+            "text": "As you step into the corridor, the hallway stretches. For a second, it looks infinite. Then it snaps back. You blink. Just a trick of the light.",
+            "passive_check": {
+                "skill": "Paranormal Sense",
+                "difficulty": 10,
+                "success": "No. Not a trick. The geometry actually changed. The walls breathed.",
+                "failure": "You need to sleep more."
+            }
+        }
+    ],
+    "music": "drone_low.mp3"
+}

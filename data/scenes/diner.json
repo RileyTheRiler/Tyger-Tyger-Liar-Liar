@@ -1,27 +1,69 @@
 {
     "id": "diner",
-    "text": "You push open the door to the diner. The bell chimes, but the sound feels wrong—too sharp, too loud. A waitress looks up from behind the counter, her eyes tired and hollow.",
-    "background_media": {
-        "type": "image",
-        "src": "diner_interior.png"
+    "title": "The Last Stop Diner",
+    "location_id": "town",
+    "time_cost": 15,
+    "text": {
+        "base": "You push open the door. The bell chimes, a sharp, nervous sound. The diner smells of stale coffee and floor wax. Behind the counter, Maude is pouring coffee into a mug that is already full.",
+        "lens": {
+            "believer": "She was at the hotel five minutes ago. There is no back door. Distance is a suggestion to her, not a rule.",
+            "skeptic": "It's a small town. People work multiple jobs. But she hasn't changed her clothes. And she isn't sweating.",
+            "haunted": "She looks up. Her eyes are the same gray as the static on the TV. She knows you're wondering how she got here. She thinks it's funny."
+        }
     },
+    "connected_scenes": [
+        "bedroom",
+        "town_square"
+    ],
     "objects": {
         "counter": {
-            "description": "Worn formica, cracked in places. Coffee rings overlap like a Venn diagram of despair."
+            "description": "Worn formica. Coffee rings overlap like a Venn diagram of despair."
         },
-        "bell": {
-            "description": "A small brass bell above the door. It's still vibrating."
+        "tv": {
+            "description": "An old CRT monitor. The reception is nonexistent. Faces form in the snow."
         }
     },
     "choices": [
         {
-            "text": "Approach the waitress.",
+            "label": "Sit at the counter",
             "type": "dialogue",
-            "dialogue_id": "diner"
+            "dialogue_id": "diner_waitress",
+            "effects": [
+                {
+                    "type": "flag",
+                    "target": "met_maude_diner",
+                    "value": true
+                }
+            ]
         },
         {
-            "text": "Leave the diner.",
-            "next_scene": "bedroom"
+            "label": "Order coffee (black)",
+            "check": {
+                "skill": "Composure",
+                "dc": 8
+            },
+            "on_success": {
+                "text": "The coffee is mud, but it's hot. It centers you.",
+                "effects": [
+                    {
+                        "type": "sanity",
+                        "value": 2
+                    }
+                ]
+            },
+            "on_fail": {
+                "text": "Maude watches your hand shake. 'Nerves, hon?' She smiles. It's not a kind smile.",
+                "effects": [
+                    {
+                        "type": "sanity",
+                        "value": -1
+                    }
+                ]
+            }
+        },
+        {
+            "label": "Leave the diner",
+            "next_scene": "town_square"
         }
     ]
 }

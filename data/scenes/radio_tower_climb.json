@@ -1,0 +1,32 @@
+{
+    "id": "radio_tower_climb",
+    "title": "The Apex",
+    "location_id": "radio_tower",
+    "time_cost": 20,
+    "text": {
+        "base": "The wind is deafening up here. The ladder rungs are slick with ice, biting through your gloves. From the platform, Kaltvik is a smear of yellow light in a sea of black.",
+        "lens": {
+            "believer": "There is a pattern in the tree line. A spiral moving inwards towards the town. It's pulsing. The forest isn't growing; it's digesting.",
+            "skeptic": "Visibility is low, but you can see the fire road clearly. There's a car parked 2 miles down, half-buried in snow. Make: 1998 Volvo Sedan. Plate: KLT-429. That's... that's your car. The one you totaled ten years ago. It's pristine.",
+            "haunted": "You aren't climbing alone. You can feel the vibration on the rungs below you. Something is climbing *down* towards you. Don't look down."
+        }
+    },
+    "connected_scenes": [
+        "radio_tower"
+    ],
+    "board_updates": [
+        {
+            "node_type": "clue",
+            "action": "add",
+            "id": "clue_phantom_car",
+            "label": "Phantom Vehicle",
+            "description": "You saw your own totaled car from ten years ago, pristine and parked on the fire road."
+        }
+    ],
+    "choices": [
+        {
+            "label": "Climb back down (Don't look)",
+            "next_scene": "radio_tower"
+        }
+    ]
+}

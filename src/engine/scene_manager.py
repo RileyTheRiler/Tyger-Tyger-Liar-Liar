@@ -4,8 +4,11 @@ import sys
 import random
 from typing import Optional
 
+from engine.branch_controller import BranchController
+
 class SceneManager:
-    def __init__(self, time_system, board, skill_system, player_state, flashback_manager):
+    def __init__(self, time_system, board, skill_system, player_state, flashback_manager, 
+                 npc_system=None, attention_system=None, inventory_system=None):
         self.scenes = {}
         self.current_scene_data = None
         self.current_scene_id = None
@@ -14,6 +17,13 @@ class SceneManager:
         self.skill_system = skill_system
         self.player_state = player_state
         self.flashback_manager = flashback_manager
+        
+        # New Systems for Branch Controller
+        self.npc_system = npc_system
+        self.attention_system = attention_system
+        self.inventory_system = inventory_system
+        
+        self.branch_controller = BranchController()
 
     def load_scenes_from_directory(self, directory: str, root_scenes: Optional[str] = None):
         # Fallback to finding existing scenes.json in root if directory doesn't look populated
@@ -53,7 +63,7 @@ class SceneManager:
         if not self._check_conditions(scene):
             # If not accessible, return None (Game loop handles "Blocked")
             # For now, simplistic approach
-            pass
+            return None
 
         self.current_scene_id = scene_id
         self.current_scene_data = scene
@@ -87,41 +97,28 @@ class SceneManager:
                     self.player_state["reality"] = max(0, min(100, self.player_state["reality"] + value))
                     print(f"[REALITY ENTRY CHANGE] {value}")
 
+    def _get_game_state(self):
+        """Construct game state dictionary for BranchController."""
+        return {
+            "board": self.board,
+            "skill_system": self.skill_system,
+            "player_state": self.player_state,
+            "time_system": self.time_system,
+            "npc_system": self.npc_system,
+            "attention_system": self.attention_system,
+            "inventory_system": self.inventory_system,
+            "current_location": self.player_state.get("current_location"),
+            "location_states": self.player_state.get("location_states", {}),
+            "player_flags": self.player_state.get("event_flags", set()),
+        }
+
     def _check_conditions(self, scene) -> bool:
         conditions = scene.get("conditions", {})
-        
-        # Time Check
-        if "time" in conditions:
-            # Format "HH:MM", currently only checking hours for simplicity
-            start_str, end_str = conditions["time"]
-            start_h = int(start_str.split(":")[0])
-            end_h = int(end_str.split(":")[0])
+        if not conditions:
+            return True
             
-            # Access datetime object
-            current_h = self.time_system.current_time.hour 
-            
-            if start_h <= end_h:
-                if not (start_h <= current_h < end_h):
-                    return False
-            else: # Overnight e.g. 22:00 to 06:00
-                if not (current_h >= start_h or current_h < end_h):
-                    return False
-
-        # Weather Check
-        if "weather" in conditions:
-            allowed = conditions["weather"]
-            if self.time_system.weather not in allowed:
-                return False
-
-        # Theory Check (Board)
-        if "requires_theory" in conditions:
-            reqs = conditions["requires_theory"]
-            for tid in reqs:
-                theory = self.board.get_theory(tid)
-                if not theory or theory.status != "active":
-                    return False
-
-        return True
+        game_state = self._get_game_state()
+        return self.branch_controller.evaluate_condition(conditions, game_state)
 
     def _check_memory_trigger(self, scene):
         trigger = scene.get("memory_trigger")
@@ -145,11 +142,15 @@ class SceneManager:
         connected_ids = self.current_scene_data.get("connected_scenes", [])
         available = []
         
+        game_state = self._get_game_state()
+        
         for sid in connected_ids:
             scene = self.scenes.get(sid)
             if not scene: continue
             
-            is_accessible = self._check_conditions(scene)
+            # Use BranchController for check
+            conditions = scene.get("conditions", {})
+            is_accessible = self.branch_controller.evaluate_condition(conditions, game_state)
             
             available.append({
                 "id": sid,

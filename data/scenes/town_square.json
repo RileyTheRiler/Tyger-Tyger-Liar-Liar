@@ -1,0 +1,53 @@
+{
+    "id": "town_square",
+    "title": "Tyger Tyger Square",
+    "location_id": "town_center",
+    "time_cost": 10,
+    "text": {
+        "base": "The square is an open wound in the forest. The statue in the center is draped in plastic sheeting that snaps in the wind. Fog rolls through the streets like a tide, erasing buildings from the waist down.",
+        "lens": {
+            "believer": "The geometry here is wrong. The streets spiral *in* towards the statue, not out. You are standing in the center of a drain.",
+            "skeptic": "Population density is zero. But the trash cans are full. There are footprints in the mud that haven't been washed away. People were here *minutes* ago.",
+            "haunted": "Exposure. You are watched from a dozen windows. You can feel the eyes on your neck, heavy and wet."
+        }
+    },
+    "connected_scenes": [
+        "diner",
+        "trailhead",
+        "clinic_lobby"
+    ],
+    "choices": [
+        {
+            "label": "Enter the Diner",
+            "next_scene": "diner"
+        },
+        {
+            "label": "Head to the Trailhead",
+            "next_scene": "trailhead"
+        },
+        {
+            "label": "[Logic] Analyze the statue's draping",
+            "check": {
+                "skill": "Logic",
+                "dc": 12
+            },
+            "on_success": {
+                "text": "The wind isn't moving the plastic. Something *under* the plastic is moving.",
+                "effects": [
+                    {
+                        "type": "sanity",
+                        "value": -2
+                    },
+                    {
+                        "type": "thought",
+                        "target": "thought_statue_movement",
+                        "value": true
+                    }
+                ]
+            },
+            "on_fail": {
+                "text": "Just wind. Just plastic. Keep moving."
+            }
+        }
+    ]
+}

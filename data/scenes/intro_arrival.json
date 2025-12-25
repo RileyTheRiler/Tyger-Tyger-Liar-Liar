@@ -1,0 +1,32 @@
+{
+    "id": "intro_arrival",
+    "title": "Kaltvik - The Arrival",
+    "location_id": "harbor",
+    "time_cost": 0,
+    "text": {
+        "base": "The ferry engine creates a headache that vibrates in your teeth. You stand on the rusted deck, watching Kaltvik emerge from the gray fog like a developed photograph. The town is small, clustered against the base of a cliff that looks like it's leaning forward, threatening to push the houses into the sea.",
+        "lens": {
+            "believer": "The fog isn't natural. It moves against the wind, coiling around the church spire like a serpent constricting its prey. Kaltvik feels less like a town and more like a secret kept by the earth itself.",
+            "skeptic": "Economic depression is visible from a mile out. Rusted roofs, failed infrastructure, zero new construction. The 'fog' is likely trapped particulate matter from the old coal seams burning underground.",
+            "haunted": "You've been here before. In a nightmare, or a memory, it doesn't matter. The cliff face looks exactly like the wall you stared at for three months in the ward. Gray. Unforgiving. Silent."
+        }
+    },
+    "connected_scenes": [
+        "lobby_interrogation"
+    ],
+    "exits": {
+        "port": "lobby_interrogation"
+    },
+    "interactables": {
+        "fog": "It's thick, wet, and cold. It tastes of salt and ash.",
+        "cliff": "Jagged black rock. It looms over the town, blocking out the weak sun.",
+        "ferry": "The 'Saint Anne'. A rusting hulk that smells of diesel and dead fish."
+    },
+    "music": "ambient_fog.mp3",
+    "choices": [
+        {
+            "label": "Disembark and head to the hotel",
+            "next_scene": "lobby_interrogation"
+        }
+    ]
+}

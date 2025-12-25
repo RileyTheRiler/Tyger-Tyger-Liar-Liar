@@ -1,13 +1,15 @@
 from typing import Tuple, Optional
 from tyger_game.engine.scene_manager import SceneManager
 from tyger_game.engine.character import Character
+from tyger_game.engine.dialogue import DialogueManager
 from tyger_game.engine.skill_checks import perform_skill_check, format_check_result
 from tyger_game.ui.interface import print_text, Colors
 
 class CommandParser:
-    def __init__(self, scene_manager: SceneManager, character: Character):
+    def __init__(self, scene_manager: SceneManager, character: Character, dialogue_manager: DialogueManager):
         self.scene_manager = scene_manager
         self.character = character
+        self.dialogue_manager = dialogue_manager
 
     def parse(self, input_text: str):
         """
@@ -41,6 +43,12 @@ class CommandParser:
             else:
                 print_text("Go where?", Colors.WARNING)
 
+        elif verb in ["talk", "speak", "chat"]:
+            if noun:
+                self._handle_talk(noun)
+            else:
+                print_text("Talk to whom?", Colors.WARNING)
+
         elif verb in ["check", "roll"]:
             # Debug command to test skills: "check logic 10"
             if noun:
@@ -49,7 +57,7 @@ class CommandParser:
                 print_text("Check usage: check <skill> [dc]", Colors.WARNING)
 
         elif verb in ["help", "h"]:
-            print_text("Commands: look, examine <obj>, go <dir>, quit", Colors.CYAN)
+            print_text("Commands: look, examine <obj>, go <dir>, talk <npc>, check <skill>, quit", Colors.CYAN)
             
         else:
             # Simple directional shorthand
@@ -64,8 +72,18 @@ class CommandParser:
         if not scene:
             return
         
-        print_text(f"== {scene['title']} ==", Colors.HEADER)
-        print_text(scene['description'])
+        print_text(f"== {scene.get('title', scene.get('id', 'Unknown'))} ==", Colors.HEADER)
+        description = self.scene_manager.get_description(self.character)
+        print_text(description)
+        
+        # Display Choices
+        choices = self.scene_manager.get_choices()
+        if choices:
+            print_text("\nOPTIONS:", Colors.CYAN)
+            for idx, choice in enumerate(choices):
+                # Check conditions visibility? skipping for prototype simplicity
+                label = choice.get("label", choice.get("text", "Unknown"))
+                print_text(f"{idx + 1}. {label}")
         
         exits = scene.get('exits', {})
         if exits:
@@ -77,14 +95,16 @@ class CommandParser:
         if interactable_text:
             print_text(interactable_text)
         else:
+            # Also check if it's an NPC
+            # TODO: NPC descriptions should be in Interactables or Scene Data
             print_text(f"You see nothing special about the {noun}.")
 
     def _handle_move(self, direction: str):
         exits = self.scene_manager.get_exits()
+        
+        # Support numeric choice selection
         if direction in exits:
             next_scene_id = exits[direction]
-            # In a real engine, we'd handle transitions here
-            # For this simple sprint, we just load it
             try:
                 self.scene_manager.load_scene(next_scene_id)
                 self._handle_look_scene()
@@ -93,6 +113,43 @@ class CommandParser:
         else:
             print_text("You can't go that way.")
 
+    def _handle_talk(self, noun: str):
+        # 1. Check if NPC is in the scene (using interactables for now or a separate list)
+        # For this prototype, we'll check if a dialogue file exists or if the literal noun is "receptionist"
+        # Ideally, SceneManager should expose explicit NPCs.
+        
+        # HACK: Hardcoded for prototype or using interactables
+        # If the noun is "receptionist" and we are in "lobby_interrogation"
+        
+        # Better: Check scene interactables for the key noun
+        if not self.scene_manager.get_interactable(noun):
+            print_text(f"There is no {noun} here.")
+            return
+
+        # 2. Try to load dialogue
+        # Assuming npc_noun.json mapping
+        dialogue_id = f"npc_{noun}"
+        
+        try:
+            # Helper to load dialogue (TODO: Move to DialogueManager or SceneManager)
+            import json, os
+            path = os.path.join(self.scene_manager.data_path, "dialogues", f"{dialogue_id}.json")
+            if not os.path.exists(path):
+                 print_text(f"The {noun} has nothing to say.")
+                 return
+                 
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            root = data.get("root")
+            if root:
+                self.dialogue_manager.start_dialogue(root, self.character)
+                # After dialogue, reprint scene?
+                # self._handle_look_scene()
+                
+        except Exception as e:
+            print_text(f"Error starting dialogue: {e}", Colors.FAIL)
+
     def _handle_debug_check(self, args: str):
         # Expected: "logic 10" or just "logic" (default DC 8)
         parts = args.split()
@@ -100,18 +157,16 @@ class CommandParser:
         
         # Fuzzy match skill name
         found_skill = None
-        for attr, skills in self.character.skills.items(): # Actually skills is just a dict name->val? No, Char.skills is name->base.
-            # Need to iterate over SKILLS constant to check validity or Char.skills keys
-            if skill_name_candidate.capitalize() in self.character.skills:
-                found_skill = skill_name_candidate.capitalize()
-                break
-            # Check constants just in case
-            from tyger_game.utils.constants import SKILLS
-            for s_list in SKILLS.values():
-                 for s in s_list:
-                     if s.lower() == skill_name_candidate.lower():
-                         found_skill = s
-                         break
+        for attr, skills in self.character.skills.items():
+             pass # Logic to match skills is complex without flat list access in Char
+        
+        # Check constants
+        from tyger_game.utils.constants import SKILLS
+        for s_list in SKILLS.values():
+                for s in s_list:
+                    if s.lower() == skill_name_candidate.lower():
+                        found_skill = s
+                        break
         
         if not found_skill:
             print_text(f"Skill '{skill_name_candidate}' not found.", Colors.FAIL)

@@ -138,15 +138,6 @@ class Game:
         self.flashback_manager = FlashbackManager(self.skill_system, self.player_state)
 
         # Initialize Scene Manager
-        self.scene_manager = SceneManager(
-            self.time_system, 
-            self.board, 
-            self.skill_system, 
-            self.player_state,
-            self.flashback_manager
-        )
-        self.last_composed_text = ""
-        
         # Initialize Population & Liar Engine
         self.population_system = PopulationSystem()
         self.liar_engine = LiarEngine(self.skill_system, self.inventory_system)
@@ -154,6 +145,18 @@ class Game:
         # Initialize NPC System (Week 11)
         npcs_dir = resource_path(os.path.join('data', 'npcs'))
         self.npc_system = NPCSystem(npcs_dir if os.path.exists(npcs_dir) else None)
+        
+        # Initialize Scene Manager (Now requires NPC, Attention, Inventory)
+        self.scene_manager = SceneManager(
+            self.time_system, 
+            self.board, 
+            self.skill_system, 
+            self.player_state,
+            self.flashback_manager,
+            npc_system=self.npc_system,
+            attention_system=self.attention_system,
+            inventory_system=self.inventory_system
+        )
         
         # Initialize Dialogue Manager
         self.dialogue_manager = DialogueManager(
@@ -165,7 +168,12 @@ class Game:
         self.in_dialogue = False
         
         # Initialize Endgame and Memory Systems
-        self.endgame_manager = EndgameManager(self.board, self.player_state, self.skill_system)
+        self.endgame_manager = EndgameManager(
+            self.board, 
+            self.player_state, 
+            self.skill_system,
+            endings_path=resource_path(os.path.join('data', 'endings'))
+        )
         self.memory_system = MemorySystem(resource_path(os.path.join('data', 'memories', 'memories.json')))
         
         # Initialize Week 13 Systems: Injury, Trauma, Chase, Environmental
@@ -278,6 +286,47 @@ class Game:
                 if result.get('game_over'):
                     self.print("\n=== GAME OVER: INTEGRATED ===\n")
                     return  # End game
+        
+        # Week 16: Check Attention Threshold Effects
+        threshold_effects = self.attention_system.get_threshold_effects()
+        if threshold_effects:
+            # Reality Drain from high attention
+            if "reality_drain_per_hour" in threshold_effects:
+                drain = threshold_effects["reality_drain_per_hour"] * hours
+                self.player_state['reality'] -= drain
+                # Only notify occasionally or it gets spammy
+                if random.random() < 0.1: 
+                    self.print(f"\n[REALITY -{drain}] The Entity's gaze erodes your certainty.")
+
+            # Integration Attempt (100 Attention)
+            if threshold_effects.get("integration_attempt_pending"):
+                integration_event = self.attention_system.trigger_integration_attempt()
+                if integration_event["triggered"]:
+                    self.print(f"\n{Colors.RED}*** {integration_event['message'].upper()} ***{Colors.RESET}")
+                    # Force scene if specified
+                    if integration_event.get("force_scene"):
+                        # Ideally we'd transition, but for now just print warning
+                        self.print("[SYSTEM] The Entity is manifesting. Prepare yourself.")
+                        # TODO: Trigger actual manifestation scene when available
+
+        # Week 16: Check Resonance (347 Rule)
+        self.population_system.hours_off_target = self.population_system.hours_off_target + hours if self.population_system.population != 347 else 0
+        resonance_check = self.population_system.check_resonance_violation()
+        
+        if resonance_check["is_violation"]:
+            for action in resonance_check["actions"]:
+                self.print(f"\n{Colors.MAGENTA}[RESONANCE VIOLATION] {action['description']}{Colors.RESET}")
+                
+                if action["type"] == "forced_subtraction":
+                     subtraction_event = self.population_system.enforce_347_rule(self.npc_system)
+                     if subtraction_event:
+                         self.print(f"\n[POPULATION CORRECTION] {subtraction_event.description}")
+                         self.log_event("population_forced_subtraction", 
+                                       npc_id=subtraction_event.npc_id,
+                                       count=subtraction_event.count)
+                
+                if "attention_gain" in action:
+                    self.attention_system.add_attention(action["attention_gain"], reason="Resonance Violation")
         
         # Week 7: Check Triggers after time pass
         triggered_events = self.trigger_manager.check_triggers(self.get_game_state())
@@ -583,7 +632,7 @@ class Game:
                      self.scene_manager.load_scene("arrival_bus")
 
              choices = self.scene_manager.current_scene_data.get("choices", []) if self.scene_manager.current_scene_data else []
-             action_result = self.process_command(user_input, choices)
+             action_result = self.process_command(user_input)
              
              if action_result == "quit":
                  return "QUIT"
@@ -609,6 +658,40 @@ class Game:
                               # Update Music if scene defines it
                               if "music" in new_scene:
                                   self.current_music = new_scene["music"]
+                              
+                              # Process Scene Entry Effects
+                              self.process_scene_entry(new_scene)
+
+    def process_scene_entry(self, scene_data):
+        """Handle on-enter effects for a scene."""
+        # 1. Standard Effects
+        if "effects" in scene_data:
+            self.apply_effects(scene_data["effects"])
+            
+        # 2. Board Updates
+        if "board_updates" in scene_data:
+            for update in scene_data["board_updates"]:
+                action = update.get("action")
+                node_type = update.get("node_type", "clue")
+                
+                if action == "add":
+                    # add_node(id, label, type, description, ...)
+                    self.board.add_node(
+                        node_id=update.get("id"),
+                        label=update.get("label", "Unknown"),
+                        type=node_type,
+                        description=update.get("description", "")
+                    )
+                    self.print(f"\n[BOARD] New {node_type} added: {update.get('label')}")
+                    
+                elif action == "link":
+                    # add_link(source, target, label)
+                    self.board.add_link(
+                        source=update.get("source"),
+                        target=update.get("target"),
+                        label=update.get("label", "related")
+                    )
+                    self.print(f"\n[BOARD] Linked {update.get('source')} -> {update.get('target')}")
 
         # 2. Run Passive Mechanics (Checks that happen every tick/update)
         # Note: Time advancement usually happens via specific actions (travel, wait), 
@@ -677,7 +760,8 @@ class Game:
             "board_data": self.board.get_board_data(),
             "music": self.current_music,
             "sfx_queue": sfx_to_play,
-            "active_failures": self.player_state.get("active_failures", [])
+            "active_failures": self.player_state.get("active_failures", []),
+            "game_over": self.endgame_manager.triggered
         }
 
     def run_passive_mechanics(self):
@@ -717,7 +801,11 @@ class Game:
                     with open(scene_path, 'r', encoding='utf-8') as f:
                         import json
                         memory_scene = json.load(f)
-                        self.print("\n" + memory_scene.get("text", ""))
+                        self.print("\n" + "~"*60)
+                        self.print("    MEMORY SURFACING")
+                        self.print("~"*60 + "\n")
+                        self.print(memory_scene.get("text", ""))
+                        self.print("\n" + "~"*60 + "\n")
         
         # 3. Spontaneous False Memories (Week 16)
         recall_text = self.narrative_memory.check_spontaneous_recall(self.player_state)
@@ -790,85 +878,6 @@ class Game:
 
         print_separator("-", 64, printer=self.print)
 
-    def apply_reality_distortion(self, text):
-        reality = self.player_state["reality"]
-        if reality >= 75:
-            return text
-            
-        # Level 1 Distortion (74-50): Minor sensory additions
-        if reality < 75 and reality >= 50:
-            if random.random() < 0.3:
-                text += " (Did the shadows just move?)"
-                
-        # Level 2 Distortion (49-25): Word replacements
-        if reality < 50:
-            replacements = {
-                "door": "mouth",
-                "window": "eyes",
-                "light": "burning gaze",
-                "shadow": "living void",
-                "tree": "reaching hand",
-                "sky": "infinite abyss",
-                "wall": "skin",
-                "floor": "flesh"
-            }
-            words = text.split()
-            new_words = []
-            for word in words:
-                lower_word = word.lower().strip('.,!?')
-                if lower_word in replacements and random.random() < 0.4:
-                    new_words.append(replacements[lower_word].upper())
-        # Level 2 Distortion (25-50): Word jumbling and subtle corruption
-        if reality < 50:
-            words = text.split()
-            new_words = []
-            for word in words:
-                if random.random() < 0.1: # 10% chance to corrupt word
-                    if random.random() < 0.5:
-                        # Jumble
-                        w_list = list(word)
-                        random.shuffle(w_list)
-                        new_words.append("".join(w_list))
-                    else:
-                        # Corrupt with static
-                        noise = ["▓", "▒", "░", "█"]
-                        new_words.append(random.choice(noise) * len(word))
-                else:
-                    new_words.append(word)
-            text = " ".join(new_words)
-
-        # Level 3 Distortion (<25): Hallucinated sentences, redacting blocks, and reversals
-        if reality < 25:
-            if random.random() < 0.5:
-                hallucinations = [
-                    "\nTHEY ARE WATCHING YOU.",
-                    "\nIT IS INSIDE THE WALLS.",
-                    "\nDON'T TRUST THE MIRROR.",
-                    "\nYOU ARE NOT ALONE.",
-                    "\nTHE BLUE FLUID IS HUNGRY."
-                ]
-                text += f"\n{Colors.RED}{random.choice(hallucinations)}{Colors.RESET}"
-            
-            # Block redaction
-            if random.random() < 0.3:
-                 paragraphs = text.split("\n\n")
-                 if paragraphs:
-                     idx = random.randint(0, len(paragraphs)-1)
-                     paragraphs[idx] = "█" * len(paragraphs[idx])
-                     text = "\n\n".join(paragraphs)
-                     
-        # Sanity effects (different from reality)
-        sanity = self.player_state.get("sanity", 100.0)
-        if sanity < 20:
-            # Randomly reverse a sentence
-            if random.random() < 0.4:
-                sentences = text.split(". ")
-                if sentences:
-                    idx = random.randint(0, len(sentences)-1)
-                    sentences[idx] = sentences[idx][::-1]
-                    text = ". ".join(sentences)
-        
-        return text
 
     def display_scene(self):
         scene = self.scene_manager.current_scene_data
@@ -935,10 +944,23 @@ class Game:
             text_data = text_obj
 
         # 3. Compose
+        # 3. Compose
         thermal_active = self.player_state.get("thermal_mode", False)
         composed_result = self.text_composer.compose(text_data, archetype, self.player_state, thermal_mode=thermal_active)
-        self.last_composed_text = self.apply_reality_distortion(composed_result.full_text)
-        self.print("\n" + self.last_composed_text + "\n")
+        self.last_composed_text = composed_result.full_text
+        
+        # Check dev toggle for side-by-side
+        if self.config.get("debug_show_distortions", False):
+            # Print side-by-side
+            raw = composed_result.raw_text if composed_result.raw_text else composed_result.full_text
+            self.print("\n=== DEBUG: DISTORTION VIEW ===")
+            self.print(f"{Colors.CYAN}--- RAW TEXT ---{Colors.RESET}")
+            self.print(raw)
+            self.print(f"{Colors.RED}--- DISTORTED ---{Colors.RESET}")
+            self.print(composed_result.full_text)
+            self.print("==============================\n")
+        else:
+            self.print("\n" + self.last_composed_text + "\n")
         
         # Check for Contradictions (Liar Engine)
         liar_interrupts = self.liar_engine.check_contradictions(self.last_composed_text)
@@ -1737,6 +1759,63 @@ class Game:
         elif verb == "MENTAL" or verb == "PSYCH":
             self.print(self.psych_state.get_psychological_summary())
         
+        # --- SUPERNATURAL COMMANDS (Week 16) ---
+        elif verb == "ATTENTION":
+            warning = self.attention_system.get_status_display()
+            if warning:
+                self.print(f"\n{Colors.RED}[ATTENTION] {warning}{Colors.RESET}")
+            else:
+                self.print("\n[ATTENTION] The dark is quiet... for now.")
+        
+        elif verb == "POPULATION":
+            count = self.population_system.population
+            self.print(f"\n[POPULATION: {count}]")
+            # If off-target, show resonance hint
+            if count != 347:
+                self.print(f"{Colors.MAGENTA}The number feels wrong. Resonant dissonance detected.{Colors.RESET}")
+            else:
+                self.print("The town feels... balanced.")
+                
+        elif verb == "CHECK" or verb == "SCAN":
+            if not target:
+                self.print("Check whom/what?")
+            else:
+                # Resolve NPC
+                npc_key, npc_data = self._resolve_object(target, objects)
+                if npc_data and npc_data.get("type") == "npc":
+                    npc_id = npc_data.get("id")
+                    
+                    self.print(f"\nYou focus closely on {npc_key}...")
+                    
+                    # 1. Thermal check (Requires Thermo Camera)
+                    has_thermo = False # TODO: Check inventory item
+                    for item in self.inventory_system.carried_items:
+                        if "thermal" in item.name.lower():
+                            has_thermo = True
+                            break
+                    
+                    if has_thermo:
+                        thermal = self.integration_system.get_thermal_signature(npc_id)
+                        color = Colors.RED if thermal["is_anomalous"] else Colors.GREEN
+                        self.print(f"[THERMAL] {color}{thermal['description']}{Colors.RESET}")
+                        if thermal["is_anomalous"] and npc_id not in self.player_state.get("discovered_locations", []): # Use a different tracking set ideally
+                             self.attention_system.add_attention(3, "Thermal scan of integrated NPC")
+                    
+                    # 2. Lens check
+                    lens = self.lens_system.calculate_lens()
+                    clue = self.integration_system.get_lens_clue(npc_id, lens)
+                    if clue:
+                        self.print(f"[{lens.upper()} LENS] {clue}")
+                        
+                    # 3. Micro-pause check (simulated via dialogue context if we were in dialogue found last)
+                    # For parser command, it's hard to check a pause unless we just talked
+                    # But we can give a general impression
+                    if self.integration_system.check_micro_pause(npc_id, "test")["pause_detected"]:
+                        self.print("[OBSERVATION] They seem... out of sync with time.")
+                        
+                else:
+                    self.print(f"Nothing special detected about {target}.")
+
         elif verb == "GROUND":
             self.perform_grounding_ritual()
 

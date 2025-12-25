@@ -16,21 +16,21 @@ const StatusHUD = ({ uiState }) => {
         <div className="hud-container">
             <div className="hud-header">
                 <span className="hud-title">
-                    <SubliminalText text="BIO_MONITOR" sanity={sanity} />
+                    <SubliminalText text="BIO_MONITOR_v9" sanity={sanity} />
                 </span>
                 <span className="hud-status blink">
-                    <SubliminalText text="ACTIVE" sanity={sanity} />
+                    ACTIVE
                 </span>
             </div>
 
             <div className="hud-section stats-grid">
-                <StatBar
+                <AnalogGauge
                     label="SANITY"
                     value={sanity}
                     color="var(--sanity-stable)"
                     criticalColor="var(--sanity-low)"
                 />
-                <StatBar
+                <AnalogGauge
                     label="REALITY"
                     value={reality}
                     color="var(--reality-anchor)"
@@ -38,20 +38,22 @@ const StatusHUD = ({ uiState }) => {
                 />
             </div>
 
-            <div className="hud-divider" />
-
             <div className="hud-section meta-info">
+                <div className="meta-row">
+                    <span className="meta-label">CASE ID:</span>
+                    <span className="meta-value">88X-X-R</span>
+                </div>
                 <div className="meta-row">
                     <span className="meta-label">LOC:</span>
                     <span className="meta-value">{location?.toUpperCase() || "UNKNOWN"}</span>
                 </div>
                 <div className="meta-row">
-                    <span className="meta-label">DAY:</span>
-                    <span className="meta-value">{day || "01"}</span>
+                    <span className="meta-label">DATE:</span>
+                    <span className="meta-value">OCT {day || "14"}</span>
                 </div>
                 <div className="meta-row">
                     <span className="meta-label">TIME:</span>
-                    <span className="meta-value">{time || "00:00"}</span>
+                    <span className="meta-value">{time || "06:00"}</span>
                 </div>
             </div>
 
@@ -63,8 +65,8 @@ const StatusHUD = ({ uiState }) => {
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                     >
-                        {lowSanity && <div className="warning-text text-panic">CRITICAL STRESS</div>}
-                        {breakReality && <div className="warning-text text-panic">REALITY FRACTURE</div>}
+                        {lowSanity && <div className="warning-text">CRITICAL STRESS</div>}
+                        {breakReality && <div className="warning-text">REALITY FRACTURE</div>}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -72,36 +74,50 @@ const StatusHUD = ({ uiState }) => {
             {/* Decorative footer */}
             <div className="hud-footer">
                 <div className="scan-line-decoration"></div>
-                <span className="id-tag">ID: 893-K-X</span>
+                <span className="id-tag">REF: 893-K-X</span>
             </div>
         </div>
     );
 };
 
-const StatBar = ({ label, value, color, criticalColor }) => {
-    const isCritical = value < 30;
-    const barColor = isCritical ? criticalColor : color;
+// The new Analog Gauge Component
+const AnalogGauge = ({ label, value, color, criticalColor }) => {
+    // Map 0-100 to rotation degrees. 
+    // Say -45deg is 0, +45deg is 100. Range = 90deg.
+    const rotation = -45 + (value / 100) * 90;
+
+    // Jitter the needle slightly based on value (lower = more jitter)
+    const [jitter, setJitter] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            // More jitter if value is low (stress/instability)
+            const stressFactor = Math.max(0, (50 - value) / 50);
+            if (stressFactor > 0) {
+                setJitter((Math.random() - 0.5) * (stressFactor * 5));
+            } else {
+                setJitter(0);
+            }
+        }, 100);
+        return () => clearInterval(interval);
+    }, [value]);
 
     return (
         <div className="stat-unit">
-            <div className="stat-header">
-                <span className="stat-label">{label}</span>
-                <span className="stat-value" style={{ color: barColor }}>{value}%</span>
-            </div>
-            <div className="bar-track">
-                <motion.div
-                    className="bar-fill"
-                    initial={{ width: 0 }}
-                    animate={{
-                        width: `${value}%`,
-                        backgroundColor: barColor,
-                        filter: isCritical ? [`drop-shadow(0 0 2px ${barColor})`, `drop-shadow(0 0 8px ${barColor})`] : "none"
-                    }}
-                    transition={{
-                        width: { duration: 1, type: "spring" },
-                        filter: { duration: 0.2, repeat: isCritical ? Infinity : 0, repeatType: "reverse" }
+            <div className="gauge-display">
+                <div className="gauge-ticks" />
+                <div
+                    className="gauge-needle"
+                    style={{
+                        transform: `rotate(${rotation + jitter}deg)`,
+                        backgroundColor: value < 30 ? criticalColor : color
                     }}
                 />
+            </div>
+            <div className="stat-header">
+                <span className="stat-label">{label}</span>
+                {/* Optional digital readout below */}
+                {/* <span className="stat-value">{value}%</span> */}
             </div>
         </div>
     );

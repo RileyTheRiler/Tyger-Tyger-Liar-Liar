@@ -4,36 +4,36 @@
         {
             "id": "diner_intro",
             "speaker": "Waitress",
-            "text": "Coffee's hot. You look like you haven't slept in a week.",
+            "text": "She doesn't look up. The coffee pot hovers over your cup, pouring until the black liquid threatens the rim. Stops exactly at the terrifying edge.",
             "passive_checks": [
                 {
                     "skill": "Perception",
                     "dc": 3,
-                    "interjection": "[Perception] She’s trembling. Something’s wrong."
+                    "interjection": "[Perception] Her fingernails are chewed to the quick. Fresh blood on the thumb."
                 },
                 {
                     "skill": "Paranormal Sensitivity",
                     "dc": 4,
-                    "interjection": "[Paranormal Sensitivity] Something’s clinging to her. You can’t see it, but it’s there."
+                    "interjection": "[Paranormal Sensitivity] The air around her is stale. Like air in a sealed tomb."
                 }
             ],
             "choices": [
                 {
-                    "text": "“I haven't. Bad dreams.”",
-                    "next": "dream_branch",
+                    "text": "“You got a cigarette?”",
+                    "next": "cigarette_branch",
                     "effects": {
-                        "sanity": -2
+                        "sanity": -1
                     }
                 },
                 {
-                    "text": "“Just bring the coffee.”",
-                    "next": "dismiss_branch",
+                    "text": "Watch the coffee settle. Say nothing.",
+                    "next": "silence_branch",
                     "effects": {
                         "reality": -1
                     }
                 },
                 {
-                    "text": "[Empathy ≥ 3] “You sound worried.”",
+                    "text": "[Empathy ≥ 3] “Who are you waiting for?”",
                     "skill_gate": {
                         "skill": "Empathy",
                         "level": 3
@@ -41,40 +41,40 @@
                     "next": "branch_empathy"
                 },
                 {
-                    "text": "[Leave]",
+                    "text": "[Leave] Drop a bill. Walk out.",
                     "next": "EXIT_DIALOGUE"
                 }
             ]
         },
         {
-            "id": "dream_branch",
+            "id": "cigarette_branch",
             "speaker": "Waitress",
-            "text": "Dreams are bad in this town, honey. They stick to you.",
+            "text": "She slaps a pack on the counter. Red box. Crushed corner. \"Six years sober. But who's counting.\"",
             "choices": [
                 {
-                    "text": "“I noticed.”",
+                    "text": "Take one. Light it.",
                     "next": "diner_intro"
                 }
             ]
         },
         {
-            "id": "dismiss_branch",
+            "id": "silence_branch",
             "speaker": "Waitress",
-            "text": "Right. Black, then.",
+            "text": "\"You know what they say about staring.\" She wipes the counter. The rag is grey. The stain doesn't move.",
             "choices": [
                 {
-                    "text": "...",
-                    "next": "EXIT_DIALOGUE"
+                    "text": "“I'm looking for the brother.”",
+                    "next": "branch_empathy"
                 }
             ]
         },
         {
             "id": "branch_empathy",
             "speaker": "Waitress",
-            "text": "It's... it's my brother. He went into the woods north path and didn't come back.",
+            "text": "The rag stops moving. She looks at the window. The reflection shows a hollow room. \"He didn't come back. The North Path. He said he found the door.\"",
             "choices": [
                 {
-                    "text": "“I'll look for him.”",
+                    "text": "“The door.”",
                     "next": "EXIT_DIALOGUE",
                     "effects": {
                         "theory_unlock": "missing_brother_case"

@@ -1,0 +1,35 @@
+{
+    "id": "epistemic_test",
+    "text": "You see a flickering light in the sky.",
+    "speaker": "Narrator",
+    "passive_checks": [
+        {
+            "skill": "Pattern Recognition",
+            "difficulty": 4,
+            "text": "It blinks in the Fibonacci sequence."
+        }
+    ],
+    "choices": [
+        {
+            "text": "It's just a drone. Ignore it.",
+            "tag": "Skeptic",
+            "effect": {
+                "alignment": "skeptic",
+                "value": 1
+            }
+        },
+        {
+            "text": "This is it. The Signal.",
+            "tag": "Believer",
+            "effect": {
+                "alignment": "believer",
+                "value": 1
+            }
+        },
+        {
+            "text": "Deep Logic Required Option.",
+            "req_alignment": "Fundamentalist",
+            "text": "Only a true believer can see the angels."
+        }
+    ]
+}

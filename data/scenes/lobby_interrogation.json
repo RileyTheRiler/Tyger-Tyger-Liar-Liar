@@ -1,0 +1,60 @@
+{
+    "id": "lobby_interrogation",
+    "title": "Hotel Kaltvik - Lobby",
+    "location_id": "hotel_lobby",
+    "time_cost": 5,
+    "text": {
+        "base": "You step off the pier and into the only hotel in town. The lobby smells of lemon polish and dust. A front desk sits guarded by a woman who looks like she's been waiting for you to leave since before you arrived.",
+        "lens": {
+            "believer": "The geometry of the room is wrong. The angles of the corners don't add up to 360. Maude, the receptionist, sits at the center of this web, a spider in a cardigan.",
+            "skeptic": "Structural integrity is questionable; water damage visible on the ceiling tiles. Maude displays classic defensive body language—crossed arms, averted gaze. She's hiding something.",
+            "haunted": "It smells like the waiting room. The one where they told you the news. Maude looks at you with the same pitying, contemptuous eyes as the doctor."
+        }
+    },
+    "connected_scenes": [
+        "intro_arrival",
+        "corridor_glitch"
+    ],
+    "objects": {
+        "receptionist": {
+            "description": "Name tag: 'MAUDE'. She watches you like you're a mistake in the ledger.",
+            "interactions": {
+                "talk": "She doesn't look up. 'No vacancies. Unless you have a reservation from before these dates. And you don't look like you belong in this decade, hon.'"
+            }
+        },
+        "plant": {
+            "description": "Plastic. Reviewing it closely reveals a layer of gray dust that feels like ash."
+        }
+    },
+    "choices": [
+        {
+            "label": "Demand a room.",
+            "type": "dialogue",
+            "dialogue_id": "maude_checkin"
+        },
+        {
+            "label": "Examine the guest register.",
+            "check": {
+                "skill": "Fieldcraft",
+                "dc": 6
+            },
+            "on_success": {
+                "text": "You flip the book around. The pages are blank. All of them. Except for one entry in 1998, written in your handwriting. 'R. VANCE - INDEFINITE'.",
+                "effects": [
+                    {
+                        "type": "flag",
+                        "target": "clue_vance_hotel",
+                        "value": true
+                    }
+                ]
+            },
+            "on_fail": {
+                "text": "Maude slams her hand on the book. 'You aren't in there. You aren't anywhere.'"
+            }
+        },
+        {
+            "label": "Go back outside",
+            "next_scene": "intro_arrival"
+        }
+    ]
+}

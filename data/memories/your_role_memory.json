@@ -1,22 +1,23 @@
 {
     "id": "your_role_memory",
     "type": "memory",
-    "text": "═══════════════════════════════════════════════════════════\n                    THE TRUTH\n═══════════════════════════════════════════════════════════\n\nYou weren't sent here to investigate.\n\nYou were sent here to bury it.\n\nThe files. The evidence. The connections.\n\nThey knew. They always knew.\n\nAnd they sent you—the perfect tool. The perfect cover.\n\nBecause you're good at this. You're good at making things disappear.\n\nJust like you made the others disappear.\n\nWait.\n\nNo.\n\nThat's not—\n\nIs it?\n\n═══════════════════════════════════════════════════════════",
+    "text": "The file wasn't labeled 'INVESTIGATION'. It was labeled 'CONTAINMENT'.\n\nYou remember the briefing room. No windows. Air cycling too loud.\n\n\"The town is a loss,\" the Director said. He didn't look up from the photos of the burning trees.\n\n\"Your job isn't to save it. Your job is to make sure it stays dead.\"\n\nYou remember nodding.\n\nYou remember taking the lighter.\n\nYou remember thinking: *It's just a job.*\n\nBut the smell of gasoline... you never got that off your hands, did you?",
     "background_media": null,
     "choices": [
         {
-            "text": "[This is a lie]",
+            "text": "[Internalize: I am the Cleaner]",
             "next_scene": null,
             "effects": {
-                "reality": -10
+                "reality": -10,
+                "unlock_thought": "cleaner_instinct"
             }
         },
         {
-            "text": "[This is the truth]",
+            "text": "[Reject: I am here to help]",
             "next_scene": null,
             "effects": {
                 "sanity": -10,
-                "unlock_thought": "complicit"
+                "unlock_thought": "delusional_hero"
             }
         }
     ]
