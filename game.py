@@ -56,6 +56,7 @@ from engine.environmental_effects import EnvironmentalEffects
 from engine.psychological_system import PsychologicalState, FailureType
 from engine.fear_system import FearManager
 from engine.unreliable_narrator import HallucinationEngine
+from engine.narrative_memory_system import NarrativeMemorySystem
 from engine.parser_hallucination import ParserHallucinationEngine
 from npc_system import NPCSystem
 from fracture_system import FractureSystem
@@ -217,6 +218,13 @@ class Game:
 
         # Initialize Fracture System
         self.fracture_system = FractureSystem(self.get_game_state())
+
+        # Initialize Narrative Memory System (Week 16)
+        self.narrative_memory = NarrativeMemorySystem(
+            text_composer=self.text_composer,
+            player_state=self.player_state,
+            time_system=self.time_system
+        )
 
         self.active_argument = None # Phase 4 internal debates
         self.current_autopsy = None # Phase 5 autopsies
@@ -711,6 +719,18 @@ class Game:
                         memory_scene = json.load(f)
                         self.print("\n" + memory_scene.get("text", ""))
         
+        # 3. Spontaneous False Memories (Week 16)
+        recall_text = self.narrative_memory.check_spontaneous_recall(self.player_state)
+        if recall_text:
+            self.print("\n[INTRUSIVE MEMORY SURFACING]")
+            self.print(recall_text)
+            self.log_event("spontaneous_recall", memory="arrival_memory")
+
+        # 4. Breakdowns
+        if self.player_state["sanity"] <= 0:
+            self.print("\n>> SANITY CRITICAL: You collapse under the weight of your own mind. <<")
+            self.player_state["sanity"] = 10 
+            self.log_event("breakdown", breakdown_type="sanity")
         # 3. Breakdowns & Soft Failures
         theory_count = self.board.get_active_or_internalizing_count()
         new_failures = self.psych_state.check_soft_failures(theory_count)
@@ -1690,6 +1710,7 @@ class Game:
             self.print("\n-=- AVAILABLE COMMANDS -=-")
             self.print(" INVESTIGATION: EXAMINE [target], SEARCH, COLLECT [item], EQUIP [item], ANALYZE [evidence]")
             self.print(" ACTIONS: PHOTOGRAPH [target], USE [target] (on [target])")
+            self.print(" MEMORY: RECALL [topic] (or 'list'), RECALL false_memory (debug)")
             self.print(" NAVIGATION: MAP, WHERE, [number], GO [location]")
             self.print(" SYSTEM: (b)oard, (c)haracter, (i)nventory, (e)vidence, (w)ait, (s)leep, (q)uit")
             self.print("--------------------------")
@@ -1718,6 +1739,27 @@ class Game:
         
         elif verb == "GROUND":
             self.perform_grounding_ritual()
+
+        # --- NARRATIVE MEMORY (Week 16) ---
+        elif verb == "RECALL":
+            if not target:
+                self.print("Recall what? (Use 'recall list' to see available memories)")
+                return
+
+            if target == "list":
+                self.print("\n=== RECENT MEMORIES ===")
+                # List last 10
+                sorted_mems = sorted(self.narrative_memory.memories.values(), key=lambda x: x.timestamp, reverse=True)[:10]
+                for m in sorted_mems:
+                    self.print(f"- {m.event_id}")
+            elif target == "false_memory":
+                # Debug trigger for false memory requirement
+                self.narrative_memory.inject_explicit_false_memory()
+                self.print(self.narrative_memory.recall_event("arrival_memory"))
+            else:
+                text = self.narrative_memory.recall_event(target)
+                self.print(f"\n[RECALLING: {target}]")
+                self.print(f"{text}")
 
         else:
             self.print(f"You try to {verb} the {target or 'air'}, but nothing happens yet.")
@@ -2031,7 +2073,8 @@ class Game:
                     "attention_system": self.attention_system.to_dict(),
                     "memory_system": self.memory_system.export_state(),
                     "fracture_system": self.fracture_system.to_dict(),
-                    "psychological_system": self.psych_state.to_dict()
+                    "psychological_system": self.psych_state.to_dict(),
+                    "narrative_memory": self.narrative_memory.to_dict()
                 }
             }
             
@@ -2107,6 +2150,8 @@ class Game:
                     self.fracture_system.restore_state(systems["fracture_system"])
                 if "psychological_system" in systems:
                     self.psych_state.restore_state(systems["psychological_system"])
+                if "narrative_memory" in systems:
+                    self.narrative_memory.load_state(systems["narrative_memory"])
             
             print(f"\n✓ Game loaded successfully from '{slot_id}'")
             print(f"   Location: {save_data.get('scene', 'Unknown')}")
@@ -2200,6 +2245,19 @@ class Game:
     def log_event(self, event_type: str, **details):
         """Log a significant game event."""
         self.event_log.add_event(event_type, **details)
+
+        # Week 16: Also log to Narrative Memory if it's a scene entry or major event
+        if event_type == "scene_entry":
+            scene_id = details.get("scene_id")
+            scene_data = self.scene_manager.scenes.get(scene_id)
+            if scene_data:
+                # Log the scene text as a memory
+                self.narrative_memory.log_event(
+                    event_id=f"scene_{scene_id}_{int(self.time_system.current_time.timestamp())}",
+                    text_data=scene_data.get("text", f"Visited {scene_data.get('name')}"),
+                    importance=5,
+                    tags=["scene_visit", scene_id]
+                )
 
     def process_choice(self, choice):
         # Handle Skill Checks
