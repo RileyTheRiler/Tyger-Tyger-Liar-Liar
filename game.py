@@ -60,6 +60,7 @@ from engine.narrative_memory_system import NarrativeMemorySystem
 from engine.parser_hallucination import ParserHallucinationEngine
 from npc_system import NPCSystem
 from fracture_system import FractureSystem
+from engine.clue_system import ClueSystem
 from engine.reality_checker import RealityConsistencyChecker
 
 
@@ -142,6 +143,16 @@ class Game:
         self.flashback_manager = FlashbackManager(self.skill_system, self.player_state)
 
         # Initialize Scene Manager
+        self.scene_manager = SceneManager(
+            self.time_system, 
+            self.board, 
+            self.skill_system, 
+            self.player_state,
+            self.flashback_manager,
+            clue_system=None # Injected later or we can move ClueSystem init up
+        )
+        self.last_composed_text = ""
+        
         # Initialize Population & Liar Engine
         self.population_system = PopulationSystem()
         self.liar_engine = LiarEngine(self.skill_system, self.inventory_system)
@@ -244,10 +255,16 @@ class Game:
         # Load Documents (Phase 6)
         docs_path = resource_path(os.path.join('data', 'documents', 'documents.json'))
         self.inventory_system.load_documents(docs_path)
+
+        # Initialize Clue System
+        clues_dir = resource_path(os.path.join('data', 'clues'))
+        self.clue_system = ClueSystem(clues_dir, self.board)
         
         # Load Scenes
         scenes_dir = resource_path(os.path.join('data', 'scenes'))
         root_scenes = resource_path('scenes.json')
+        # Pass clue_system to SceneManager (requires update in SceneManager)
+        self.scene_manager.clue_system = self.clue_system
         self.scene_manager.load_scenes_from_directory(scenes_dir, root_scenes)
 
     
@@ -2037,6 +2054,34 @@ class Game:
                 if value not in self.player_state["thoughts"]:
                     self.player_state["thoughts"].append(value)
                     print(f"[THOUGHT UNLOCKED: {value}]")
+            elif key == "add_item":
+                item = Item.from_dict(value)
+                self.inventory_system.add_item(item)
+            elif key == "add_evidence":
+                ev = Evidence.from_dict(value)
+                self.inventory_system.add_evidence(ev)
+                # Bridge to ClueSystem: if evidence ID matches a clue ID, acquire it
+                if self.clue_system.get_clue(ev.id):
+                    # Use current lens for automatic acquisition via evidence
+                    lens = self.lens_system.calculate_lens()
+                    state = self.clue_system.acquire_clue(ev.id, lens)
+                    if state:
+                        print(f"[CLUE SYSTEM] Evidence '{ev.id}' also interpreted as clue.")
+                        print(f"  Interpretation ({state.current_lens.upper()}): \"{state.current_interpretation}\"")
+                        self.log_event("clue_found", clue_id=ev.id, interpretation=state.current_interpretation, lens=state.current_lens)
+            elif key == "add_clue":
+                # Check for explicit lens in the effect, otherwise default to current lens
+                clue_id = value
+                forced_lens = None
+                if isinstance(value, dict):
+                    clue_id = value.get("id")
+                    forced_lens = value.get("lens")
+
+                lens = forced_lens or self.lens_system.calculate_lens()
+                state = self.clue_system.acquire_clue(clue_id, lens)
+                if state:
+                     print(f"\\n[CLUE FOUND] {self.clue_system.get_clue(clue_id).title}")
+                     print(f"  Interpretation ({state.current_lens.upper()}): \\\"{state.current_interpretation}\\\"")
     
     def handle_save_menu(self):
         """Interactive save menu."""
@@ -2371,6 +2416,18 @@ class Game:
     def log_event(self, event_type: str, **details):
         """Log a significant game event."""
         self.event_log.add_event(event_type, **details)
+        # Week 6: Hook into Journal System if meaningful
+        if event_type in ["clue_found", "clue_updated"]:
+            title = f"Clue Discovery: {details.get('clue_id', 'Unknown')}"
+            if event_type == "clue_updated":
+                title = f"Clue Reinterpreted: {details.get('clue_id', 'Unknown')}"
+
+            body = f"{details.get('interpretation', 'No interpretation recorded.')}\n\nLens: {details.get('lens', 'neutral').upper()}"
+            self.journal.add_entry(
+                title=title,
+                body=body,
+                tags=["clue", details.get('lens', 'neutral')]
+            )
 
         # Week 16: Also log to Narrative Memory if it's a scene entry or major event
         if event_type == "scene_entry":
@@ -2619,25 +2676,6 @@ class Game:
         print(self.board_ui.render())
         print("\nCommands: 'evidence <theory_id> <evidence_id>' | 'contradict <theory_id> <evidence_id>'")
         print("          'prove <theory_id>' | 'disprove <theory_id>'\n")
-
-    def apply_effects(self, effects):
-        for key, value in effects.items():
-            if key == "sanity":
-                self.player_state["sanity"] += value
-                print(f"[Sanity {'+' if value > 0 else ''}{value}]")
-            elif key == "reality":
-                self.player_state["reality"] += value
-                print(f"[Reality {'+' if value > 0 else ''}{value}]")
-            elif key == "add_item":
-                item = Item.from_dict(value)
-                self.inventory_system.add_item(item)
-            elif key == "add_evidence":
-                ev = Evidence.from_dict(value)
-                self.inventory_system.add_evidence(ev)
-            elif key == "unlock_thought":
-                if value not in self.player_state["thoughts"]:
-                    self.player_state["thoughts"].append(value)
-                    print(f"[THOUGHT UNLOCKED: {value}]")
 
 if __name__ == "__main__":
     game = Game()

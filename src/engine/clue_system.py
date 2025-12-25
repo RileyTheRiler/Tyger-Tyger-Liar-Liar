@@ -39,6 +39,7 @@ class Clue:
     related_npcs: List[str] = field(default_factory=list)
     related_locations: List[str] = field(default_factory=list)
     analysis_skills: List[str] = field(default_factory=list)
+    # Deprecated fields (moved to ClueState)
     analyzed: bool = False
     analysis_result: Optional[dict] = None
 
@@ -51,6 +52,47 @@ class Clue:
         if lens in lens_text:
             return lens_text[lens]
         return self.text.get("base", str(self.text))
+
+    def get_base_text(self) -> str:
+        """Get the base observation text."""
+        if isinstance(self.text, str):
+            return self.text
+        return self.text.get("base", "")
+
+
+@dataclass
+class ClueState:
+    """The state of a specific acquired clue."""
+    clue_id: str
+    raw_observation: str
+    current_interpretation: str
+    current_lens: str  # The lens used for interpretation
+    confidence: float
+    analyzed: bool = False
+    analysis_result: Optional[dict] = None
+
+    def to_dict(self) -> dict:
+        return {
+            "clue_id": self.clue_id,
+            "raw_observation": self.raw_observation,
+            "current_interpretation": self.current_interpretation,
+            "current_lens": self.current_lens,
+            "confidence": self.confidence,
+            "analyzed": self.analyzed,
+            "analysis_result": self.analysis_result
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'ClueState':
+        return cls(
+            clue_id=data["clue_id"],
+            raw_observation=data["raw_observation"],
+            current_interpretation=data["current_interpretation"],
+            current_lens=data.get("current_lens", "neutral"),
+            confidence=data.get("confidence", 0.5),
+            analyzed=data.get("analyzed", False),
+            analysis_result=data.get("analysis_result")
+        )
 
 
 @dataclass
@@ -74,7 +116,8 @@ class ClueSystem:
 
     def __init__(self, clues_dir: str = None, board=None):
         self.clue_definitions: Dict[str, Clue] = {}
-        self.acquired_clues: Set[str] = set()
+        # Changed from Set[str] to Dict[str, ClueState]
+        self.acquired_clues: Dict[str, ClueState] = {}
         self.board = board
 
         if clues_dir:
@@ -101,10 +144,16 @@ class ClueSystem:
         """Load a single clue from data."""
         links = []
         for link in data.get("links_to_theories", []):
-            links.append(ClueTheoryLink(
-                theory_id=link["theory_id"],
-                relation=link.get("relation", "associated")
-            ))
+            if isinstance(link, str):
+                links.append(ClueTheoryLink(
+                    theory_id=link,
+                    relation="associated"
+                ))
+            else:
+                links.append(ClueTheoryLink(
+                    theory_id=link["theory_id"],
+                    relation=link.get("relation", "associated")
+                ))
 
         clue = Clue(
             id=data["id"],
@@ -134,26 +183,63 @@ class ClueSystem:
         """Check if player has acquired a clue."""
         return clue_id in self.acquired_clues
 
-    def acquire_clue(self, clue_id: str) -> Optional[Clue]:
+    def get_acquired_clue(self, clue_id: str) -> Optional[ClueState]:
+        """Get the state of an acquired clue."""
+        return self.acquired_clues.get(clue_id)
+
+    def acquire_clue(self, clue_id: str, lens: str = "neutral") -> Optional[ClueState]:
         """
         Acquire a clue if not already acquired.
-        Returns the clue if newly acquired, None if already had it.
+        Returns the ClueState if newly acquired, None if already had it.
         """
         if clue_id in self.acquired_clues:
             return None
 
-        clue = self.get_clue(clue_id)
-        if not clue:
+        clue_def = self.get_clue(clue_id)
+        if not clue_def:
             return None
 
-        self.acquired_clues.add(clue_id)
-        print(f"[CLUE] Acquired: {clue.title}")
+        # Create new clue state with initial interpretation
+        state = ClueState(
+            clue_id=clue_id,
+            raw_observation=clue_def.get_base_text(),
+            current_interpretation=clue_def.get_text(lens),
+            current_lens=lens,
+            confidence=clue_def.reliability,
+            analyzed=False,
+            analysis_result=None
+        )
+
+        self.acquired_clues[clue_id] = state
+        print(f"[CLUE] Acquired: {clue_def.title} (Lens: {lens})")
 
         # Add to Board if available
         if self.board:
-            self._add_clue_to_board(clue)
+            self._add_clue_to_board(clue_def)
 
-        return clue
+        return state
+
+    def reinterpret_clue(self, clue_id: str, new_lens: str) -> Optional[ClueState]:
+        """
+        Update the interpretation of an existing clue.
+        Returns the updated ClueState, or None if not found/no change.
+        """
+        if clue_id not in self.acquired_clues:
+            return None
+
+        state = self.acquired_clues[clue_id]
+        if state.current_lens == new_lens:
+            return None
+
+        clue_def = self.get_clue(clue_id)
+        if not clue_def:
+            return None
+
+        state.current_lens = new_lens
+        state.current_interpretation = clue_def.get_text(new_lens)
+
+        print(f"[CLUE] Reinterpreted: {clue_def.title} as {new_lens.upper()}")
+        return state
 
     def _add_clue_to_board(self, clue: Clue):
         """Add a clue node to the Board and link it."""
@@ -170,18 +256,26 @@ class ClueSystem:
             print(f"[BOARD] Tagged clue with: {tag}")
 
     def evaluate_passive_clues(self, scene_passive_clues: List[dict],
-                                player_state: dict) -> List[Tuple[Clue, str]]:
+                                player_state: dict, lens_system=None) -> List[Tuple[ClueState, str]]:
         """
         Evaluate passive clue checks for a scene.
 
         Args:
             scene_passive_clues: List of passive clue definitions from scene
             player_state: Dict with skills, inventory, equipment, active_theories, flags
+            lens_system: Optional LensSystem to determine interpretation
 
         Returns:
-            List of (Clue, reveal_text) tuples for clues that should be revealed
+            List of (ClueState, reveal_text) tuples for clues that should be revealed
         """
         revealed = []
+
+        # Determine lens
+        current_lens = "neutral"
+        if lens_system:
+            current_lens = lens_system.calculate_lens()
+        elif "archetype" in player_state:
+             current_lens = player_state["archetype"].lower()
 
         for pc_data in scene_passive_clues:
             clue_id = pc_data.get("clue_id")
@@ -191,10 +285,11 @@ class ClueSystem:
             conditions = pc_data.get("visible_when", {})
 
             if self._check_visibility_conditions(conditions, player_state):
-                clue = self.acquire_clue(clue_id)
-                if clue:
-                    reveal_text = pc_data.get("reveal_text") or clue.get_text()
-                    revealed.append((clue, reveal_text))
+                state = self.acquire_clue(clue_id, current_lens)
+                if state:
+                    clue_def = self.get_clue(clue_id)
+                    reveal_text = pc_data.get("reveal_text") or state.current_interpretation
+                    revealed.append((state, reveal_text))
 
         return revealed
 
@@ -234,13 +329,13 @@ class ClueSystem:
 
         return True
 
-    def format_revealed_clues(self, revealed: List[Tuple[Clue, str]], lens: str = "neutral") -> str:
+    def format_revealed_clues(self, revealed: List[Tuple[ClueState, str]], lens: str = "neutral") -> str:
         """Format revealed clues for narrative insertion."""
         if not revealed:
             return ""
 
         parts = []
-        for clue, reveal_text in revealed:
+        for state, reveal_text in revealed:
             parts.append(f"\n[You notice something...]\n{reveal_text}")
 
         return "\n".join(parts)
@@ -252,28 +347,29 @@ class ClueSystem:
 
         Returns dict with success status and any revealed information.
         """
-        clue = self.get_clue(clue_id)
-        if not clue:
-            return {"success": False, "error": "Clue not found"}
-
-        if clue_id not in self.acquired_clues:
+        state = self.get_acquired_clue(clue_id)
+        if not state:
             return {"success": False, "error": "Clue not acquired"}
 
-        if clue.analyzed:
+        if state.analyzed:
             return {"success": True, "already_analyzed": True,
-                    "result": clue.analysis_result}
+                    "result": state.analysis_result}
 
-        if skill_name not in clue.analysis_skills:
+        clue_def = self.get_clue(clue_id)
+        if not clue_def:
+             return {"success": False, "error": "Clue definition missing"}
+
+        if skill_name not in clue_def.analysis_skills:
             return {"success": False, "error": f"{skill_name} cannot analyze this clue"}
 
         # This would normally integrate with the dice system
         # For now, simple threshold check
         if skill_level >= dc:
-            clue.analyzed = True
+            state.analyzed = True
             # Analysis would reveal more based on the clue's analysis_result field
             return {
                 "success": True,
-                "result": clue.analysis_result or {"text": "Analysis complete. No additional details."}
+                "result": state.analysis_result or {"text": "Analysis complete. No additional details."}
             }
         else:
             return {"success": False, "error": "Analysis failed"}
@@ -282,7 +378,7 @@ class ClueSystem:
         """Get all acquired clues with a specific tag."""
         return [
             self.clue_definitions[cid]
-            for cid in self.acquired_clues
+            for cid in self.acquired_clues.keys()
             if cid in self.clue_definitions and tag in self.clue_definitions[cid].tags
         ]
 
@@ -290,7 +386,7 @@ class ClueSystem:
         """Get all acquired clues that link to a theory, grouped by relation."""
         result = {"supports": [], "contradicts": [], "associated": []}
 
-        for clue_id in self.acquired_clues:
+        for clue_id in self.acquired_clues.keys():
             clue = self.clue_definitions.get(clue_id)
             if not clue:
                 continue
@@ -317,7 +413,7 @@ class ClueSystem:
     def get_clue_summary(self) -> List[dict]:
         """Get a summary of all acquired clues."""
         summary = []
-        for clue_id in self.acquired_clues:
+        for clue_id, state in self.acquired_clues.items():
             clue = self.clue_definitions.get(clue_id)
             if clue:
                 summary.append({
@@ -327,36 +423,50 @@ class ClueSystem:
                     "tags": clue.tags,
                     "reliability": clue.reliability,
                     "reliability_desc": self.get_reliability_description(clue.reliability),
-                    "analyzed": clue.analyzed,
-                    "theory_links": len(clue.links_to_theories)
+                    "analyzed": state.analyzed,
+                    "theory_links": len(clue.links_to_theories),
+                    "interpretation": state.current_interpretation,
+                    "lens": state.current_lens
                 })
         return summary
 
     def to_dict(self) -> dict:
         """Serialize clue state for saving."""
-        clue_states = {}
-        for clue_id in self.acquired_clues:
-            clue = self.clue_definitions.get(clue_id)
-            if clue:
-                clue_states[clue_id] = {
-                    "analyzed": clue.analyzed,
-                    "analysis_result": clue.analysis_result
-                }
-
         return {
-            "acquired": list(self.acquired_clues),
-            "states": clue_states
+            "acquired_clues": {cid: state.to_dict() for cid, state in self.acquired_clues.items()}
         }
 
     def restore_state(self, state: dict):
         """Restore clue state from saved data."""
-        self.acquired_clues = set(state.get("acquired", []))
+        self.acquired_clues = {}
 
-        for clue_id, clue_state in state.get("states", {}).items():
-            clue = self.clue_definitions.get(clue_id)
-            if clue:
-                clue.analyzed = clue_state.get("analyzed", False)
-                clue.analysis_result = clue_state.get("analysis_result")
+        # Handle new format
+        if "acquired_clues" in state:
+            for cid, c_data in state["acquired_clues"].items():
+                self.acquired_clues[cid] = ClueState.from_dict(c_data)
+
+        # Handle legacy format (set/list of strings)
+        elif "acquired" in state:
+            acquired_ids = state.get("acquired", [])
+            legacy_states = state.get("states", {})
+
+            for cid in acquired_ids:
+                if cid not in self.clue_definitions:
+                    continue
+
+                clue_def = self.clue_definitions[cid]
+                # Default to neutral if we don't know
+                legacy_state = legacy_states.get(cid, {})
+
+                self.acquired_clues[cid] = ClueState(
+                    clue_id=cid,
+                    raw_observation=clue_def.get_base_text(),
+                    current_interpretation=clue_def.get_text("neutral"),
+                    current_lens="neutral",
+                    confidence=clue_def.reliability,
+                    analyzed=legacy_state.get("analyzed", False),
+                    analysis_result=legacy_state.get("analysis_result")
+                )
 
 
 # Example clues for testing
@@ -448,17 +558,24 @@ if __name__ == "__main__":
     ]
 
     player_state = {
-        "skills": {"Forensics": 3, "Perception": 2}
+        "skills": {"Forensics": 3, "Perception": 2},
+        "archetype": "skeptic"
     }
 
     print("\nEvaluating passive clues...")
     revealed = system.evaluate_passive_clues(scene_passive_clues, player_state)
 
     print(f"Revealed {len(revealed)} clues:")
-    for clue, text in revealed:
-        print(f"  - {clue.title}")
-        print(f"    \"{text[:50]}...\"")
+    for state, text in revealed:
+        print(f"  - {system.get_clue(state.clue_id).title}")
+        print(f"    Interpretation ({state.current_lens}): \"{state.current_interpretation}\"")
 
     print("\nAcquired clues:")
     for summary in system.get_clue_summary():
-        print(f"  - {summary['title']} (Reliability: {summary['reliability_desc']})")
+        print(f"  - {summary['title']} (Lens: {summary['lens']})")
+
+    print("\nReinterpreting as Believer...")
+    system.reinterpret_clue("clue_bloody_glass", "believer")
+
+    state = system.get_acquired_clue("clue_bloody_glass")
+    print(f"  - New Interpretation: \"{state.current_interpretation}\"")

@@ -1,0 +1,79 @@
+[
+  {
+    "id": "scene_interpretation_demo_origin",
+    "name": "Interpretation Demo: Origin",
+    "text": "You stand before a strange rock formation. This area serves as a demonstration of the Evidence Interpretation System.",
+    "choices": [
+      {
+        "text": "Examine the carving",
+        "effects": {
+          "add_clue": {
+            "id": "clue_ancient_symbol"
+          }
+        }
+      },
+      {
+        "text": "Approach the Crossroads (Check Interpretation)",
+        "next_scene": "scene_interpretation_demo_crossroads"
+      }
+    ]
+  },
+  {
+    "id": "scene_interpretation_demo_crossroads",
+    "name": "Interpretation Demo: Crossroads",
+    "text": "The path forward depends on how you interpret the symbol you found.",
+    "choices": [
+        {
+            "text": "Return to Origin",
+            "next_scene": "scene_interpretation_demo_origin"
+        }
+    ],
+    "connected_scenes": [
+      "scene_interpretation_demo_believer",
+      "scene_interpretation_demo_skeptic",
+      "scene_interpretation_demo_haunted"
+    ]
+  },
+  {
+    "id": "scene_interpretation_demo_believer",
+    "name": "Sanctum of the Faithful",
+    "text": "You recognized the warding sigil (Believer Lens) and stepped through the veil.",
+    "conditions": {
+      "clue_interpretation": {
+        "clue_id": "clue_ancient_symbol",
+        "lens": "believer"
+      }
+    },
+    "choices": [
+       { "text": "Back", "next_scene": "scene_interpretation_demo_crossroads" }
+    ]
+  },
+  {
+    "id": "scene_interpretation_demo_skeptic",
+    "name": "Geological Survey Site",
+    "text": "You identified the erosion patterns (Skeptic Lens) and found the unstable ground.",
+    "conditions": {
+      "clue_interpretation": {
+        "clue_id": "clue_ancient_symbol",
+        "lens": "skeptic"
+      }
+    },
+    "choices": [
+       { "text": "Back", "next_scene": "scene_interpretation_demo_crossroads" }
+    ]
+  },
+  {
+    "id": "scene_interpretation_demo_haunted",
+    "name": "Memory of the Fall",
+    "text": "The carving triggered a flashback (Haunted Lens). You are trapped in the memory.",
+    "conditions": {
+      "clue_interpretation": {
+        "clue_id": "clue_ancient_symbol",
+        "lens": "haunted"
+      }
+    },
+    "choices": [
+       { "text": "Back", "next_scene": "scene_interpretation_demo_crossroads" }
+    ]
+  }
+]

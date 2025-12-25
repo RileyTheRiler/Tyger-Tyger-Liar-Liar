@@ -7,6 +7,7 @@ from typing import Optional
 from engine.branch_controller import BranchController
 
 class SceneManager:
+    def __init__(self, time_system, board, skill_system, player_state, flashback_manager, clue_system=None):
     def __init__(self, time_system, board, skill_system, player_state, flashback_manager, 
                  npc_system=None, attention_system=None, inventory_system=None):
         self.scenes = {}
@@ -17,6 +18,7 @@ class SceneManager:
         self.skill_system = skill_system
         self.player_state = player_state
         self.flashback_manager = flashback_manager
+        self.clue_system = clue_system
         
         # New Systems for Branch Controller
         self.npc_system = npc_system
@@ -117,6 +119,45 @@ class SceneManager:
         if not conditions:
             return True
             
+            # Access datetime object
+            current_h = self.time_system.current_time.hour 
+            
+            if start_h <= end_h:
+                if not (start_h <= current_h < end_h):
+                    return False
+            else: # Overnight e.g. 22:00 to 06:00
+                if not (current_h >= start_h or current_h < end_h):
+                    return False
+
+        # Weather Check
+        if "weather" in conditions:
+            allowed = conditions["weather"]
+            if self.time_system.weather not in allowed:
+                return False
+
+        # Theory Check (Board)
+        if "requires_theory" in conditions:
+            reqs = conditions["requires_theory"]
+            for tid in reqs:
+                theory = self.board.get_theory(tid)
+                if not theory or theory.status != "active":
+                    return False
+
+        # Clue Interpretation Check
+        if "clue_interpretation" in conditions:
+            # Format: {"clue_id": "foo", "lens": "believer"}
+            req = conditions["clue_interpretation"]
+            clue_id = req.get("clue_id")
+            required_lens = req.get("lens")
+
+            if self.clue_system and clue_id:
+                state = self.clue_system.get_acquired_clue(clue_id)
+                if not state:
+                    return False
+                if required_lens and state.current_lens != required_lens:
+                    return False
+
+        return True
         game_state = self._get_game_state()
         return self.branch_controller.evaluate_condition(conditions, game_state)
 
