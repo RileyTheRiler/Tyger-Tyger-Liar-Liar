@@ -31,7 +31,7 @@ class Character:
     def get_skill_level(self, skill_name: str) -> int:
         """
         Calculates effective skill level:
-        Base Skill + Parent Attribute Value + Modifiers (TODO)
+        Base Skill + Parent Attribute Value + Modifiers
         """
         # Find parent attribute
         parent_attr = None
@@ -55,8 +55,8 @@ class Character:
                 modifier_val += item.get_skill_modifier(skill_name)
             # Fallback for dict-like items or simplified objects
             elif hasattr(item, 'effects') and isinstance(item.effects, dict):
-                 mods = item.effects.get("skill_modifiers", {})
-                 modifier_val += mods.get(skill_name, 0)
+                mods = item.effects.get("skill_modifiers", {})
+                modifier_val += mods.get(skill_name, 0)
 
         # Thought modifiers
         for thought in self.thoughts:
