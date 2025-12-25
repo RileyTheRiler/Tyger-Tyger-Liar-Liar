@@ -1169,9 +1169,34 @@ class Game:
         if clean == 'debug':
             self.debug_mode = not self.debug_mode
             self.print(f"[DEBUG MODE: {'ON' if self.debug_mode else 'OFF'}]")
+            # Sync debug mode with Dialogue Manager
+            if hasattr(self.dialogue_manager, 'toggle_debug'):
+                self.dialogue_manager.debug_show_hidden = self.debug_mode
+                if hasattr(self.dialogue_manager, 'text_composer'):
+                    self.dialogue_manager.text_composer.debug_mode = self.debug_mode
             return "refresh"
         
         if self.debug_mode:
+            # Debug: Show Dialogue Tree
+            if clean.startswith('debug_dialogue'):
+                parts = clean.split()
+                if len(parts) > 1:
+                    d_id = parts[1]
+                    self.print(f"\n--- DEBUG DIALOGUE TREE: {d_id} ---")
+                    # Try to load and inspect
+                    temp_dm = DialogueManager(self.skill_system, self.board, self.player_state)
+                    if temp_dm.load_dialogue(d_id, resource_path(os.path.join('data', 'dialogues'))):
+                        for node_id, node in temp_dm.nodes.items():
+                            self.print(f"[{node_id}] {node.get('text', '')[:50]}...")
+                            if "choices" in node:
+                                for c in node["choices"]:
+                                    self.print(f"  -> {c.get('text', '')} (Next: {c.get('next')})")
+                    else:
+                        self.print("Failed to load dialogue.")
+                else:
+                    self.print("Usage: debug_dialogue <dialogue_id>")
+                return "refresh"
+
             # Debug: Force Save
             if clean.startswith('forcesave'):
                 parts = clean.split()

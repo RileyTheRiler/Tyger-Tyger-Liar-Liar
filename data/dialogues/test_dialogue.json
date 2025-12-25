@@ -1,32 +1,87 @@
-
+{
+    "intro_node": {
+        "id": "intro_node",
+        "text": "The stranger looks at you warily. 'Who are you?'",
+        "speaker": "Stranger",
+        "passives": ["Paranormal Sensitivity", "Logic"],
+        "choices": [
             {
-              "scene_id": "test_dialogue",
-              "lines": [
-                {
-                  "id": "start",
-                  "speaker": "NPC",
-                  "text": "Hello.",
-                  "choices": [
-                    { "id": "check_choice", "text": "Run Check", "next": "check_node" },
-                    { "id": "theory_choice", "text": "Theory Choice", "next": "theory_node", "require_theory": "TheoryA" }
-                  ],
-                  "passives": ["Empathy"]
-                },
-                {
-                  "id": "check_node",
-                  "speaker": "System",
-                  "text": "Checking...",
-                  "check": {
-                    "skill": "Logic",
-                    "dc": 10,
-                    "white_id": "logic_check",
-                    "success_next": "success_node",
-                    "fail_next": "fail_node"
-                  }
-                },
-                { "id": "success_node", "speaker": "NPC", "text": "Success!" },
-                { "id": "fail_node", "speaker": "NPC", "text": "Fail!" },
-                { "id": "theory_node", "speaker": "NPC", "text": "Theory worked!" }
-              ]
+                "text": "I'm just a traveler.",
+                "next": "traveler_node"
+            },
+            {
+                "text": "I'm the one asking questions here.",
+                "skill_gate": {"skill": "Authority", "level": 2},
+                "next": "authority_node"
             }
-            
+        ]
+    },
+    "traveler_node": {
+        "id": "traveler_node",
+        "text": "'Travelers don't come here often.' He relaxes slightly.",
+        "speaker": "Stranger",
+        "choices": [
+            {
+                "text": "Ask about the lights.",
+                "next": "lights_node"
+            }
+        ]
+    },
+    "authority_node": {
+        "id": "authority_node",
+        "text": "He flinches. 'Alright, alright. No need for trouble.'",
+        "speaker": "Stranger",
+        "passives": ["Empathy"],
+        "choices": [
+            {
+                "text": "Tell me what you know.",
+                "next": "lights_node"
+            }
+        ]
+    },
+    "lights_node": {
+        "id": "lights_node",
+        "text": "'The lights... they change people. You should leave.'",
+        "speaker": "Stranger",
+        "check": {
+            "skill": "Skepticism",
+            "dc": 10,
+            "success_next": "truth_node",
+            "fail_next": "lie_node",
+            "white_id": "check_lights_truth"
+        }
+    },
+    "truth_node": {
+        "id": "truth_node",
+        "text": "You catch a flicker in his eye. He knows more than he's saying.",
+        "speaker": "Internal",
+        "choices": [
+            {
+                "text": "You're lying.",
+                "next": "confession_node"
+            }
+        ]
+    },
+    "lie_node": {
+        "id": "lie_node",
+        "text": "He seems sincere enough.",
+        "speaker": "Internal",
+        "choices": [
+            {
+                "text": "Okay. I'll go.",
+                "next": "EXIT_DIALOGUE"
+            }
+        ]
+    },
+    "confession_node": {
+        "id": "confession_node",
+        "text": "'Fine! I saw them take her! The lights took her!'",
+        "speaker": "Stranger",
+        "choices": [
+            {
+                "text": "Leave.",
+                "next": "EXIT_DIALOGUE"
+            }
+        ]
+    }
+}
