@@ -1342,9 +1342,17 @@ class Game:
         if self.debug_mode and random.random() < 0.15: # 15% chance to suggest
             suggestions = []
             if objects:
-                 # Pick a random object and a random verb
+                 # Adaptive Suggestion: Check preferred verb for EXAMINE
+                 preferred_verb = "examine"
+                 # Simple check: if "inspect" is used more than "examine"
+                 if self.parser_memory.get_keyword_frequency("inspect") > self.parser_memory.get_keyword_frequency("examine"):
+                     preferred_verb = "inspect"
+                 elif self.parser_memory.get_keyword_frequency("look") > self.parser_memory.get_keyword_frequency("examine"):
+                     preferred_verb = "look"
+
+                 # Pick a random object
                  obj_name = random.choice(list(objects.keys()))
-                 suggestions.append(f"Hint: You could 'examine {obj_name}'.")
+                 suggestions.append(f"Hint: You could '{preferred_verb} {obj_name}'.")
 
             if suggestions:
                  self.print(f"{Colors.BLUE}{random.choice(suggestions)}{Colors.RESET}")
