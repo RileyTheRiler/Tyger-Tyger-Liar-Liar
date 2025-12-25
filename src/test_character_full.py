@@ -84,11 +84,11 @@ def test_skill_personalities():
     # Check a few skills have personalities
     logic = system.get_skill("Logic")
     print(f"Logic personality: \"{logic.personality}\"")
-    assert logic.personality == "Cold, deductible facts."
+    assert logic.personality == "The world is a machine of cause and effect. Analyze the variables, discard the noise, and the truth remains as cold and certain as a mathematical theorem."
     
     forensics = system.get_skill("Forensics")
     print(f"Forensics personality: \"{forensics.personality}\"")
-    assert forensics.personality == "The dead speak if you listen."
+    assert forensics.personality == "The dead speak if you listen. Blood spatter, calluses, and decomposition are a language of their own."
     
     # Test all skills have personalities
     for skill_name, skill in system.skills.items():
