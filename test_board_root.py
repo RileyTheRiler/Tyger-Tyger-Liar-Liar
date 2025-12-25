@@ -1,13 +1,11 @@
 
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
-
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 from mechanics import SkillSystem
 from board import Board
 from time_system import TimeSystem
-from scene_manager import SceneManager # SceneManager is in src/scene_manager.py, not game.py
+from game import SceneManager
 
 def test_board_integration():
     print("Initializing Game Systems...")
