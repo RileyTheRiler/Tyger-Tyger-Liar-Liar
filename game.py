@@ -130,6 +130,7 @@ class Game:
         
         # Initialize Text Composer (Replaces LensSystem eventually)
         self.text_composer = TextComposer(self.skill_system, self.board, self.player_state)
+        self.text_composer.developer_commentary = self.config.get("developer_commentary", False)
 
         # Initialize Flashback Manager (Phase 6)
         self.flashback_manager = FlashbackManager(self.skill_system, self.player_state)
@@ -560,7 +561,17 @@ class Game:
         if self.in_dialogue:
              self.process_dialogue_input(user_input)
         else:
-             choices = self.scene_manager.current_scene_data.get("choices", [])
+             # Check if we have a current scene
+             if not self.scene_manager.current_scene_data:
+                 # Attempt to reload current scene if ID exists, or fallback
+                 if self.scene_manager.current_scene_id:
+                     self.scene_manager.load_scene(self.scene_manager.current_scene_id)
+
+                 # If still no data (e.g. init failure), try arrival_bus
+                 if not self.scene_manager.current_scene_data:
+                     self.scene_manager.load_scene("arrival_bus")
+
+             choices = self.scene_manager.current_scene_data.get("choices", []) if self.scene_manager.current_scene_data else []
              action_result = self.process_command(user_input, choices)
              
              if action_result == "quit":
@@ -688,7 +699,7 @@ class Game:
         else:
             self.display_scene()
             
-            choices = self.scene_manager.current_scene_data.get("choices", [])
+            choices = self.scene_manager.current_scene_data.get("choices", []) if self.scene_manager.current_scene_data else []
             
             interrupts = self.skill_system.check_passive_interrupts(
                 self.last_composed_text,
@@ -699,8 +710,9 @@ class Game:
                 for item in interrupts:
                     if isinstance(item, dict):
                         # Format structured interrupt
-                        skill = item['skill']
-                        text = item['text']
+                        # Handle both uppercase and lowercase keys if needed, but standardize on 'skill'
+                        skill = item.get('skill', 'UNKNOWN')
+                        text = item.get('text', '...')
                         # Simple color simulation for CLI text if supported or just text
                         self.print(f" [{skill}] {text}")
                     else:
@@ -708,7 +720,10 @@ class Game:
                 self.print("~" * 60)
 
             self.display_status_line()
-            self.display_choices(choices)
+
+            # Ensure choices are displayed even if scene data is missing (empty list)
+            if self.scene_manager.current_scene_data:
+                self.display_choices(choices)
 
     def display_status_line(self):
         mode_str = "DIALOGUE" if self.input_mode == InputMode.DIALOGUE else "INVESTIGATION"
@@ -800,6 +815,10 @@ class Game:
 
     def display_scene(self):
         scene = self.scene_manager.current_scene_data
+        if not scene:
+            self.print("No scene loaded.")
+            return
+
         self.print("\n" + "="*60)
         
         # HUD
@@ -1176,6 +1195,11 @@ class Game:
                     self.dialogue_manager.text_composer.debug_mode = self.debug_mode
             return "refresh"
         
+        if clean == 'devmode':
+            self.text_composer.developer_commentary = not self.text_composer.developer_commentary
+            self.print(f"[DEVELOPER COMMENTARY: {'ON' if self.text_composer.developer_commentary else 'OFF'}]")
+            return "refresh"
+
         if self.debug_mode:
             # Debug: Show Dialogue Tree
             if clean.startswith('debug_dialogue'):
@@ -1360,7 +1384,12 @@ class Game:
                         self.handle_parser_command(verb, target)
                 return "refresh" # Stay in same scene (or refresh state)
             else:
-                self.print("I don't understand that command.")
+                # Try to get a suggestion
+                suggestion = self.parser.get_suggestion(raw)
+                if suggestion:
+                    self.print(f"I don't understand that. Did you mean '{suggestion}'?")
+                else:
+                    self.print("I don't understand that command.")
         else:
             self.print("Use numbered choices in Dialogue Mode (or type 'switch').")
         
@@ -1396,7 +1425,7 @@ class Game:
                 return
 
         scene = self.scene_manager.current_scene_data
-        objects = scene.get("objects", {})
+        objects = scene.get("objects", {}) if scene else {}
         
         # 2. Dynamic Verb Guessing (Context-Aware)
         # If verb is implicit or generic, try to infer from target

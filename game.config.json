@@ -9,5 +9,6 @@
         "hard": 11,
         "extreme": 13,
         "legendary": 15
-    }
+    },
+    "developer_commentary": false
 }
