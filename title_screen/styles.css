@@ -110,8 +110,12 @@ body, html {
     transition: text-shadow 0.2s;
 }
 
-.main-menu li:hover {
+.main-menu li:hover, .main-menu li.active {
     text-shadow: 0 0 15px var(--green-term), 0 0 30px var(--green-term), 0 0 40px #A0FFA0;
+}
+
+.main-menu li.active::before {
+    content: "> ";
 }
 
 /* Phase 4: CRT Monitor Container */
@@ -179,6 +183,14 @@ body, html {
     color: var(--green-term);
     text-shadow: 0 0 5px var(--green-term); /* Less bloom for small screen */
     margin-bottom: 0.5rem;
+}
+
+.crt-menu li.active {
+    text-shadow: 0 0 10px var(--green-term), 0 0 20px var(--green-term);
+}
+
+.crt-menu li.active::before {
+    content: "> ";
 }
 
 /* Scanlines */
