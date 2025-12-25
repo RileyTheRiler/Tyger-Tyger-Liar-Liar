@@ -8,6 +8,13 @@ DATA_DIR = "data"
 ENCOUNTERS_FILE = os.path.join(DATA_DIR, "encounters", "vertical_slice_encounters.json")
 INJURIES_FILE = os.path.join(DATA_DIR, "injuries.json")
 
+# Ensure src is in path for imports
+sys.path.append(os.path.join(os.getcwd(), 'src'))
+from engine.combat import CombatManager
+from engine.mechanics import SkillSystem
+from engine.injury_system import InjurySystem
+from engine.trauma_system import TraumaSystem
+
 def ensure_dirs():
     if not os.path.exists(os.path.join(DATA_DIR, "encounters")):
         os.makedirs(os.path.join(DATA_DIR, "encounters"))
@@ -98,13 +105,75 @@ def edit_injury():
     data[iid] = injury
     save_json(INJURIES_FILE, data)
 
+def simulate_combat():
+    print("\n--- Combat Simulation ---")
+    print("This will run a mock combat using the current systems.")
+
+    skill_sys = SkillSystem()
+    player_state = {"sanity": 100, "injuries": []}
+    injury_sys = InjurySystem()
+    trauma_sys = TraumaSystem()
+
+    combat = CombatManager(skill_sys, player_state, injury_sys, trauma_sys)
+
+    # Load default enemy or create one
+    enemy = {
+        "name": "Simulation Dummy",
+        "hp": 5,
+        "reflexes": 0,
+        "attack": 1,
+        "traits": []
+    }
+
+    print("Initializing encounter...")
+    combat.start_encounter(enemies=[enemy], encounter_type="simulation")
+
+    while combat.active:
+        print(f"\nRound {combat.round_counter}")
+        print("1. Attack")
+        print("2. Dodge")
+        print("3. Intimidate")
+        print("4. End Simulation")
+
+        choice = input("Choose action: ").strip()
+        result = {}
+
+        if choice == "1":
+            result = combat.perform_action("attack", "Simulation Dummy")
+        elif choice == "2":
+            result = combat.perform_action("dodge")
+        elif choice == "3":
+            result = combat.perform_action("intimidate", "Simulation Dummy")
+        elif choice == "4":
+            combat.end_encounter()
+            break
+        else:
+            print("Invalid.")
+            continue
+
+        # Print Log for this turn
+        if result:
+            print(f"\n[ACTION RESULT]: {result.get('messages')}")
+
+        print("\n--- COMBAT LOG (Last 5) ---")
+        for msg in combat.log[-5:]:
+            print(f" > {msg}")
+
+        if not combat.active:
+            print("\nCombat Ended.")
+            if "injuries" in player_state and player_state["injuries"]:
+                 print("Injuries sustained:")
+                 for inj in injury_sys.active_injuries:
+                     print(f" - {inj.name} ({inj.severity})")
+
 def main():
     ensure_dirs()
     while True:
         print("\n=== Tyger Tyger Developer Tools ===")
         print("1. Edit Encounters")
         print("2. Edit Injuries")
-        print("3. Exit")
+        print("3. Simulate Combat (Debug Log)")
+        print("4. Exit")
         choice = input("Select: ").strip()
 
         if choice == "1":
@@ -112,6 +181,8 @@ def main():
         elif choice == "2":
             edit_injury()
         elif choice == "3":
+            simulate_combat()
+        elif choice == "4":
             break
 
 if __name__ == "__main__":
