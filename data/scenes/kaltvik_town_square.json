@@ -1,0 +1,32 @@
+{
+    "id": "kaltvik_town_square",
+    "name": "Kaltvik Town Square",
+    "text": {
+        "base": "The town square is silent. Snow drifts against the statue of the town founder, burying him up to his waist. To the north, the Grand Kaltvik Hotel looms. To the east, the Police Station sits squat and grey. Far to the west, beyond the industrial district, the fence of the Research Facility glints.",
+        "lens": {
+            "believer": "The geometry of the square is wrong. The streets spiral inward, like a drain.",
+            "skeptic": "Economic collapse hit this place hard. Everything is in disrepair, but it's just neglect, not malice.",
+            "haunted": "You remember a festival here. Or a riot. The shouting is still trapped in the ice."
+        }
+    },
+    "choices": [
+        {
+            "text": "Head to the Hotel.",
+            "effects": {"stress": 5},
+            "next_scene": "kaltvik_hotel"
+        },
+        {
+            "text": "Go to the Police Station.",
+            "next_scene": "kaltvik_police"
+        },
+        {
+            "text": "Trek to the Abandoned Facility.",
+            "effects": {"stress": 10},
+            "next_scene": "kaltvik_facility"
+        },
+        {
+            "text": "Return to the Trailhead.",
+            "next_scene": "trailhead"
+        }
+    ]
+}

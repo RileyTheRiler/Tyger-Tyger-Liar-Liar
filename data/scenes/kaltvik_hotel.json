@@ -1,0 +1,54 @@
+{
+    "id": "kaltvik_hotel",
+    "name": "Grand Kaltvik Hotel Lobby",
+    "text": {
+        "base": "The lobby smells of mildew and old cigarettes. The reception desk is covered in a layer of dust. Keys hang on the wall behind it, swinging slightly in a draft you can't feel.",
+        "lens": {
+            "believer": "Room 347's key is missing. The hook is shiny, as if recently used.",
+            "skeptic": "Squatters probably. The draft is coming from a broken window upstairs.",
+            "haunted": "You checked in here once. You never checked out."
+        },
+        "inserts": [
+            {
+                "id": "stress_vision",
+                "condition": {"skill_gte": {"Paranormal Sensitivity": 1}},
+                "text": "For a second, the dust on the floor looks like ash.",
+                "insert_at": "AFTER_BASE"
+            }
+        ]
+    },
+    "objects": {
+        "guest_register": {
+            "name": "Guest Register",
+            "description": "The leather-bound book is open to October 1995.",
+            "interactions": {
+                "read": "The last entry is just scratching. It looks like a map."
+            }
+        }
+    },
+    "choices": [
+        {
+            "text": "Examine the Guest Register.",
+            "effects": {"doubt": 5},
+            "skill_check": {
+                "skill": "Research",
+                "difficulty": 10,
+                "on_success": {
+                    "effects": {"unlock_thought": "The Missing Guest"}
+                },
+                "on_fail": {
+                    "effects": {"stress": 5}
+                }
+            }
+        },
+        {
+            "text": "Sit in the lobby chair and rest.",
+            "effects": {"stress": -10, "doubt": 5},
+            "next_scene": "kaltvik_hotel"
+        },
+        {
+            "text": "Leave the Hotel.",
+            "next_scene": "kaltvik_town_square"
+        }
+    ]
+}

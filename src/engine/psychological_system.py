@@ -1,6 +1,6 @@
 """
-Psychological State System - Week 15
-Manages Sanity, Mental Load, Fear Level, and psychological effects.
+Psychological State System - Refactored
+Manages Stress, Doubt, Obsession, Stability, and psychological effects.
 """
 
 import random
@@ -9,8 +9,8 @@ from typing import Dict, List, Tuple, Optional
 
 class PsychologicalState:
     """
-    Manages the player's psychological state including Sanity, Mental Load, 
-    Fear Level, and derived states like Disorientation and Instability.
+    Manages the player's psychological state including Stability, Stress,
+    Doubt, and Obsession.
     """
     
     def __init__(self, player_state: dict):
@@ -23,366 +23,204 @@ class PsychologicalState:
         self.player_state = player_state
         
         # Initialize new psychological variables if not present
-        if "mental_load" not in self.player_state:
-            self.player_state["mental_load"] = 0
-        if "fear_level" not in self.player_state:
-            self.player_state["fear_level"] = 0
+        if "stress" not in self.player_state:
+            # Map legacy mental_load if exists
+            self.player_state["stress"] = self.player_state.get("mental_load", 0)
+
+        if "doubt" not in self.player_state:
+            self.player_state["doubt"] = 0
+
+        if "obsession" not in self.player_state:
+            self.player_state["obsession"] = 0
+
+        if "stability" not in self.player_state:
+            # Map legacy sanity if exists
+            self.player_state["stability"] = self.player_state.get("sanity", 100.0)
+
+        # Legacy flags
         if "disorientation" not in self.player_state:
             self.player_state["disorientation"] = False
         if "instability" not in self.player_state:
             self.player_state["instability"] = False
         if "hallucination_history" not in self.player_state:
             self.player_state["hallucination_history"] = []
+
+    # ==================== STABILITY (Ex-Sanity) SYSTEM ====================
     
-    # ==================== SANITY SYSTEM ====================
-    
-    def get_sanity_tier(self) -> int:
+    @property
+    def stability(self) -> float:
+        return self.player_state["stability"]
+
+    @stability.setter
+    def stability(self, value: float):
+        self.player_state["stability"] = max(0.0, min(100.0, value))
+        # Sync legacy
+        self.player_state["sanity"] = self.player_state["stability"]
+
+    def get_stability_tier(self) -> int:
         """
-        Get the current sanity tier (0-4).
-        
-        Returns:
-            0: 0 (breakdown)
-            1: 1-24 (psychosis)
-            2: 25-49 (hysteria)
-            3: 50-74 (unsettled)
-            4: 75-100 (stable)
+        Get the current stability tier (0-4).
         """
-        sanity = self.player_state.get("sanity", 100.0)
-        
-        if sanity <= 0:
-            return 0
-        elif sanity < 25:
-            return 1
-        elif sanity < 50:
-            return 2
-        elif sanity < 75:
-            return 3
-        else:
-            return 4
+        val = self.stability
+        if val <= 0: return 0
+        elif val < 25: return 1
+        elif val < 50: return 2
+        elif val < 75: return 3
+        else: return 4
     
-    def get_sanity_tier_name(self) -> str:
-        """Get the descriptive name of the current sanity tier."""
-        tier = self.get_sanity_tier()
-        names = {
-            0: "BREAKDOWN",
-            1: "PSYCHOSIS",
-            2: "HYSTERIA",
+    def get_stability_description(self) -> str:
+        """Get indirect symptom description of stability."""
+        tier = self.get_stability_tier()
+        descriptions = {
+            0: "BROKEN",
+            1: "FRACTURED",
+            2: "SHAKING",
             3: "UNSETTLED",
-            4: "STABLE"
+            4: "FOCUSED"
         }
-        return names.get(tier, "UNKNOWN")
+        return descriptions.get(tier, "UNKNOWN")
     
-    def modify_sanity(self, amount: float, reason: str = "Unknown") -> Dict:
-        """
-        Modify sanity and return effects triggered.
-        
-        Args:
-            amount: Amount to change sanity by (negative = loss)
-            reason: Description of what caused the change
-            
-        Returns:
-            Dict with 'messages' and 'effects' keys
-        """
-        old_sanity = self.player_state["sanity"]
-        old_tier = self.get_sanity_tier()
-        
-        self.player_state["sanity"] = max(0, min(100, old_sanity + amount))
-        new_sanity = self.player_state["sanity"]
-        new_tier = self.get_sanity_tier()
-        
-        result = {
-            "messages": [],
-            "effects": [],
-            "tier_changed": old_tier != new_tier
-        }
-        
-        # Log the change
-        if amount != 0:
-            sign = "+" if amount > 0 else ""
-            result["messages"].append(f"[SANITY {sign}{amount:.0f}] {reason}")
-        
-        # Check for tier transitions
-        if new_tier < old_tier:
-            result["messages"].append(f"[PSYCHOLOGICAL STATE: {self.get_sanity_tier_name()}]")
-            result["effects"].append(("tier_drop", new_tier))
-            
-            # Trigger tier-specific effects
-            if new_tier == 0:
-                result["effects"].append(("breakdown", None))
-            elif new_tier == 1:
-                result["effects"].append(("visual_hallucinations_enabled", True))
-                self.player_state["instability"] = True
-            elif new_tier == 2:
-                result["effects"].append(("auditory_hallucinations_enabled", True))
-        
-        return result
-    
-    def get_mental_load_multiplier(self) -> float:
-        """
-        Get the Mental Load accumulation multiplier based on sanity tier.
-        
-        Returns:
-            Multiplier (1.0 = normal, 1.5 = increased, etc.)
-        """
-        tier = self.get_sanity_tier()
-        
-        if tier >= 3:  # 50-100: Normal
-            return 1.0
-        elif tier == 2:  # 25-49: Increased
-            return 1.5
-        elif tier == 1:  # 1-24: Severe
-            return 2.0
-        else:  # 0: Critical
-            return 3.0
-    
-    def should_skill_misfire(self) -> bool:
-        """
-        Check if a skill check should misfire due to low sanity.
-        
-        Returns:
-            True if skill should misfire (49-25 range: 10% chance)
-        """
-        tier = self.get_sanity_tier()
-        
-        if tier == 2:  # 25-49 range
-            return random.random() < 0.10
-        elif tier == 1:  # 1-24 range
-            return random.random() < 0.20
-        
-        return False
-    
-    # ==================== MENTAL LOAD SYSTEM ====================
-    
-    def add_mental_load(self, amount: int, source: str = "Unknown") -> Dict:
-        """
-        Add Mental Load with sanity-based multiplier.
-        
-        Args:
-            amount: Base amount to add
-            source: What caused the load
-            
-        Returns:
-            Dict with messages and current load level
-        """
-        multiplier = self.get_mental_load_multiplier()
-        actual_amount = int(amount * multiplier)
-        
-        old_load = self.player_state["mental_load"]
-        self.player_state["mental_load"] = min(100, old_load + actual_amount)
-        new_load = self.player_state["mental_load"]
-        
-        result = {
-            "messages": [],
-            "load_level": self.get_mental_load_level(),
-            "amount_added": actual_amount
-        }
-        
-        if actual_amount > 0:
-            result["messages"].append(f"[MENTAL LOAD +{actual_amount}] {source}")
-            
-            # Check for threshold crossings
-            if old_load < 50 <= new_load:
-                result["messages"].append("[MENTAL LOAD: MODERATE] Your thoughts feel heavier.")
-            elif old_load < 75 <= new_load:
-                result["messages"].append("[MENTAL LOAD: HIGH] Concentration is becoming difficult.")
-                self.player_state["disorientation"] = True
-            elif old_load < 90 <= new_load:
-                result["messages"].append("[MENTAL LOAD: CRITICAL] Your mind is fracturing under the strain.")
-                self.player_state["instability"] = True
-        
-        return result
-    
-    def reduce_mental_load(self, amount: int, source: str = "Recovery") -> Dict:
-        """
-        Reduce Mental Load.
-        
-        Args:
-            amount: Amount to reduce
-            source: What caused the reduction
-            
-        Returns:
-            Dict with messages
-        """
-        old_load = self.player_state["mental_load"]
-        self.player_state["mental_load"] = max(0, old_load - amount)
-        new_load = self.player_state["mental_load"]
-        
-        result = {
-            "messages": [],
-            "load_level": self.get_mental_load_level()
-        }
-        
-        if amount > 0:
-            result["messages"].append(f"[MENTAL LOAD -{amount}] {source}")
-            
-            # Update flags based on new load
-            if new_load < 75:
-                self.player_state["disorientation"] = False
-            if new_load < 90:
-                self.player_state["instability"] = False
-        
-        return result
-    
-    def get_mental_load_level(self) -> str:
-        """Get descriptive level of mental load."""
-        load = self.player_state.get("mental_load", 0)
-        
-        if load < 25:
-            return "LOW"
-        elif load < 50:
-            return "MODERATE"
-        elif load < 75:
-            return "HIGH"
-        elif load < 90:
-            return "SEVERE"
-        else:
-            return "CRITICAL"
-    
-    def get_mental_load_penalty(self) -> int:
-        """
-        Get skill check penalty based on Mental Load.
-        
-        Returns:
-            Penalty to apply to skill checks (0 to -3)
-        """
-        load = self.player_state.get("mental_load", 0)
-        
-        if load < 50:
-            return 0
-        elif load < 75:
-            return -1
-        elif load < 90:
-            return -2
-        else:
-            return -3
-    
-    # ==================== FEAR LEVEL SYSTEM ====================
-    
-    def add_fear(self, amount: int, source: str = "Unknown") -> Dict:
-        """
-        Add Fear Level (temporary spikes).
-        
-        Args:
-            amount: Amount to add
-            source: What caused the fear
-            
-        Returns:
-            Dict with messages and effects
-        """
-        old_fear = self.player_state["fear_level"]
-        self.player_state["fear_level"] = min(100, old_fear + amount)
-        new_fear = self.player_state["fear_level"]
+    def modify_stability(self, amount: float, reason: str = "Unknown") -> Dict:
+        """Modify stability (sanity)."""
+        old_tier = self.get_stability_tier()
+        self.stability += amount
+        new_tier = self.get_stability_tier()
         
         result = {
             "messages": [],
             "effects": []
         }
         
-        if amount > 0:
-            result["messages"].append(f"[FEAR +{amount}] {source}")
-            
-            # High fear amplifies Mental Load
-            if new_fear >= 50:
-                load_increase = amount // 2
-                load_result = self.add_mental_load(load_increase, "Fear-induced stress")
-                result["messages"].extend(load_result["messages"])
+        if amount != 0:
+            # Indirect feedback
+            msg = "You feel your grip tightening." if amount > 0 else "You feel a piece of yourself slip away."
+            result["messages"].append(f"[{msg}] ({reason})")
+
+        if new_tier < old_tier:
+            result["messages"].append(f"[MENTAL STATE: {self.get_stability_description()}]")
+            if new_tier <= 1:
+                result["effects"].append(("visual_hallucinations_enabled", True))
         
         return result
-    
-    def decay_fear(self, minutes: int) -> Dict:
-        """
-        Decay fear level over time (5 points per 10 minutes).
+
+    # ==================== STRESS (Ex-Mental Load) SYSTEM ====================
+
+    @property
+    def stress(self) -> int:
+        return self.player_state["stress"]
+
+    @stress.setter
+    def stress(self, value: int):
+        self.player_state["stress"] = max(0, min(100, value))
+        # Sync legacy
+        self.player_state["mental_load"] = self.player_state["stress"]
+
+    def add_stress(self, amount: int, source: str = "Unknown") -> Dict:
+        """Add Stress."""
+        self.stress += amount
+        result = {"messages": []}
         
-        Args:
-            minutes: Time passed
+        if amount > 0:
+            # Indirect feedback
+            symptoms = [
+                "Your temples throb.",
+                "Your heart rate spikes.",
+                "Gritting your teeth.",
+                "A sharp migraine pierces your skull."
+            ]
+            symptom = symptoms[min(len(symptoms)-1, int(self.stress / 25))]
+            result["messages"].append(f"[{symptom}]")
             
-        Returns:
-            Dict with messages if significant decay occurred
+        return result
+
+    def relieve_stress(self, amount: int, source: str = "Relief") -> Dict:
+        """Relieve Stress."""
+        self.stress -= amount
+        return {"messages": ["You take a deep breath. The pressure subsides."]}
+
+    def get_stress_symptom(self) -> str:
+        if self.stress < 25: return "Calm"
+        elif self.stress < 50: return "Tense"
+        elif self.stress < 75: return "Strained"
+        else: return "Overloaded"
+
+    # ==================== DOUBT SYSTEM ====================
+
+    @property
+    def doubt(self) -> int:
+        return self.player_state["doubt"]
+
+    @doubt.setter
+    def doubt(self, value: int):
+        self.player_state["doubt"] = max(0, min(100, value))
+
+    def add_doubt(self, amount: int, source: str = "Unknown") -> Dict:
+        self.doubt += amount
+        result = {"messages": []}
+        if amount > 0 and self.doubt > 50:
+            result["messages"].append("[Are you sure about that?]")
+        return result
+
+    def get_doubt_symptom(self) -> str:
+        if self.doubt < 30: return "Confident"
+        elif self.doubt < 60: return "Uncertain"
+        else: return "Paranoid"
+
+    # ==================== OBSESSION SYSTEM ====================
+
+    @property
+    def obsession(self) -> int:
+        return self.player_state["obsession"]
+
+    @obsession.setter
+    def obsession(self, value: int):
+        self.player_state["obsession"] = max(0, min(100, value))
+
+    def add_obsession(self, amount: int, source: str = "Unknown") -> Dict:
+        self.obsession += amount
+        result = {"messages": []}
+        if amount > 0 and self.obsession > 60:
+             result["messages"].append("[You can't stop thinking about it.]")
+        return result
+
+    def get_obsession_symptom(self) -> str:
+        if self.obsession < 30: return "Detached"
+        elif self.obsession < 60: return "Fixated"
+        else: return "Obsessed"
+
+    # ==================== EFFECTS & THRESHOLDS ====================
+
+    def should_trigger_text_distortion(self) -> bool:
         """
-        decay_amount = (minutes // 10) * 5
-        
-        if decay_amount > 0:
-            old_fear = self.player_state["fear_level"]
-            self.player_state["fear_level"] = max(0, old_fear - decay_amount)
-            
-            return {
-                "messages": [f"[Your fear subsides slightly...]"] if old_fear > 0 else [],
-                "amount_decayed": decay_amount
-            }
-        
-        return {"messages": [], "amount_decayed": 0}
-    
-    # ==================== STATE QUERIES ====================
-    
+        Triggered by High Stress (>50) or Low Stability (<40).
+        """
+        return self.stress > 50 or self.stability < 40
+
+    def should_trigger_hallucinated_options(self) -> bool:
+        """
+        Triggered by High Obsession (>50) or Very Low Stability (<25).
+        """
+        return self.obsession > 50 or self.stability < 25
+
+    def should_trigger_missing_facts(self) -> bool:
+        """
+        Triggered by High Doubt (>50).
+        """
+        return self.doubt > 50
+
     def get_psychological_summary(self) -> str:
-        """
-        Get a formatted summary of the current psychological state.
-        
-        Returns:
-            Multi-line string with current state
-        """
-        sanity = self.player_state.get("sanity", 100.0)
-        mental_load = self.player_state.get("mental_load", 0)
-        fear = self.player_state.get("fear_level", 0)
-        disoriented = self.player_state.get("disorientation", False)
-        unstable = self.player_state.get("instability", False)
-        
-        lines = [
-            "=== PSYCHOLOGICAL STATE ===",
-            f"Sanity: {sanity:.0f}/100 ({self.get_sanity_tier_name()})",
-            f"Mental Load: {mental_load}/100 ({self.get_mental_load_level()})",
-            f"Fear Level: {fear}/100",
-            ""
-        ]
-        
-        # Status flags
-        if disoriented or unstable:
-            lines.append("Status Effects:")
-            if disoriented:
-                lines.append("  • DISORIENTED - Perception may be unreliable")
-            if unstable:
-                lines.append("  • UNSTABLE - Internal voices competing")
-        
-        # Penalties
-        penalty = self.get_mental_load_penalty()
-        if penalty < 0:
-            lines.append(f"\nSkill Check Penalty: {penalty}")
-        
-        lines.append("=" * 27)
-        
-        return "\n".join(lines)
+        return (
+            "=== MENTAL STATE ===\n"
+            f"Stability: {self.get_stability_description()} ({self.stability:.0f}%)\n"
+            f"Stress:    {self.get_stress_symptom()} ({self.stress}%)\n"
+            f"Doubt:     {self.get_doubt_symptom()} ({self.doubt}%)\n"
+            f"Obsession: {self.get_obsession_symptom()} ({self.obsession}%)\n"
+            "===================="
+        )
     
-    def is_hallucinating(self) -> bool:
-        """Check if player should experience hallucinations."""
-        tier = self.get_sanity_tier()
-        return tier <= 2  # Sanity < 50
-    
-    def can_have_visual_hallucinations(self) -> bool:
-        """Check if player can have visual hallucinations."""
-        tier = self.get_sanity_tier()
-        return tier <= 1  # Sanity < 25
-    
-    def can_have_auditory_hallucinations(self) -> bool:
-        """Check if player can have auditory hallucinations."""
-        tier = self.get_sanity_tier()
-        return tier <= 2  # Sanity < 50
-    
-    def record_hallucination(self, hallucination_id: str):
-        """Record that a hallucination has been shown to avoid repetition."""
-        if hallucination_id not in self.player_state["hallucination_history"]:
-            self.player_state["hallucination_history"].append(hallucination_id)
-    
-    def has_seen_hallucination(self, hallucination_id: str) -> bool:
-        """Check if a specific hallucination has already been shown."""
-        return hallucination_id in self.player_state.get("hallucination_history", [])
-
-    def to_dict(self) -> Dict:
-        """Serialize psychological state (most data is in player_state, but for consistency)."""
-        # Since this class wraps player_state, most data is already saved there.
-        # This is provided if we need to save transient state not in player_state.
-        return {}
-
-    def restore_state(self, state: Dict):
-        """Restore psychological state."""
-        # Most data is in player_state, so this might be empty or used for future transient data.
-        pass
+    # Legacy / Compatibility methods
+    def get_sanity_tier(self) -> int: return self.get_stability_tier()
+    def is_hallucinating(self) -> bool: return self.stability < 50
+    def decay_fear(self, minutes): return {"messages": []} # Stub for compatibility
+    def to_dict(self): return {}
+    def restore_state(self, state): pass
