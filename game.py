@@ -325,6 +325,7 @@ class Game:
         self.process_recovery(minutes)
 
     def process_recovery(self, minutes: int):
+        # Legacy recovery
         injuries = self.player_state.get("injuries", [])
         healed = []
         for injury in injuries:
@@ -335,7 +336,16 @@ class Game:
         for h in healed:
             injuries.remove(h)
             self.print(f"\n[RECOVERY] Your '{h['name']}' has healed properly.")
-            # Restore stats if needed?
+
+        # New System Recovery
+        hours = minutes / 60.0
+        injury_msgs = self.injury_system.advance_time(hours)
+        for msg in injury_msgs:
+            self.print(f"\n{msg}")
+
+        trauma_msgs = self.trauma_system.advance_time(hours)
+        for msg in trauma_msgs:
+            self.print(f"\n{msg}")
 
     def modify_resonance(self, amount: int, cause: str = "Unknown"):
         """Modify the global population resonance counter."""
@@ -380,15 +390,38 @@ class Game:
 
 
     def update_board_effects(self):
-        # Clear old Board modifiers (hacky reset for now)
+        # Clear old modifiers
         for skill in self.skill_system.skills.values():
             skill.set_modifier("Board", 0)
+            skill.set_modifier("Injury", 0)
+            skill.set_modifier("Trauma", 0)
             
+        # Board Modifiers
         current_mods = self.board.get_all_modifiers()
         for skill_name, val in current_mods.items():
             skill = self.skill_system.get_skill(skill_name)
             if skill:
                 skill.set_modifier("Board", val)
+
+        # Injury Penalties
+        inj_penalties, all_pen = self.injury_system.get_total_penalties()
+        if all_pen != 0:
+            for skill in self.skill_system.skills.values():
+                skill.set_modifier("Injury", all_pen) # Base 'All' penalty
+
+        for skill_name, val in inj_penalties.items():
+            skill = self.skill_system.get_skill(skill_name)
+            if skill:
+                # Add to existing (if any)
+                current = skill.modifiers.get("Injury", 0)
+                skill.set_modifier("Injury", current + val)
+
+        # Trauma Penalties
+        trauma_penalties = self.trauma_system.get_total_penalties()
+        for skill_name, val in trauma_penalties.items():
+            skill = self.skill_system.get_skill(skill_name)
+            if skill:
+                skill.set_modifier("Trauma", val)
 
     def get_game_state(self):
         """Package current game state for trigger evaluation and movement checks."""
@@ -935,7 +968,12 @@ class Game:
         # 3. Compose
         thermal_active = self.player_state.get("thermal_mode", False)
         composed_result = self.text_composer.compose(text_data, archetype, self.player_state, thermal_mode=thermal_active)
-        self.last_composed_text = self.apply_reality_distortion(composed_result.full_text)
+
+        # Apply distortions
+        text = self.apply_reality_distortion(composed_result.full_text)
+        text = self.trauma_system.apply_trauma_to_text(text, self.player_state) # Apply trauma effects
+
+        self.last_composed_text = text
         self.print("\n" + self.last_composed_text + "\n")
         
         # Check for Contradictions (Liar Engine)
@@ -971,7 +1009,9 @@ class Game:
                 self.print(f" {s2['skill']}: {s2['text']}")
                 self.print(f" Choose a perspective: {Colors.CYAN}'side {s1['skill'].lower()}'{Colors.RESET} or {Colors.CYAN}'side {s2['skill'].lower()}'{Colors.RESET}")
             else:
-                self.print(f" [{Colors.YELLOW}{inter['skill']}{Colors.RESET}] {inter['text']}")
+                skill_name = inter.get('skill', 'UNKNOWN')
+                text_val = inter.get('text', '...')
+                self.print(f" [{Colors.YELLOW}{skill_name}{Colors.RESET}] {text_val}")
         
         if "ambient_effects" in scene:
             amb = scene["ambient_effects"]
@@ -1729,6 +1769,10 @@ class Game:
                 "scene_state": {
                     "current_scene_id": self.scene_manager.current_scene_id,
                     "visited_scenes": list(self.scene_manager.visited_scenes) if hasattr(self.scene_manager, 'visited_scenes') else []
+                },
+                "new_systems": {
+                    "injury_system": self.injury_system.to_dict(),
+                    "trauma_system": self.trauma_system.to_dict()
                 }
             }
             
@@ -1787,6 +1831,14 @@ class Game:
             if "scene" in save_data:
                 self.scene_manager.load_scene(save_data["scene"])
             
+            # Restore new systems
+            if "new_systems" in save_data:
+                ns = save_data["new_systems"]
+                if "injury_system" in ns:
+                    self.injury_system.from_dict(ns["injury_system"])
+                if "trauma_system" in ns:
+                    self.trauma_system.from_dict(ns["trauma_system"])
+
             print(f"\n✓ Game loaded successfully from '{slot_id}'")
             print(f"   Location: {save_data.get('scene', 'Unknown')}")
             print(f"   Time: {save_data.get('datetime', 'Unknown')}")
