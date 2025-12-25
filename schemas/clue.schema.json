@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "clue.schema.json",
+  "title": "Clue",
+  "description": "An investigative clue that can be discovered and added to the Board",
+  "type": "object",
+  "required": ["id", "title", "text", "source_scene_id"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the clue",
+      "pattern": "^clue_[a-z][a-z0-9_]*$"
+    },
+    "title": {
+      "type": "string",
+      "description": "Short display title"
+    },
+    "text": {
+      "type": "object",
+      "required": ["base"],
+      "properties": {
+        "base": {
+          "type": "string",
+          "description": "Objective description of the clue"
+        },
+        "lens": {
+          "type": "object",
+          "properties": {
+            "believer": {"type": "string"},
+            "skeptic": {"type": "string"},
+            "haunted": {"type": "string"}
+          }
+        }
+      }
+    },
+    "source_scene_id": {
+      "type": "string",
+      "description": "Scene where this clue is discovered"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["aurora", "dewline", "missing", "medical", "folklore", "government",
+                 "physical", "document", "testimony", "photograph", "recording", "anomaly"]
+      },
+      "description": "Tags for auto-linking and categorization"
+    },
+    "reliability": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.5,
+      "description": "How reliable this clue is (0 = unreliable, 1 = certain)"
+    },
+    "links_to_theories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["theory_id", "relation"],
+        "properties": {
+          "theory_id": {"type": "string"},
+          "relation": {
+            "type": "string",
+            "enum": ["supports", "contradicts", "associated"]
+          }
+        }
+      }
+    },
+    "related_npcs": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "NPC IDs related to this clue"
+    },
+    "related_locations": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Location IDs related to this clue"
+    },
+    "analysis_skills": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Skills that can analyze this clue for more information"
+    },
+    "analyzed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the clue has been analyzed"
+    },
+    "analysis_result": {
+      "type": "object",
+      "properties": {
+        "text": {"type": "string"},
+        "reveals_clues": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "modifies_reliability": {"type": "number"}
+      }
+    }
+  }
+}

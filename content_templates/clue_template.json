@@ -1,0 +1,68 @@
+{
+  "_comment": "CLUE TEMPLATE - Copy and fill in for each clue",
+  "_instructions": [
+    "1. ID must start with 'clue_'",
+    "2. Reliability: 0.0 (rumor) to 1.0 (physical evidence)",
+    "3. Tags are used for Board auto-linking",
+    "4. Link to theories with 'supports', 'contradicts', or 'associated'"
+  ],
+
+  "id": "clue_example_evidence",
+  "title": "Example Clue Title",
+
+  "text": {
+    "base": "OBJECTIVE DESCRIPTION: What the clue IS, physically. A torn letter. A photograph. A bloodstain.",
+    "lens": {
+      "believer": "BELIEVER READING: What supernatural meaning might this have?",
+      "skeptic": "SKEPTIC READING: What rational explanation fits?",
+      "haunted": "HAUNTED READING: What personal connection might the player have?"
+    }
+  },
+
+  "source_scene_id": "scene_where_found",
+
+  "tags": [
+    "physical",
+    "missing",
+    "aurora"
+  ],
+
+  "reliability": 0.7,
+
+  "links_to_theories": [
+    {
+      "theory_id": "the_missing_are_connected",
+      "relation": "supports"
+    },
+    {
+      "theory_id": "aurora_rules",
+      "relation": "associated"
+    }
+  ],
+
+  "related_npcs": [
+    "npc_sheriff_bergman"
+  ],
+
+  "related_locations": [
+    "loc_cabin",
+    "loc_forest"
+  ],
+
+  "analysis_skills": [
+    "Forensics",
+    "Research"
+  ],
+
+  "analysis_result": {
+    "text": "Deeper analysis reveals additional details...",
+    "reveals_clues": ["clue_hidden_connection"],
+    "modifies_reliability": 0.9
+  },
+
+  "_writing_notes": {
+    "base_guidance": "Be specific but not conclusive. 'A torn letter' not 'proof of conspiracy'",
+    "lens_guidance": "Each lens interprets the SAME physical clue differently",
+    "reliability_scale": "0.0-0.2: Rumor/hearsay, 0.3-0.5: Testimony, 0.6-0.8: Physical evidence, 0.9-1.0: Irrefutable"
+  }
+}
