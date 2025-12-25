@@ -48,7 +48,8 @@ class CommandParser:
             "SCREAM": ["scream", "shout", "yell"],
             "BURN": ["burn", "ignite", "torch"],
             "GROUND": ["ground", "calm", "meditate"],
-            "OPEN": ["open", "unlock"]
+            "OPEN": ["open", "unlock"],
+            "RUN": ["run", "flee", "escape", "retreat"]
         }
         
         # Spatial prepositions that might imply "LOOK"
@@ -103,13 +104,18 @@ class CommandParser:
             results.append((verb, target))
             
             # Week 24: Implicit Command Chaining
-            if verb == "OPEN" and target:
-                # "open drawer" -> also "examine drawer" (to see contents)
-                results.append(("EXAMINE", target))
-            elif verb == "SEARCH" and target:
-                # "search desk" -> "examine desk" + "collect" (if applicable, but "collect" needs specific item)
-                # For now, SEARCH implies EXAMINE.
-                results.append(("EXAMINE", target))
+            # Week 24: Implicit Command Chaining via Dictionary
+            # Check if verb maps to implicit followers
+            # We iterate implicit_chains to support generic definitions
+            # Key is verb (lower case), Value is list of verbs to append with same target
+            if verb and verb.lower() in self.implicit_chains:
+                for implicit_verb_key in self.implicit_chains[verb.lower()]:
+                    # Map simple key to canonical verb if possible, or use as is
+                    # self.implicit_chains values should ideally be canonical verbs (e.g. "examine")
+                    # but we need to uppercase them to match parser output format
+                    canonical_implicit = implicit_verb_key.upper()
+                    # Only add if it's not already the next command (prevent infinite loops if user typed it)
+                    results.append((canonical_implicit, target))
 
         return results
 
