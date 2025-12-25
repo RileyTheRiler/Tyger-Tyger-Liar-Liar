@@ -131,8 +131,8 @@ class Game:
         self.output.print(str(text))
 
     def on_time_passed(self, minutes: int):
-        # Update Weather
-        self.weather_system.update(minutes)
+        # Update Weather (with Attention influence)
+        self.weather_system.update(minutes, attention_level=self.attention_system.attention_level)
 
         # Weather Mechanics (Stamina/Sanity Drain)
         # Only apply if exposed (simplification: all scenes except specific indoor ones?)
@@ -159,6 +159,22 @@ class Game:
                      # For safety, let's drain Sanity as "Misery"
                      self.player_state["sanity"] -= damage
                      self.print(f"\n[WEATHER] The cold is biting. You feel your resolve stiffen. (Sanity -{damage:.1f})")
+
+            # Equipment Durability (Battery Drain)
+            # If weather is cold (<= 0F), electronics drain faster.
+            if weather_cond.visibility_mod < 0 or self.weather_system.temperature <= 0:
+                 # Check inventory for electronic tools
+                 for item in self.inventory_system.carried_items:
+                     if item.limited_use and item.uses > 0:
+                         # Heuristic: Check for 'battery', 'electric', 'light' in desc
+                         keywords = ['battery', 'electric', 'electronic', 'flashlight', 'radio', 'sensor']
+                         is_electronic = any(k in item.name.lower() or k in item.description.lower() for k in keywords)
+
+                         if is_electronic:
+                             # Chance to drain extra charge due to cold
+                             if random.random() < 0.2: # 20% chance per check (approx per hour if exposed)
+                                 item.uses -= 1
+                                 self.print(f"[{item.name}] The cold saps the battery. Charge drops.")
 
         # Check Environmental Triggers
         # For now, just a generic check, or we need current location type from scene

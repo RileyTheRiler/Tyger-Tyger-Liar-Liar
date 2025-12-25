@@ -32,19 +32,26 @@ class WeatherSystem:
     def get_current_condition(self) -> WeatherCondition:
         return self.conditions.get(self.current_condition_key, self.conditions["clear"])
 
-    def update(self, minutes_passed: int):
+    def update(self, minutes_passed: int, attention_level: int = 0):
         self.next_shift_time -= minutes_passed
         if self.next_shift_time <= 0:
-            self._shift_weather()
+            self._shift_weather(attention_level=attention_level)
 
-    def _shift_weather(self, force_condition: Optional[str] = None):
+    def _shift_weather(self, force_condition: Optional[str] = None, attention_level: int = 0):
         if force_condition and force_condition in self.conditions:
             self.current_condition_key = force_condition
         else:
             # Logic for shifting based on current state
-            options = list(self.conditions.keys())
-            # Weighted choice: Clear/Overcast/Snow common, others rare
-            weights = [30, 25, 20, 15, 5, 4, 1] # Clear, Overcast, Snow, Wind, Aurora, Ice Fog, Whiteout
+            options = ["clear", "overcast", "snow", "wind", "aurora", "ice_fog", "whiteout"]
+
+            # Base weights
+            weights = [30, 25, 20, 15, 5, 4, 1]
+
+            # Dynamic adjustment based on Attention (Entity presence)
+            # Aurora index is 4
+            if attention_level > 50:
+                weights[4] += int((attention_level - 50) * 1.5) # Boost Aurora significantly
+
             self.current_condition_key = random.choices(options, weights=weights, k=1)[0]
 
         # Reset timer (6-12 hours)
