@@ -146,12 +146,49 @@ class TitleScreen {
         });
 
         this.socket.on('game_output', (msg) => {
-            this.queueOutput(msg.data);
+             // Legacy fallback
+             console.warn("Received legacy game_output event");
+             this.queueOutput({ type: 'NARRATIVE_TEXT', payload: { text: msg.data } });
+        });
+
+        this.socket.on('game_event', (event) => {
+            this.handleGameEvent(event);
         });
 
         this.socket.on('game_started', () => {
             console.log('Game Process Started');
         });
+    }
+
+    handleGameEvent(event) {
+        console.log("Event Received:", event);
+
+        switch (event.type) {
+            case 'NARRATIVE_TEXT':
+                this.queueOutput(event.payload.text);
+                break;
+            case 'RAW_TEXT':
+                // Treat raw text as narrative for now but log warning
+                console.warn("Received RAW_TEXT event:", event);
+                this.queueOutput(event.payload.text);
+                break;
+            case 'STATE_UPDATE':
+                // TODO: Update UI HUD elements
+                console.log("State Update:", event.payload);
+                break;
+            case 'CLUE_ADDED':
+                console.log("Clue Added:", event.payload);
+                this.queueOutput(`\n[CLUE ADDED: ${event.payload.name || 'Unknown'}]`);
+                break;
+            case 'OPTION_ADDED':
+            case 'OPTION_REMOVED':
+            case 'MENTAL_EFFECT':
+                console.log("Game Event:", event.type, event.payload);
+                break;
+            default:
+                console.error("UNKNOWN EVENT TYPE:", event.type, event);
+                break;
+        }
     }
 
     startIntro() {

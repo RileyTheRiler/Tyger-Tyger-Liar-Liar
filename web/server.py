@@ -5,6 +5,7 @@ import subprocess
 import threading
 import queue
 import time
+import json
 from flask import Flask, send_from_directory
 from flask_socketio import SocketIO, emit
 
@@ -25,7 +26,22 @@ def read_output(process):
     """Reads output from the game process and emits it to the client."""
     for line in iter(process.stdout.readline, ''):
         if line:
-            socketio.emit('game_output', {'data': line})
+            try:
+                # Try to parse as JSON event
+                event = json.loads(line)
+                socketio.emit('game_event', event)
+            except json.JSONDecodeError:
+                # Fallback for non-JSON lines (shouldn't happen in strict API mode but safe to keep)
+                # Wrap in generic text event or ignore?
+                # Let's emit as raw data for debugging if needed, or wrap it.
+                # User wants to lock interface, so ideally we shouldn't emit raw stuff.
+                # But for now, let's wrap it in a pseudo-event so frontend doesn't crash
+                socketio.emit('game_event', {
+                    "type": "NARRATIVE_TEXT",
+                    "payload": {"text": line},
+                    "source": "system",
+                    "timestamp": time.time()
+                })
     process.stdout.close()
 
 @app.route('/')
@@ -61,8 +77,9 @@ def handle_start_game():
     env["PYTHONPATH"] = f"{ROOT_DIR}:{src_path}"
 
     try:
+        # Add --api flag
         game_process = subprocess.Popen(
-            [python_exe, "-u", game_script],
+            [python_exe, "-u", game_script, "--api"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
