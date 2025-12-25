@@ -375,3 +375,14 @@ class PsychologicalState:
     def has_seen_hallucination(self, hallucination_id: str) -> bool:
         """Check if a specific hallucination has already been shown."""
         return hallucination_id in self.player_state.get("hallucination_history", [])
+
+    def to_dict(self) -> Dict:
+        """Serialize psychological state (most data is in player_state, but for consistency)."""
+        # Since this class wraps player_state, most data is already saved there.
+        # This is provided if we need to save transient state not in player_state.
+        return {}
+
+    def restore_state(self, state: Dict):
+        """Restore psychological state."""
+        # Most data is in player_state, so this might be empty or used for future transient data.
+        pass
