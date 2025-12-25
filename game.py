@@ -65,6 +65,11 @@ class Game:
         # Initialize Output Buffer
         self.output = OutputBuffer()
 
+        # Turn System
+        self.turn_id = 0
+        self.current_turn_events = []
+        self.last_turn_events = []
+
         # Load Config
         import json
         with open(resource_path('game.config.json'), 'r') as f:
@@ -531,6 +536,7 @@ class Game:
         self.print("\n[Location marked as searched]")
 
     def start_game(self, start_scene_id="bedroom"):
+        self.start_turn()
         self.output.clear()
         
         # Initial Load
@@ -542,6 +548,7 @@ class Game:
 
         if not scene:
             self.print(f"Failed to load initial scene '{start_scene_id}'.")
+            self.commit_turn()
             return self.output.flush()
         
         # Log initial scene entry
@@ -552,9 +559,11 @@ class Game:
             self.current_music = scene["music"]
         
         self.display_state()
+        self.commit_turn()
         return self.output.flush()
 
     def step(self, user_input):
+        self.start_turn()
         self.output.clear()
         
         # 1. Process Input
@@ -575,6 +584,7 @@ class Game:
              action_result = self.process_command(user_input, choices)
              
              if action_result == "quit":
+                 self.commit_turn()
                  return "QUIT"
                  
              if isinstance(action_result, dict):
@@ -612,6 +622,7 @@ class Game:
         if not triggered_endgame:
             self.display_state()
             
+        self.commit_turn()
         return self.output.flush()
 
     def get_ui_state(self):
@@ -623,6 +634,8 @@ class Game:
         self.sfx_queue.clear() # Clear transient queue
 
         return {
+            "turn_id": self.turn_id,
+            "events": self.last_turn_events,
             "sanity": self.player_state.get("sanity", 100),
             "reality": self.player_state.get("reality", 100),
             "time": self.time_system.get_time_string(),
@@ -864,7 +877,15 @@ class Game:
         
         # Override if manually set in player_state
         if self.player_state.get("archetype", Archetype.NEUTRAL) != Archetype.NEUTRAL:
-             archetype = self.player_state["archetype"]
+             # Ensure archetype is an Enum, not a string value from JSON
+             val = self.player_state["archetype"]
+             if isinstance(val, str):
+                 try:
+                     archetype = Archetype(val)
+                 except ValueError:
+                     archetype = Archetype.NEUTRAL
+             else:
+                 archetype = val
 
         # 2. Prepare Data for Composer (Adapter Layer)
         text_obj = scene.get("text", {"base": "..."})
@@ -2101,9 +2122,28 @@ class Game:
         # Stub: save_system removed
         pass
     
+    def start_turn(self):
+        self.turn_id += 1
+        self.current_turn_events = []
+
+    def commit_turn(self):
+        self.last_turn_events = list(self.current_turn_events)
+
     def log_event(self, event_type: str, **details):
         """Log a significant game event."""
+        # Add turn_id to details for persistence
+        details['turn_id'] = self.turn_id
+
+        # Persistent Log
         self.event_log.add_event(event_type, **details)
+
+        # Transient Log for UI
+        event = {
+            "type": event_type,
+            "turn_id": self.turn_id,
+            **details
+        }
+        self.current_turn_events.append(event)
 
     def process_choice(self, choice):
         # Handle Skill Checks
