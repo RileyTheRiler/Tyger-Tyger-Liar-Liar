@@ -60,6 +60,7 @@ from engine.narrative_memory_system import NarrativeMemorySystem
 from engine.parser_hallucination import ParserHallucinationEngine
 from npc_system import NPCSystem
 from fracture_system import FractureSystem
+from engine.reality_checker import RealityConsistencyChecker
 
 
 class Game:
@@ -133,6 +134,9 @@ class Game:
         # Initialize Text Composer (Replaces LensSystem eventually)
         self.text_composer = TextComposer(self.skill_system, self.board, self.player_state)
         self.text_composer.developer_commentary = self.config.get("developer_commentary", False)
+
+        # Initialize Reality Consistency Checker (Dev Tool)
+        self.reality_checker = RealityConsistencyChecker(debug_mode=self.config.get("debug_mode", False))
 
         # Initialize Flashback Manager (Phase 6)
         self.flashback_manager = FlashbackManager(self.skill_system, self.player_state)
@@ -946,7 +950,40 @@ class Game:
         # 3. Compose
         # 3. Compose
         thermal_active = self.player_state.get("thermal_mode", False)
+
+        # Pass reality checker if debug
+
         composed_result = self.text_composer.compose(text_data, archetype, self.player_state, thermal_mode=thermal_active)
+
+        # --- Reality Consistency Check (Dev Tool) ---
+        if self.debug_mode:
+            # We assume current text is asserting something about current location and time
+            # 1. Fact: Current Location
+            self.reality_checker.register_fact(
+                subject="player",
+                attribute="location",
+                value=self.player_state.get("current_location", "unknown"),
+                timestamp=int((self.time_system.current_time - self.time_system.start_time).total_seconds() / 60),
+                location_id=self.player_state.get("current_location", "unknown"),
+                is_distorted=composed_result.fracture_applied or archetype == Archetype.HAUNTED,
+                source_text=f"Scene Display: {scene.get('name')}"
+            )
+
+            # 2. Explicit facts in text_data? (Need to update scenes to use this)
+            if "facts" in text_data:
+                for f_data in text_data["facts"]:
+                     self.reality_checker.register_fact(
+                        subject=f_data.get("subject"),
+                        attribute=f_data.get("attribute"),
+                        value=f_data.get("value"),
+                        timestamp=int((self.time_system.current_time - self.time_system.start_time).total_seconds() / 60),
+                        location_id=self.player_state.get("current_location", "unknown"),
+                        is_distorted=composed_result.fracture_applied or archetype == Archetype.HAUNTED,
+                        source_text=f"Fact Assertion in {scene.get('id')}"
+                     )
+
+        self.last_composed_text = self.apply_reality_distortion(composed_result.full_text)
+        self.print("\n" + self.last_composed_text + "\n")
         self.last_composed_text = composed_result.full_text
         
         # Check dev toggle for side-by-side
@@ -1238,8 +1275,15 @@ class Game:
                 self.export_dossier()
             elif target == 'log':
                 self.export_log()
+            elif target == 'reality':
+                # Export Reality Report
+                report = self.reality_checker.generate_report()
+                fname = f"reality_report_{int(time.time())}.txt"
+                with open(fname, 'w', encoding='utf-8') as f:
+                    f.write(report)
+                self.print(f"[REALITY REPORT EXPORTED: {fname}]")
             else:
-                self.print("Usage: export [dossier|log]")
+                self.print("Usage: export [dossier|log|reality]")
             return "refresh"
 
         # Wait Command
@@ -1311,6 +1355,8 @@ class Game:
                 self.dialogue_manager.debug_show_hidden = self.debug_mode
                 if hasattr(self.dialogue_manager, 'text_composer'):
                     self.dialogue_manager.text_composer.debug_mode = self.debug_mode
+            # Sync reality checker
+            self.reality_checker.debug_mode = self.debug_mode
             return "refresh"
         
         if clean == 'devmode':
@@ -2020,7 +2066,8 @@ class Game:
         self.print("\n=== EXPORT DATA ===")
         self.print("1. Export Dossier (HTML)")
         self.print("2. Export Event Log (Text)")
-        self.print("\n(Use command: 'export dossier' or 'export log')")
+        self.print("3. Export Reality Report (Text)")
+        self.print("\n(Use command: 'export dossier', 'export log', or 'export reality')")
 
     def export_dossier(self):
         """Generates an HTML dossier of the current investigation."""
