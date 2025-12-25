@@ -186,7 +186,7 @@ class CommandParser:
         if raw_target:
             raw_target = re.sub(r'^(at|to|the|a|an)\s+', '', raw_target).strip()
 
-        return None, None
+        return verb, raw_target if raw_target else None
 
     def get_suggestion(self, invalid_input: str) -> Optional[str]:
         """

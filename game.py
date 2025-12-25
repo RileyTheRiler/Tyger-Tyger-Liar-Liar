@@ -99,7 +99,15 @@ class Game:
             "current_location": "trailhead",
             "location_states": {},
             "discovered_locations": {"trailhead"},
-            "fired_triggers": set()
+            "fired_triggers": set(),
+
+            # Fail-Forward Endings
+            "investigation_count": 0,
+            "ff_counters": {
+                "broken": 0,       # Truth uncovered, psyche broken
+                "obscured": 0,     # Psyche intact, truth obscured
+                "annihilation": 0  # Mutual annihilation
+            }
         }
 
         # Audio State
@@ -642,6 +650,10 @@ class Game:
         }
 
     def run_passive_mechanics(self):
+        # 0. Fail-Forward Ending Check
+        if self.check_fail_forward_ending():
+            return True
+
         # 1. Endgame Triggers
         triggered, reason = self.endgame_manager.check_endgame_triggers()
         if triggered:
@@ -1470,6 +1482,7 @@ class Game:
 
         # --- INVESTIGATION ---
         elif verb == "EXAMINE":
+            self.player_state["investigation_count"] += 1
             if not target:
                 self.display_scene()
                 return
@@ -1491,6 +1504,7 @@ class Game:
                      self.print(f"You don't see '{target}' here.")
 
         elif verb == "SEARCH":
+            self.player_state["investigation_count"] += 1
             self.search_location()
             # Also reveal hidden objects?
             visible = [k for k in objects.keys()]
@@ -1562,6 +1576,7 @@ class Game:
                 self.print(f"You aren't equipping a '{target}'.")
 
         elif verb == "ANALYZE":
+             self.player_state["investigation_count"] += 1
              self.handle_analyze(target)
 
         elif verb == "COMBINE":
@@ -1603,6 +1618,7 @@ class Game:
             self.print("--------------------------")
 
         elif verb == "TALK" or verb == "ASK":
+             self.player_state["investigation_count"] += 1
              # Need to restore TALK/ASK because it's in original
              if not target:
                 self.print("Talk to whom?")
@@ -1765,15 +1781,73 @@ class Game:
             if key == "sanity":
                 self.player_state["sanity"] = max(0, min(100, self.player_state["sanity"] + value))
                 print(f"[SANITY {'+' if value > 0 else ''}{value}]")
+                # Fail-Forward: Sanity loss -> Broken Psyche
+                if value < 0:
+                    self.player_state['ff_counters']['broken'] += abs(value)
             elif key == "reality":
                 self.player_state["reality"] = max(0, min(100, self.player_state["reality"] + value))
                 print(f"[REALITY {'+' if value > 0 else ''}{value}]")
+                # Fail-Forward: Reality loss -> Broken Psyche
+                if value < 0:
+                    self.player_state['ff_counters']['broken'] += abs(value)
             elif key == "xp":
                 print(f"[XP +{value}]")
             elif key == "unlock_thought":
                 if value not in self.player_state["thoughts"]:
                     self.player_state["thoughts"].append(value)
                     print(f"[THOUGHT UNLOCKED: {value}]")
+            elif key == "add_item":
+                item = Item.from_dict(value)
+                self.inventory_system.add_item(item)
+            elif key == "add_evidence":
+                ev = Evidence.from_dict(value)
+                self.inventory_system.add_evidence(ev)
+                # Fail-Forward: Finding evidence -> Annihilation (too deep) or Broken
+                self.player_state['ff_counters']['annihilation'] += 2
+                self.player_state['ff_counters']['broken'] += 1
+
+    def check_fail_forward_ending(self):
+        """Check if investigation limit reached and trigger fail-forward ending."""
+        LIMIT = 25 # Short loop for testing, maybe higher in real game
+        if self.player_state['investigation_count'] >= LIMIT:
+            self.print(f"\n{'='*60}")
+            self.print(f"  INVESTIGATION LIMIT REACHED ({LIMIT})")
+            self.print(f"{'='*60}\n")
+
+            counters = self.player_state['ff_counters']
+
+            # Add base drift
+            # If Sanity is high, drift towards Obscured
+            if self.player_state['sanity'] > 70:
+                counters['obscured'] += 20
+
+            # If Attention is high, drift towards Annihilation
+            if self.attention_system.attention_level > 50:
+                counters['annihilation'] += 20
+
+            # Determine winner
+            ending_scene = "ending_obscured" # Default
+            max_val = -1
+
+            # Simple max check
+            if counters['broken'] > max_val:
+                max_val = counters['broken']
+                ending_scene = "ending_broken"
+
+            if counters['obscured'] > max_val:
+                max_val = counters['obscured']
+                ending_scene = "ending_obscured"
+
+            if counters['annihilation'] > max_val:
+                max_val = counters['annihilation']
+                ending_scene = "ending_annihilation"
+
+            self.print(f"[DEBUG] Counters: {counters} -> Winner: {ending_scene}")
+
+            # Trigger ending
+            self.scene_manager.load_scene(ending_scene)
+            return True
+        return False
     
     def handle_save_menu(self):
         """Interactive save menu."""

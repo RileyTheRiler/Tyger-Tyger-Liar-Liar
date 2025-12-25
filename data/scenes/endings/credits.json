@@ -1,0 +1,15 @@
+{
+    "id": "credits",
+    "name": "THE END",
+    "text": {
+        "base": "THANK YOU FOR PLAYING TYGER TYGER.\n\n[Scenario Complete]\n\nPress any key to return to title.",
+        "variants": {},
+        "inserts": []
+    },
+    "choices": [
+        {
+            "text": "Return to Title",
+            "next_scene": "main_menu"
+        }
+    ]
+}
