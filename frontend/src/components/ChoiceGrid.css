@@ -1,0 +1,58 @@
+.choice-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-bottom: 4rem;
+    /* Space for input console */
+}
+
+.choice-btn {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    font-size: 1rem;
+    text-align: left;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.choice-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+.choice-index {
+    font-family: var(--font-mono);
+    color: var(--text-dim);
+    margin-right: 1rem;
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
+.choice-text {
+    flex: 1;
+}
+
+.corner-decor {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-top: 10px solid var(--text-dim);
+    border-left: 10px solid transparent;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.choice-btn:hover .corner-decor {
+    opacity: 1;
+}

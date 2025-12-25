@@ -251,10 +251,47 @@ class Board:
             "evidence_count": theory.evidence_count
         }
 
-    def get_proven_theories(self) -> List[str]:
-        """Get list of proven theory names."""
-        proven = []
-        for theory in self.theories.values():
-            if theory.proven is True:
-                proven.append(theory.name)
         return proven
+
+    def get_board_data(self) -> dict:
+        """
+        Returns graph data for the frontend visualization.
+        Nodes: Theories and Evidence
+        Links: Relationships
+        """
+        nodes = []
+        links = []
+        
+        # Add Active/Internalizing Theories as Nodes
+        for t_id, theory in self.theories.items():
+            if theory.status not in ["active", "internalizing", "closed"]:
+                continue
+                
+            nodes.append({
+                "id": t_id,
+                "label": theory.name,
+                "type": "theory",
+                "status": theory.status,
+                "health": theory.health,
+                "proven": theory.proven
+            })
+            
+            # Add Linked Evidence as Nodes and Links
+            for ev_id in theory.linked_evidence:
+                # Ideally we'd look up evidence name, but we might not have it here easily
+                # Check if node exists (evidence might be linked to multiple theories)
+                if not any(n["id"] == ev_id for n in nodes):
+                    nodes.append({
+                        "id": ev_id,
+                        "label": ev_id, # Placeholder until we have full evidence dict
+                        "type": "evidence",
+                        "status": "gathered"
+                    })
+                
+                links.append({
+                    "source": ev_id,
+                    "target": t_id,
+                    "type": "supporting" # Default for now, need to track contradiction status per link if possible
+                })
+                
+        return {"nodes": nodes, "links": links}

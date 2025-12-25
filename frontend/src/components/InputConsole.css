@@ -1,0 +1,84 @@
+.input-console {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--text-secondary);
+    padding: 1rem;
+    position: relative;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    margin-top: 1rem;
+}
+
+.input-console::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--tyger-orange), transparent);
+    opacity: 0.5;
+}
+
+.prompt-decoration {
+    font-family: var(--font-mono);
+    color: var(--tyger-orange);
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-right: 0.8rem;
+    animation: pulse 2s infinite;
+}
+
+.terminal-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    caret-color: transparent;
+    /* Custom cursor */
+    letter-spacing: 0.5px;
+}
+
+.terminal-input:focus {
+    outline: none;
+}
+
+.cursor-block {
+    width: 10px;
+    height: 1.2em;
+    background: var(--tyger-orange);
+    margin-left: -5px;
+    /* Pull back to sit on top of last char position if possible, or just after */
+    animation: blink 1s step-end infinite;
+}
+
+.cursor-block.busy {
+    background: var(--danger-red);
+    animation: blink 0.2s step-end infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        text-shadow: 0 0 5px var(--tyger-orange);
+    }
+
+    50% {
+        text-shadow: 0 0 2px var(--tyger-orange);
+    }
+}

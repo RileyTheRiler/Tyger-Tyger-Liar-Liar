@@ -20,42 +20,44 @@ class Colors:
     FAIL = "\033[91m"
 
     # Specific Game Semantic
+
+    # Exact colors are less relevant for web (handled by frontend CSS), keeping for CLI compat
     SANITY = "\033[36m" # Cyan
     REALITY = "\033[35m" # Magenta
     SKILL = "\033[33m" # Yellow
     ITEM = "\033[32m" # Green
 
-def print_separator(char="=", length=60, color=Colors.CYAN):
-    print(f"{color}{char * length}{Colors.RESET}")
+def print_separator(char="=", length=60, color=Colors.CYAN, printer=print):
+    printer(f"{color}{char * length}{Colors.RESET}")
 
-def print_boxed_title(text, width=60, color=Colors.CYAN):
+def print_boxed_title(text, width=60, color=Colors.CYAN, printer=print):
     text = text.upper()
-    print(f"\n{color}" + "╔" + "═" * (width - 2) + "╗")
+    printer(f"\n{color}" + "╔" + "═" * (width - 2) + "╗")
     
     # Handle multi-line if needed, but usually just one line for titles
     padding = (width - 2 - len(text)) // 2
     extra = (width - 2 - len(text)) % 2
-    print("║" + " " * padding + f"{Colors.WHITE}{Colors.BOLD}{text}{Colors.RESET}{color}" + " " * (padding + extra) + "║")
+    printer("║" + " " * padding + f"{Colors.WHITE}{Colors.BOLD}{text}{Colors.RESET}{color}" + " " * (padding + extra) + "║")
     
-    print("╚" + "═" * (width - 2) + "╝" + f"{Colors.RESET}")
+    printer("╚" + "═" * (width - 2) + "╝" + f"{Colors.RESET}")
 
-def print_numbered_list(title, items, offset=0, color=Colors.GREEN):
+def print_numbered_list(title, items, offset=0, color=Colors.GREEN, printer=print):
     if not items:
         return
     
-    print(f"\n{Colors.BOLD}[{title}]{Colors.RESET}")
+    printer(f"\n{Colors.BOLD}[{title}]{Colors.RESET}")
     for idx, item in enumerate(items):
         if isinstance(item, str):
-            print(f" {color}{idx + offset + 1}. {item}{Colors.RESET}")
+            printer(f" {color}{idx + offset + 1}. {item}{Colors.RESET}")
         elif isinstance(item, dict):
             text = item.get("text", "...")
             enabled = item.get("enabled", True)
             reason = item.get("reason", "")
             status = "" if enabled else f" {Colors.RED}(LOCKED: {reason}){Colors.RESET}"
             item_color = color if enabled else Colors.RED
-            print(f" {item_color}{idx + offset + 1}. {text}{status}{Colors.RESET}")
+            printer(f" {item_color}{idx + offset + 1}. {text}{status}{Colors.RESET}")
 
-def format_skill_result(result):
+def format_skill_result(result, printer=print):
     skill = result.get("skill", "???").upper()
     roll = result.get("roll", 0)
     mod = result.get("modifier", 0)
@@ -73,9 +75,9 @@ def format_skill_result(result):
     color = Colors.GREEN if success else Colors.RED
     status = ">> SUCCESS <<" if success else ">> FAILURE <<"
 
-    print(f"\n{Colors.SKILL}[ CHECK: {skill} ]{Colors.RESET}")
-    print(f" Roll: {roll} (2d6) {mod_sign}{mod} [Skill]{inv_str} = {total} vs DC {dc}")
+    printer(f"\n{Colors.SKILL}[ CHECK: {skill} ]{Colors.RESET}")
+    printer(f" Roll: {roll} (2d6) {mod_sign}{mod} [Skill]{inv_str} = {total} vs DC {dc}")
     if desc:
-        print(f" {desc}")
+        printer(f" {desc}")
     
-    print(f" {color}{status}{Colors.RESET}")
+    printer(f" {color}{status}{Colors.RESET}")

@@ -310,38 +310,38 @@ class EndgameManager:
         
         return filepath
     
-    def run_ending_sequence(self):
+    def run_ending_sequence(self, printer=print):
         """Execute the final ending sequence based on determined path."""
         ending = self.calculate_ending_path()
         self.ending_path = ending
         
-        print("\n" + "#"*60)
-        print("#" + " "*58 + "#")
-        print(f"#  FINAL ACT: {ending.upper():^50}  #")
-        print("#" + " "*58 + "#")
-        print("#"*60 + "\n")
+        printer("\n" + "#"*60)
+        printer("#" + " "*58 + "#")
+        printer(f"#  FINAL ACT: {ending.upper():^50}  #")
+        printer("#" + " "*58 + "#")
+        printer("#"*60 + "\n")
         
         # Display ending narrative
-        self._display_ending_narrative(ending)
+        self._display_ending_narrative(ending, printer)
         
         # Generate and export dossier
         dossier = self.generate_final_dossier()
         filepath = self.export_dossier(dossier)
         
-        print("\n" + "="*60)
-        print("  FINAL DOSSIER")
-        print("="*60)
-        print(f"Ending: {ending.upper()}")
-        print(f"Final Sanity: {dossier['final_stats']['sanity']:.1f}")
-        print(f"Final Reality: {dossier['final_stats']['reality']:.1f}")
-        print(f"Theories Proven: {dossier['theories']['proven_count']}")
-        print(f"Memories Unlocked: {dossier['memories_count']}")
-        print(f"Moral Corruption: {dossier['final_stats']['moral_corruption']}")
-        print("="*60)
-        print(f"\nFull dossier exported to: {filepath}")
-        print("\nThank you for playing Tyger Tyger Liar Liar.\n")
+        printer("\n" + "="*60)
+        printer("  FINAL DOSSIER")
+        printer("="*60)
+        printer(f"Ending: {ending.upper()}")
+        printer(f"Final Sanity: {dossier['final_stats']['sanity']:.1f}")
+        printer(f"Final Reality: {dossier['final_stats']['reality']:.1f}")
+        printer(f"Theories Proven: {dossier['theories']['proven_count']}")
+        printer(f"Memories Unlocked: {dossier['memories_count']}")
+        printer(f"Moral Corruption: {dossier['final_stats']['moral_corruption']}")
+        printer("="*60)
+        printer(f"\nFull dossier exported to: {filepath}")
+        printer("\nThank you for playing Tyger Tyger Liar Liar.\n")
     
-    def _display_ending_narrative(self, ending: str):
+    def _display_ending_narrative(self, ending: str, printer=print):
         """Display the narrative text for a specific ending."""
         narratives = {
             self.ENDING_COLLAPSE: [
@@ -401,7 +401,8 @@ class EndgameManager:
         
         lines = narratives.get(ending, ["[UNKNOWN ENDING]"])
         for line in lines:
-            print(line)
-            if line:  # Add dramatic pause between non-empty lines
+            printer(line)
+            # Only sleep if we are using the default print (interactive mode assumption)
+            if line and printer == print:  
                 import time
                 time.sleep(0.5)

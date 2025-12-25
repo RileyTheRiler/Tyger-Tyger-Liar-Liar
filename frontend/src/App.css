@@ -1,0 +1,70 @@
+/* Main application grid layout */
+.main-feed {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar-feed {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+}
+
+.header-deco {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--text-muted);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.title-glitch {
+  font-family: var(--font-main);
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.status-indicator {
+  color: var(--reality-cyan);
+  padding: 2px 6px;
+  border: 1px solid var(--reality-cyan);
+  animation: blink 2s infinite;
+}
+
+.ctrl-divider {
+  color: var(--text-muted);
+}
+
+.ctrl-btn {
+  color: var(--tyger-orange);
+  border: 1px solid var(--tyger-orange);
+  background: rgba(255, 159, 28, 0.05);
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.ctrl-btn:hover {
+  background: var(--tyger-orange);
+  color: black;
+  box-shadow: 0 0 15px var(--tyger-orange);
+}
+
+@media (max-width: 900px) {
+  .sidebar-feed {
+    width: 100%;
+  }
+}

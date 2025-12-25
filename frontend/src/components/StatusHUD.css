@@ -1,0 +1,134 @@
+.hud-container {
+    padding: 1rem;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    height: 100%;
+}
+
+.hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--tyger-orange);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.hud-title {
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    color: var(--tyger-orange);
+    font-weight: 700;
+}
+
+.hud-status {
+    font-size: 0.7rem;
+    color: var(--sanity-stable);
+}
+
+.blink {
+    animation: blinker 2s linear infinite;
+}
+
+@keyframes blinker {
+    50% {
+        opacity: 0;
+    }
+}
+
+.stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.stat-unit {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+}
+
+.bar-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    /* Width and color handled by inline styles/motion */
+}
+
+.hud-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--text-ghost), transparent);
+    width: 100%;
+    opacity: 0.3;
+}
+
+.meta-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    font-size: 0.85rem;
+}
+
+.meta-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.meta-label {
+    color: var(--text-dim);
+}
+
+.meta-value {
+    color: var(--text-primary);
+    font-weight: bold;
+}
+
+.hud-warning-box {
+    border: 1px solid var(--sanity-low);
+    background: rgba(255, 0, 0, 0.1);
+    padding: 0.5rem;
+    text-align: center;
+    overflow: hidden;
+    margin-top: auto;
+    /* Push to bottom if space permits */
+}
+
+.warning-text {
+    font-weight: bold;
+    letter-spacing: 1px;
+    font-size: 0.9rem;
+}
+
+.hud-footer {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    opacity: 0.5;
+}
+
+.scan-line-decoration {
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--text-ghost) 0, var(--text-ghost) 4px, transparent 4px, transparent 8px);
+}
+
+.id-tag {
+    font-size: 0.6rem;
+    text-align: right;
+}
