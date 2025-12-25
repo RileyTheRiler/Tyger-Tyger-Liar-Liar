@@ -1,0 +1,16 @@
+{
+    "id": "ending_annihilation",
+    "name": "Integration",
+    "text": {
+        "base": "You pushed too far. You looked directly into the light, and the light looked back. It wasn't a metaphor. It was a hungry thing.\n\nThe air around you solidifies into crystalline structures. The snow stops falling and simply hangs in space. You reach out to touch a flake, and your hand passes through it, turning into light. \n\nYou are not dying. Dying implies an end. This is a becoming.\n\n\"I see you,\" the voice says. It is not in your ears. It is in your atoms.\n\nYour memories unspool like ribbons. The case, the victim, your childhood pet, the color blue—all of it is being indexed, sorted, consumed. You feel a profound sense of utility. You are being used. You are part of the signal now.\n\nThe town of Kaltvik remains. The investigation remains. But the investigator is gone. There is only the hum, the light, and the eternal, freezing joy of the Aurora.\n\nYou open your mouth to scream, but only a new color comes out.",
+        "variants": {},
+        "inserts": []
+    },
+    "choices": [
+        {
+            "text": "Become the signal.",
+            "next_scene": "credits"
+        }
+    ],
+    "music": "angelic_scream.mp3"
+}

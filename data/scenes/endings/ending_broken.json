@@ -1,0 +1,16 @@
+{
+    "id": "ending_broken",
+    "name": "The Shattered Mirror",
+    "text": {
+        "base": "You know. You finally know. The patterns align perfectly. The missing hikers, the frequency of the aurora, the taste of copper in the water—it all makes sense now. It's a circuit. A giant, breathing circuit beneath the town.\n\nYou try to explain it to the officer, but your words come out as wet gargles. You point to the map, tracing the ley lines with a finger that has been bleeding for hours. They look at you with pity. Not fear. Pity.\n\n\"It's okay,\" one of them says, wrapping a blanket around your shoulders. \"We'll get you help.\"\n\nHelp? You don't need help. You need them to listen. You scream, or you think you do. The walls of the station dissolve into static. The officer's face elongates, eyes drifting apart like oil on water.\n\nThey take you away in a white van. The humming of the engine matches the frequency of the town. You laugh. You laugh because you won. You solved it. You solved it all.\n\nEven as they strap you down, you can feel the town pulsing in your veins. You are the only one who sees the wires. You are the only one who knows the truth. And it is screaming.",
+        "variants": {},
+        "inserts": []
+    },
+    "choices": [
+        {
+            "text": "Close your eyes.",
+            "next_scene": "credits"
+        }
+    ],
+    "music": "static_drone.mp3"
+}

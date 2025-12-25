@@ -1,0 +1,16 @@
+{
+    "id": "ending_obscured",
+    "name": "The Long Drive Home",
+    "text": {
+        "base": "The report is filed. 'Animal attack.' That's what you wrote. The claw marks were consistent with a bear, or maybe a large cougar. The toxicology reports were inconclusive, but exposure explains the hallucinations. It all fits. It fits well enough to sign the paper and close the folder.\n\nYou pack your bag. The hotel room feels smaller than when you arrived, or maybe you've just grown tired of it. You check under the bed one last time. Nothing. Just dust.\n\nAs you drive out of town, the radio plays a pop song from the 80s. You turn it up. You don't look in the rearview mirror. You don't want to see the lights over the mountain. They are just atmospheric phenomena. Perfectly natural.\n\nYou will go back to the city. You will take on insurance fraud cases. You will sleep with a nightlight for a month, maybe two. And eventually, you will forget the sound of the wind calling your name.\n\nYou survive. You remain whole. But deep down, in the crawlspace of your mind, you know you left the door unlocked.",
+        "variants": {},
+        "inserts": []
+    },
+    "choices": [
+        {
+            "text": "Keep driving.",
+            "next_scene": "credits"
+        }
+    ],
+    "music": "faded_pop.mp3"
+}

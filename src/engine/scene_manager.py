@@ -20,12 +20,13 @@ class SceneManager:
         if not root_scenes:
             root_scenes = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scenes.json")
         
-        # Try loading directory first
-        if os.path.exists(directory) and os.listdir(directory):
-            for filename in os.listdir(directory):
-                if filename.endswith(".json"):
-                    full_path = os.path.join(directory, filename)
-                    self.load_scenes_file(full_path)
+        # Try loading directory recursively
+        if os.path.exists(directory):
+            for root, dirs, files in os.walk(directory):
+                for filename in files:
+                    if filename.endswith(".json"):
+                        full_path = os.path.join(root, filename)
+                        self.load_scenes_file(full_path)
             
         # Also load root scenes if needed (or if directory empty)
         if os.path.exists(root_scenes):
