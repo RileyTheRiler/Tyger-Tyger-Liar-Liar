@@ -16,7 +16,11 @@ class CommandParser:
             "GO": ["go", "walk", "move", "run", "travel"],
             "SWITCH": ["switch"],
             "HELP": ["help", "?"],
-            "INVENTORY": ["inventory", "inv", "i", "items", "bag", "pockets"]
+            "INVENTORY": ["inventory", "inv", "i", "items", "bag", "pockets"],
+            "RITUAL": ["ritual", "perform ritual", "chant", "pray", "meditate"],
+            "LISTEN": ["listen", "hear"],
+            "SNIFF": ["sniff", "smell", "breathe"],
+            "FEEL": ["feel", "touch", "sense"]
         }
         
         # Reverse mapping for faster lookup

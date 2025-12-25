@@ -71,7 +71,7 @@ class Game:
         self.time_system = TimeSystem()
         self.time_system.weather_system = self.weather_system # Hack to link for serialization if needed
         self.environmental_system = EnvironmentalSystem(self.time_system, self.weather_system, self.player_state)
-        self.ambient_system = AmbientSystem(self.weather_system, self.player_state)
+        self.ambient_system = AmbientSystem(self.weather_system, self.player_state, self.attention_system)
 
         self.board = Board()
         self.board_ui = BoardUI(self.board)
@@ -634,27 +634,7 @@ class Game:
             self.handle_parser_command("HELP", None)
             return "refresh"
         
-        # Sensory Commands
-        if clean in ['listen', 'sniff', 'feel']:
-            tags = self.scene_manager.current_scene_data.get("tags", [])
-            response = self.ambient_system.get_sensory_response(clean, tags)
-            self.print(f"\n> You {clean}...")
-            self.print(response)
-            return "refresh"
 
-        # Ritual Command
-        if clean in ['ritual', 'perform ritual', 'perform_ritual']:
-            scene = self.scene_manager.current_scene_data
-            loc_type = scene.get("location_type") if scene else None
-            if loc_type:
-                result = self.environmental_system.perform_ritual(loc_type)
-                if result["success"]:
-                    self.print(f"\n{Colors.GREEN}{result['message']}{Colors.RESET}")
-                else:
-                     self.print(f"\n{result['message']}")
-            else:
-                 self.print("\nThere is no ritual to perform here.")
-            return "refresh"
 
         # Inventory & Evidence Commands
         if clean in ['i', 'inventory', 'inv']:
@@ -1022,6 +1002,27 @@ class Game:
 
         elif verb == "INVENTORY":
             self.inventory_system.list_inventory()
+
+        elif verb == "RITUAL":
+            scene = self.scene_manager.current_scene_data
+            loc_type = scene.get("location_type") if scene else None
+            if loc_type:
+                result = self.environmental_system.perform_ritual(loc_type)
+                if result["success"]:
+                    print(f"\n{Colors.GREEN}{result['message']}{Colors.RESET}")
+                else:
+                     print(f"\n{result['message']}")
+            else:
+                 print("\nThere is no ritual to perform here.")
+
+        elif verb in ["LISTEN", "SNIFF", "FEEL"]:
+            # Map canonical verb back to system expected string
+            verb_map = {"LISTEN": "listen", "SNIFF": "sniff", "FEEL": "feel"}
+            sys_verb = verb_map[verb]
+            tags = self.scene_manager.current_scene_data.get("tags", [])
+            response = self.ambient_system.get_sensory_response(sys_verb, tags)
+            print(f"\n> You {sys_verb}...")
+            print(response)
 
         else:
             print(f"You try to {verb} the {target or 'air'}, but nothing happens yet.")

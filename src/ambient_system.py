@@ -2,9 +2,10 @@ import random
 from typing import Dict, List, Optional
 
 class AmbientSystem:
-    def __init__(self, weather_system, player_state):
+    def __init__(self, weather_system, player_state, attention_system=None):
         self.weather_system = weather_system
         self.player_state = player_state
+        self.attention_system = attention_system
 
         self.loops = {
             "wind": [
@@ -83,7 +84,8 @@ class AmbientSystem:
                  return "You hear a whistle that mimics your own—one you never made."
 
         # Attention High
-        # (Assuming we have access to attention level, passed in or via ref?
-        # For now, just placeholder or need to link AttentionSystem)
+        if self.attention_system and self.attention_system.attention_level > 40:
+             if random.random() < 0.15:
+                 return "A low hum rises when you pass the radio array."
 
         return None
