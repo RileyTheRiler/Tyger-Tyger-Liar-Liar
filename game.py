@@ -38,6 +38,7 @@ from src.save_system import EventLog, SaveSystem
 from src.journal_system import JournalManager
 from interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result, Colors
 from text_composer import TextComposer, Archetype
+from src.psychological_system import PsychologicalSystem, SanityState
 
 class Game:
     def __init__(self):
@@ -48,6 +49,7 @@ class Game:
         self.player_state = {
             "sanity": 100.0,
             "reality": 100.0,
+            "paranoia": {"magnitude": 0.0, "direction": 0.0},
             "archetype": Archetype.NEUTRAL,
             "resonance_count": 347,
             "thermal_mode": False,
@@ -67,6 +69,7 @@ class Game:
         self.time_system = TimeSystem()
         self.board = Board()
         self.board_ui = BoardUI(self.board)
+        self.psychological_system = PsychologicalSystem(self.player_state)
         self.skill_system = SkillSystem(resource_path(os.path.join('data', 'skills.json')))
         self.lens_system = LensSystem(self.skill_system, self.board)
         self.attention_system = AttentionSystem()
@@ -85,7 +88,7 @@ class Game:
         self.time_system.add_listener(self.on_time_passed)
         
         # Initialize Text Composer (Replaces LensSystem eventually)
-        self.text_composer = TextComposer(self.skill_system, self.board, self.player_state)
+        self.text_composer = TextComposer(self.skill_system, self.board, self.player_state, self.psychological_system)
 
         # Initialize Scene Manager
         self.scene_manager = SceneManager(
@@ -145,6 +148,14 @@ class Game:
         if stage_info.get('reality_drain', 0) > 0:
             drain = stage_info['reality_drain'] * hours
             self.player_state['reality'] -= drain
+
+        # Dissociation Check (Week 18)
+        # Check divergence between active theories and reality.
+        # Since we don't have "Truth" easily, we check if player has conflicting theories active.
+        divergence = self.board.get_active_or_internalizing_count() * 5.0 # Simple proxy
+        dis_msg = self.psychological_system.apply_dissociation(divergence)
+        if dis_msg:
+            self.print(f"\n{Colors.MAGENTA}{dis_msg}{Colors.RESET}")
         
         # Check for stage advancement
         if self.integration_system.integration_progress >= 100:
@@ -401,7 +412,11 @@ class Game:
         # HUD
         san = self.player_state["sanity"]
         real = self.player_state["reality"]
-        san_status = "STABLE" if san >= 75 else "UNSETTLED" if san >= 50 else "HYSTERIA" if san >= 25 else "PSYCHOSIS"
+
+        # Sanity State
+        san_status = self.psychological_system.get_sanity_state().value
+        clarity_index = self.psychological_system.get_clarity_index()
+
         real_status = "LUCID" if real >= 75 else "DOUBT" if real >= 50 else "DELUSION" if real >= 25 else "BROKEN"
 
         print_separator("=", color=Colors.CYAN, printer=self.print)
@@ -420,7 +435,12 @@ class Game:
             self.print(f"{Colors.RED}{attention_display}{Colors.RESET}")
         if integration_display:
             self.print(f"{Colors.MAGENTA}{integration_display}{Colors.RESET}")
-        self.print(f"SANITY: {san_color}{san:.0f}% ({san_status}){Colors.RESET} | REALITY: {real_color}{real:.0f}% ({real_status}){Colors.RESET}")
+        self.print(f"CLARITY: {san_color}{clarity_index} ({san:.0f}%){Colors.RESET} | REALITY: {real_color}{real:.0f}% ({real_status}){Colors.RESET}")
+
+        # Hallucination Check
+        if self.psychological_system.check_hallucination_trigger("visual"):
+            self.print(f"{Colors.MAGENTA}[VISUAL DISTORTION ACTIVE]{Colors.RESET}")
+
         print_separator("=", color=Colors.CYAN, printer=self.print)
         
         print_boxed_title(scene.get("name", "Unknown Area"), printer=self.print)
@@ -453,7 +473,16 @@ class Game:
 
         # 3. Compose
         composed_result = self.text_composer.compose(text_data, archetype, self.player_state)
-        display_text = self.apply_reality_distortion(composed_result.full_text)
+
+        # 4. Apply Psychological Distortions
+        text_to_display = composed_result.full_text
+        text_to_display = self.psychological_system.get_text_distortion(text_to_display)
+
+        # Fracture / Hallucination injection (Textual)
+        if self.psychological_system.check_hallucination_trigger("narrative"):
+            text_to_display += f"\n\n{Colors.MAGENTA}You hear a voice. Your voice. But not from your mouth.\n'They know what you did.'{Colors.RESET}"
+
+        display_text = self.apply_reality_distortion(text_to_display)
         self.print("\n" + display_text + "\n")
         
         # Show specific ambient indicators
@@ -465,7 +494,16 @@ class Game:
     def display_choices(self, choices):
         # List Choices (Dialogue Mode or Hybrid)
         if choices:
-            print_numbered_list("CHOICES", choices, printer=self.print)
+            # Apply distortion to choice text if needed
+            display_choices = []
+            for c in choices:
+                # Copy so we don't modify original scene data
+                c_copy = c.copy()
+                if "text" in c_copy:
+                     c_copy["text"] = self.psychological_system.get_text_distortion(c_copy["text"])
+                display_choices.append(c_copy)
+
+            print_numbered_list("CHOICES", display_choices, printer=self.print)
         
         # List Connected Scenes (Spatial Movement)
         connected = self.scene_manager.get_available_scenes()
@@ -574,10 +612,25 @@ class Game:
             # Advance 8 hours
             self.time_system.advance_time(8 * 60)
             # Recover sanity/stats here if needed
-            self.player_state['sanity'] = min(self.player_state['sanity'] + 20, 100)
-            self.print("You wake up feeling rested. (+20 Sanity)")
+            msg = self.psychological_system.modify_sanity(20)
+            self.print(f"You wake up feeling rested. {msg}")
+            # Decrease paranoia
+            self.psychological_system.update_paranoia("rest", -10)
             return "refresh"
         
+        # Recovery Actions
+        if clean.startswith('drink'):
+             msg = self.psychological_system.perform_recovery_action("drink_water")
+             if msg:
+                 self.print(msg)
+                 return "refresh"
+
+        if clean.startswith('ritual') or clean.startswith('ground'):
+             msg = self.psychological_system.perform_recovery_action("grounding")
+             if msg:
+                 self.print(msg)
+                 return "refresh"
+
         # Debug Mode Commands
         if clean == 'debug':
             self.debug_mode = not self.debug_mode
@@ -609,7 +662,13 @@ class Game:
                 if len(parts) >= 3:
                     stat = parts[1]
                     value = float(parts[2])
-                    if stat in self.player_state:
+                    if stat == "sanity":
+                        self.psychological_system.set_sanity(value)
+                        self.print(f"[DEBUG] Sanity set to {value}")
+                    elif stat == "paranoia":
+                        self.player_state["paranoia"]["magnitude"] = value
+                        self.print(f"[DEBUG] Paranoia set to {value}")
+                    elif stat in self.player_state:
                         self.player_state[stat] = value
                         self.print(f"[DEBUG] {stat} set to {value}")
                 return "refresh"
@@ -1187,8 +1246,8 @@ class Game:
     def apply_effects(self, effects):
         for key, value in effects.items():
             if key == "sanity":
-                self.player_state["sanity"] += value
-                print(f"[Sanity {'+' if value > 0 else ''}{value}]")
+                msg = self.psychological_system.modify_sanity(value)
+                print(msg)
             elif key == "reality":
                 self.player_state["reality"] += value
                 print(f"[Reality {'+' if value > 0 else ''}{value}]")

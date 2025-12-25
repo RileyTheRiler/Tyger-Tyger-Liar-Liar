@@ -74,10 +74,11 @@ class TextComposer:
     4. Fracture layer: Rare reality glitches (triggered by attention/flags)
     """
 
-    def __init__(self, skill_system=None, board=None, game_state=None):
+    def __init__(self, skill_system=None, board=None, game_state=None, psychological_system=None):
         self.skill_system = skill_system
         self.board = board
         self.game_state = game_state
+        self.psychological_system = psychological_system
         self.debug_mode = False
         self.fracture_chance = 0.0  # Base chance for random fractures
 
@@ -282,6 +283,10 @@ class TextComposer:
         Determine if a reality fracture should occur.
         Fractures are rare and triggered by attention/flags/storms.
         """
+        # 1. Psychological System Trigger
+        if self.psychological_system and self.psychological_system.check_hallucination_trigger("narrative"):
+            return True
+
         # Check explicit fracture flag
         flags = player_state.get("flags", {})
         if isinstance(flags, set):
@@ -318,9 +323,23 @@ class TextComposer:
             self._fracture_extra_paragraph
         ]
 
+        # High Paranoia fracture types
+        if self.psychological_system and self.psychological_system.get_paranoia_level() > 30:
+            fracture_types.append(self._fracture_paranoid_thought)
+
         # Choose a random fracture type
         fracture = random.choice(fracture_types)
         return fracture(text, player_state)
+
+    def _fracture_paranoid_thought(self, text: str, player_state: dict) -> str:
+        """Inject paranoid thought."""
+        thoughts = [
+            "\n\n(They know. They've always known.)",
+            "\n\n(Don't turn around.)",
+            "\n\n(This isn't real. Wake up.)"
+        ]
+        import random
+        return text + random.choice(thoughts)
 
     def _fracture_timestamp(self, text: str, player_state: dict) -> str:
         """Add a wrong timestamp notation."""
