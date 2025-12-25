@@ -273,9 +273,24 @@ class Board:
             "evidence_count": theory.evidence_count
         }
 
-        return proven
+    def get_theory_summary(self) -> str:
+        """Returns a one-line summary of the current primary theory."""
+        active = [t for t in self.theories.values() if t.status == "active"]
+        if not active:
+            return "No Active Theory"
 
-        return {"nodes": nodes, "links": links}
+        # Pick the first active theory as "Primary"
+        primary = active[0]
+
+        # Format effects: [+4 Intuition, -2 Logic]
+        effects_str = []
+        for skill, val in primary.effects.items():
+            sign = "+" if val > 0 else ""
+            effects_str.append(f"{sign}{val} {skill}")
+
+        effects_display = f" [{', '.join(effects_str)}]" if effects_str else ""
+
+        return f"Current Theory: '{primary.name}'{effects_display}"
 
     def get_board_data(self) -> dict:
         """

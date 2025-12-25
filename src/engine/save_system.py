@@ -1,5 +1,6 @@
 import json
 import os
+import gzip
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
@@ -65,37 +66,55 @@ class SaveSystem:
         if not os.path.exists(save_directory):
             os.makedirs(save_directory)
     
-    def _get_save_path(self, slot_id: str) -> str:
+    def _get_save_path(self, slot_id: str, compressed: bool = False) -> str:
         """Get the full path for a save file."""
-        return os.path.join(self.save_directory, f"{slot_id}.json")
+        ext = ".dat" if compressed else ".json"
+        # Check if user already provided extension in slot_id, though usually not expected
+        if slot_id.endswith(".json") or slot_id.endswith(".dat"):
+            return os.path.join(self.save_directory, slot_id)
+        return os.path.join(self.save_directory, f"{slot_id}{ext}")
     
-    def save_game(self, slot_id: str, state_data: Dict[str, Any]) -> bool:
+    def save_game(self, slot_id: str, state_data: Dict[str, Any], compress: bool = False) -> bool:
         """
         Save game state to a file.
         
         Args:
             slot_id: Unique identifier for this save slot
             state_data: Dictionary containing all game state
+            compress: Whether to compress the save file (gzip)
         
         Returns:
             True if save was successful, False otherwise
         """
         try:
-            save_path = self._get_save_path(slot_id)
+            save_path = self._get_save_path(slot_id, compressed=compress)
             
             # Add metadata
             save_data = {
                 "id": slot_id,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "version": "1.0",  # For future compatibility
+                "compressed": compress,
                 **state_data
             }
             
-            # Write to file with pretty formatting
-            with open(save_path, 'w', encoding='utf-8') as f:
-                json.dump(save_data, f, indent=2, ensure_ascii=False)
+            if compress:
+                with gzip.open(save_path, 'wt', encoding='utf-8') as f:
+                    json.dump(save_data, f)
+                # Cleanup potential duplicate uncompressed file
+                alt_path = self._get_save_path(slot_id, compressed=False)
+                if os.path.exists(alt_path) and alt_path != save_path:
+                    os.remove(alt_path)
+            else:
+                # Write to file with pretty formatting
+                with open(save_path, 'w', encoding='utf-8') as f:
+                    json.dump(save_data, f, indent=2, ensure_ascii=False)
+                # Cleanup potential duplicate compressed file
+                alt_path = self._get_save_path(slot_id, compressed=True)
+                if os.path.exists(alt_path) and alt_path != save_path:
+                    os.remove(alt_path)
             
-            print(f"[SAVE] Game saved to slot '{slot_id}'")
+            print(f"[SAVE] Game saved to slot '{slot_id}' (Compressed: {compress})")
             return True
             
         except Exception as e:
@@ -113,14 +132,39 @@ class SaveSystem:
             Dictionary containing game state, or None if load failed
         """
         try:
-            save_path = self._get_save_path(slot_id)
+            path_compressed = self._get_save_path(slot_id, compressed=True)
+            path_json = self._get_save_path(slot_id, compressed=False)
+
+            # Determine which file to load
+            target_path = None
+            is_compressed = False
             
-            if not os.path.exists(save_path):
+            if os.path.exists(path_compressed) and os.path.exists(path_json):
+                # Both exist, check timestamps
+                t_comp = os.path.getmtime(path_compressed)
+                t_json = os.path.getmtime(path_json)
+                if t_comp >= t_json:
+                    target_path = path_compressed
+                    is_compressed = True
+                else:
+                    target_path = path_json
+                    is_compressed = False
+            elif os.path.exists(path_compressed):
+                target_path = path_compressed
+                is_compressed = True
+            elif os.path.exists(path_json):
+                target_path = path_json
+                is_compressed = False
+            else:
                 print(f"[ERROR] Save file '{slot_id}' not found")
                 return None
             
-            with open(save_path, 'r', encoding='utf-8') as f:
-                save_data = json.load(f)
+            if is_compressed:
+                with gzip.open(target_path, 'rt', encoding='utf-8') as f:
+                    save_data = json.load(f)
+            else:
+                with open(target_path, 'r', encoding='utf-8') as f:
+                    save_data = json.load(f)
             
             print(f"[LOAD] Game loaded from slot '{slot_id}'")
             return save_data
@@ -142,23 +186,30 @@ class SaveSystem:
             return saves
         
         for filename in os.listdir(self.save_directory):
-            if filename.endswith('.json'):
-                slot_id = filename[:-5]  # Remove .json extension
-                save_path = self._get_save_path(slot_id)
-                
-                try:
-                    with open(save_path, 'r', encoding='utf-8') as f:
+            slot_id = None
+            data = None
+
+            try:
+                if filename.endswith('.json'):
+                    slot_id = filename[:-5]
+                    with open(os.path.join(self.save_directory, filename), 'r', encoding='utf-8') as f:
                         data = json.load(f)
-                    
+                elif filename.endswith('.dat'):
+                    slot_id = filename[:-4]
+                    with gzip.open(os.path.join(self.save_directory, filename), 'rt', encoding='utf-8') as f:
+                        data = json.load(f)
+
+                if data:
                     saves.append({
                         "slot_id": slot_id,
                         "timestamp": data.get("timestamp", "Unknown"),
                         "scene": data.get("scene", "Unknown"),
                         "summary": data.get("summary", "No summary"),
-                        "datetime": data.get("datetime", "Unknown")
+                        "datetime": data.get("datetime", "Unknown"),
+                        "compressed": filename.endswith('.dat')
                     })
-                except Exception as e:
-                    print(f"[WARNING] Could not read save file '{filename}': {e}")
+            except Exception as e:
+                print(f"[WARNING] Could not read save file '{filename}': {e}")
         
         # Sort by timestamp (newest first)
         saves.sort(key=lambda x: x["timestamp"], reverse=True)
@@ -175,15 +226,24 @@ class SaveSystem:
             True if deletion was successful, False otherwise
         """
         try:
-            save_path = self._get_save_path(slot_id)
+            path_compressed = self._get_save_path(slot_id, compressed=True)
+            path_json = self._get_save_path(slot_id, compressed=False)
+
+            deleted = False
+            if os.path.exists(path_compressed):
+                os.remove(path_compressed)
+                deleted = True
             
-            if not os.path.exists(save_path):
+            if os.path.exists(path_json):
+                os.remove(path_json)
+                deleted = True
+
+            if deleted:
+                print(f"[DELETE] Save '{slot_id}' deleted")
+                return True
+            else:
                 print(f"[ERROR] Save file '{slot_id}' not found")
                 return False
-            
-            os.remove(save_path)
-            print(f"[DELETE] Save '{slot_id}' deleted")
-            return True
             
         except Exception as e:
             print(f"[ERROR] Failed to delete save: {e}")
