@@ -8,6 +8,11 @@ import time
 from flask import Flask, send_from_directory
 from flask_socketio import SocketIO, emit
 
+# Define paths relative to this file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)
+TITLE_SCREEN_DIR = os.path.join(BASE_DIR, 'title_screen')
+
 app = Flask(__name__, static_folder='title_screen')
 app.config['SECRET_KEY'] = 'tyger_tyger_secret'
 socketio = SocketIO(app, cors_allowed_origins='*')
@@ -25,11 +30,11 @@ def read_output(process):
 
 @app.route('/')
 def index():
-    return send_from_directory('title_screen', 'index.html')
+    return send_from_directory(TITLE_SCREEN_DIR, 'index.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
-    return send_from_directory('title_screen', path)
+    return send_from_directory(TITLE_SCREEN_DIR, path)
 
 @socketio.on('connect')
 def test_connect():
@@ -45,12 +50,15 @@ def handle_start_game():
 
     # Path to python executable
     python_exe = sys.executable
-    game_script = os.path.join(os.path.dirname(__file__), 'game.py')
+    game_script = os.path.join(ROOT_DIR, 'game.py')
 
     # Start the game process
     # We use -u for unbuffered output
     env = os.environ.copy()
-    env["PYTHONPATH"] = os.path.join(os.getcwd(), "src")
+
+    # Set PYTHONPATH to include src and root
+    src_path = os.path.join(ROOT_DIR, 'src')
+    env["PYTHONPATH"] = f"{ROOT_DIR}:{src_path}"
 
     try:
         game_process = subprocess.Popen(
@@ -60,6 +68,7 @@ def handle_start_game():
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1, # Line buffered
+            cwd=ROOT_DIR, # Run game from root so it finds data/
             env=env
         )
 
@@ -88,8 +97,6 @@ def handle_input(data):
 @socketio.on('disconnect')
 def handle_disconnect():
     print('Client disconnected')
-    # Optional: Kill game process on disconnect?
-    # For now, keep it running or let it die if pipe breaks
 
 if __name__ == '__main__':
     # Use eventlet if installed, otherwise standard
