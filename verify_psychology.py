@@ -4,8 +4,10 @@ import os
 
 # Ensure src is in path
 sys.path.append(os.path.join(os.getcwd(), 'src'))
+sys.path.append(os.path.join(os.getcwd(), 'src', 'engine'))
 
-from mechanics import SkillSystem
+from engine.mechanics import SkillSystem
+import game
 from game import Game
 
 def test_psychology():
@@ -14,23 +16,30 @@ def test_psychology():
     
     print(f"\nInitial State: Sanity={g.player_state['sanity']}, Reality={g.player_state['reality']}")
     
-    # 1. Test Reality Distortion
-    g.player_state["reality"] = 40
-    distorted = g.apply_reality_distortion("The door and the window are closed.")
-    print(f"\nReality 40 distortion test:")
-    print(f"Original: 'The door and the window are closed.'")
-    print(f"Distorted: '{distorted}'")
-    
-    # 2. Test Passive Interrupts with low sanity
+    # 2. Test Passive Interrupts with Archetype weighting
     g.player_state["sanity"] = 20
-    # Boost some skills to see interjections
-    g.skill_system.get_skill("Logic").base_level = 3
+    # Boost REASON skill (Skepticism)
     g.skill_system.get_skill("Skepticism").base_level = 3
+    # Boost INTUITION skill (Paranormal Sensitivity)
+    g.skill_system.get_skill("Paranormal Sensitivity").base_level = 3
     
-    print(f"\nSanity 20 interrupt test:")
-    interrupts = g.skill_system.check_passive_interrupts("the strange mirror", g.player_state["sanity"])
+    print(f"\nSanity 20 interrupt test (Archetype: SKEPTIC):")
+    # As a skeptic, Skepticism (REASON) should have a higher weight
+    interrupts = g.skill_system.check_passive_interrupts("the strange mirror", g.player_state["sanity"], current_archetype="skeptic")
     for msg in interrupts:
-        print(f" > {msg}")
+        if msg.get("type") == "argument":
+             print(f" > [ARGUMENT]: {msg['text']}")
+        else:
+             print(f" > {msg['skill']}: {msg['text']}")
+    
+    print(f"\nSanity 20 interrupt test (Archetype: BELIEVER):")
+    # As a believer, Paranormal Sensitivity (INTUITION) should have a higher weight
+    interrupts = g.skill_system.check_passive_interrupts("the strange mirror", g.player_state["sanity"], current_archetype="believer")
+    for msg in interrupts:
+        if msg.get("type") == "argument":
+             print(f" > [ARGUMENT]: {msg['text']}")
+        else:
+             print(f" > {msg['skill']}: {msg['text']}")
     
     # 3. Test Scene Entry Effects
     print(f"\nTesting 'mirror_hall' entry effects:")

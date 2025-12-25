@@ -4,7 +4,34 @@
         {
             "id": "start",
             "speaker": "Dr. Keats",
-            "text": "He doesn't offer you a seat. He's polishing his glasses with a surgical grace. \"The police took my statement. It was exhaustive. And exhausting.\"",
+            "text": {
+                "base": "He doesn't offer you a seat. He's polishing his glasses with a surgical grace. \"The police took my statement. It was exhaustive. And exhausting.\"",
+                "lens": {
+                    "believer": "The light catching his lenses isn't right. It fractures into spectra that shouldn't exist indoors. He's hiding his eyes because they've seen something impossible.",
+                    "skeptic": "Power move. He's establishing dominance by making you wait. The 'bored intellectual' act is a shield for something rigid and terrified underneath.",
+                    "haunted": "He smells like old earth and ozone. The same smell that was on your clothes when you woke up. He knows what you are."
+                },
+                "inserts": [
+                    {
+                        "condition": {
+                            "skill_gte": {
+                                "Forensics": 4
+                            }
+                        },
+                        "text": "[REASON - Forensics] Look at his boots. The mud is red clay. That's only found at the North Ridge, not the town paths.",
+                        "insert_at": "AFTER_BASE"
+                    },
+                    {
+                        "condition": {
+                            "skill_gte": {
+                                "Empathy": 6
+                            }
+                        },
+                        "text": "[PRESENCE - Empathy] His pulse is visible in his neck. Rabbit-fast. He's not exhausted; he's running on pure adrenaline.",
+                        "insert_at": "AFTER_LENS"
+                    }
+                ]
+            },
             "choices": [
                 {
                     "id": "push",
@@ -15,6 +42,17 @@
                     "id": "silence",
                     "text": "Say nothing. Just look at the glasses.",
                     "next": "silence_pressure"
+                },
+                {
+                    "id": "len_push",
+                    "text": "[Believer] “You saw the lights, didn't you? That's why your eyes are like that.”",
+                    "condition": {
+                        "archetype": "believer"
+                    },
+                    "next": "confess",
+                    "effects": {
+                        "sanity": -2
+                    }
                 },
                 {
                     "id": "theory_push",
@@ -31,7 +69,14 @@
         {
             "id": "mud_reveal",
             "speaker": "Dr. Keats",
-            "text": "The polishing stops. He holds the glasses up to the light. \"I take walks. Is walking a crime now, Detective? Or do you prefer 'Inquisitor'?\"",
+            "text": {
+                "base": "The polishing stops. He holds the glasses up to the light. \"I take walks. Is walking a crime now, Detective? Or do you prefer 'Inquisitor'?\"",
+                "lens": {
+                    "believer": "He's terrified. Not of you. Of what he saw on those walks. The glass trembles in his hand.",
+                    "skeptic": "Defensive pivot. He's countering with aggression to hide a specific location. He doesn't want you going North.",
+                    "haunted": "He's listening to something else. A sound outside the cabin. He thinks *It* followed him back."
+                }
+            },
             "check": {
                 "skill": "Interrogation",
                 "dc": 12,
@@ -55,7 +100,14 @@
         {
             "id": "confess",
             "speaker": "Dr. Keats",
-            "text": "\"Fine.\" He sits, finally. The leather chair groans. \"The clearing. I saw lights. Not electrical. Biological. Bioluminescence on a macro scale.\"",
+            "text": {
+                "base": "\"Fine.\" He sits, finally. The leather chair groans. \"The clearing. I saw lights. Not electrical. Biological. Bioluminescence on a macro scale.\"",
+                "lens": {
+                    "believer": "\"Like angels burning up on reentry. Beautiful and radioactive.\"",
+                    "skeptic": "\"A drone swarm. Or unregistered atmospheric testing. But the color... it was wrong.\"",
+                    "haunted": "\"It looked like the fire. The Blackwood fire. But cold.\""
+                }
+            },
             "choices": [
                 {
                     "id": "exit",
@@ -79,7 +131,29 @@
         {
             "id": "tyger_reveal",
             "speaker": "Dr. Keats",
-            "text": "He turns very pale. \"You shouldn't say that name. Not here. The wood loves that name.\"",
+            "text": {
+                "base": "He turns very pale. \"You shouldn't say that name. Not here. The wood loves that name.\"",
+                "inserts": [
+                    {
+                        "condition": {
+                            "skill_gte": {
+                                "Paranormal Sensitivity": 4
+                            }
+                        },
+                        "text": "[INTUITION - Paranormal Sensitivity] The shadows in the corners of the room just lengthened. The house heard you.",
+                        "insert_at": "AFTER_BASE"
+                    },
+                    {
+                        "condition": {
+                            "skill_gte": {
+                                "Logic": 6
+                            }
+                        },
+                        "text": "[REASON - Logic] 'The Wood loves that name'? Personification of environment. A classic symptom of isolation psychosis. Or a memetic hazard.",
+                        "insert_at": "AFTER_BASE"
+                    }
+                ]
+            },
             "choices": [
                 {
                     "id": "exit",

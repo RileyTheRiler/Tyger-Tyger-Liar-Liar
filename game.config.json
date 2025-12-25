@@ -11,5 +11,6 @@
         "legendary": 15
     },
     "developer_commentary": false,
+    "active_episode": "default",
     "debug_show_distortions": false
 }

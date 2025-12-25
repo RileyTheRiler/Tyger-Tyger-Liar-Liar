@@ -62,12 +62,13 @@ const MindMap = ({ boardData, onClose }) => {
                                 key={i}
                                 x1={source.x} y1={source.y}
                                 x2={target.x} y2={target.y}
-                                stroke="var(--danger-red)"
-                                strokeWidth="2"
-                                strokeDasharray="5,5"
+                                stroke={link.has_friction ? "var(--danger-red)" : "var(--text-dim)"}
+                                strokeWidth={link.has_friction ? 4 : 2}
+                                strokeDasharray={link.has_friction ? "0" : "5,5"}
                                 initial={{ pathLength: 0, opacity: 0 }}
                                 animate={{ pathLength: 1, opacity: 0.6 }}
                                 transition={{ duration: 1, delay: 0.5 + (i * 0.1) }}
+                                className={link.has_friction ? 'link-friction' : ''}
                             />
                         );
                     })}
@@ -81,8 +82,16 @@ const MindMap = ({ boardData, onClose }) => {
                                 stroke={node.type === 'theory' ? "var(--tyger-orange)" : "var(--text-dim)"}
                                 strokeWidth={node.type === 'theory' ? 3 : 1}
                                 initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                transition={{ type: "spring", delay: i * 0.1 }}
+                                animate={{
+                                    scale: 1,
+                                    x: node.is_strained ? [0, -1, 1, -1, 0] : 0,
+                                    y: node.is_strained ? [0, 1, -1, 1, 0] : 0
+                                }}
+                                transition={{
+                                    scale: { type: "spring", delay: i * 0.1 },
+                                    x: { repeat: Infinity, duration: 0.2 },
+                                    y: { repeat: Infinity, duration: 0.2 }
+                                }}
                             />
 
                             {/* Label */}
@@ -95,6 +104,7 @@ const MindMap = ({ boardData, onClose }) => {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 1 + (i * 0.1) }}
+                                className={node.is_glitched ? 'node-glitch' : ''}
                             >
                                 {node.label}
                             </motion.text>

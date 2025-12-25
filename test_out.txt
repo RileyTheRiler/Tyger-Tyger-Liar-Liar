@@ -1,0 +1,13 @@
+Verifying Legacy Epistemic Friction Integration...
+==================================================
+Testing Legacy Board Data Output...
+
+Verification Failed: 'NoneType' object is not subscriptable
+Traceback (most recent call last):
+  File "C:\Users\riley\Desktop\Tyger Tyger Liar Liar\tests\test_legacy_friction.py", line 63, in <module>
+    test_legacy_board_data()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\riley\Desktop\Tyger Tyger Liar Liar\tests\test_legacy_friction.py", line 41, in test_legacy_board_data
+    theory_node = next(n for n in data["nodes"] if n["id"] == "test_theory")
+                                  ~~~~^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable

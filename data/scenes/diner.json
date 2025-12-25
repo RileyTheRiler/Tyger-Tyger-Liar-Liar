@@ -4,11 +4,11 @@
     "location_id": "town",
     "time_cost": 15,
     "text": {
-        "base": "You push open the door. The bell chimes, a sharp, nervous sound. The diner smells of stale coffee and floor wax. Behind the counter, Maude is pouring coffee into a mug that is already full.",
+        "base": "The bell above the door chimes - a sharp, brassy note that dies instantly. The diner smells of stale coffee and industrial floor wax. Behind the counter, Maude is pouring coffee into a mug that is already full. The liquid puddles on the Formica, but she doesn't stop. She doesn't even blink.",
         "lens": {
-            "believer": "She was at the hotel five minutes ago. There is no back door. Distance is a suggestion to her, not a rule.",
-            "skeptic": "It's a small town. People work multiple jobs. But she hasn't changed her clothes. And she isn't sweating.",
-            "haunted": "She looks up. Her eyes are the same gray as the static on the TV. She knows you're wondering how she got here. She thinks it's funny."
+            "believer": "Five minutes ago, she was at the hotel reception desk. There is no back door, and there is no way she passed you on the street. She isn't teleporting; she's simply already where she needs to be.",
+            "skeptic": "People work multiple shifts in towns like this. It's an identification error—exhaustion making two different women look like one. But her uniform is identical. Same fraying on the left cuff. Same grease smudge on the nametag.",
+            "haunted": "She looks up. Her eyes are the flat gray of a television tuned to a dead channel. She doesn't offer a menu. She just waits. She knows exactly what you're thinking, and she find it unremarkable."
         }
     },
     "connected_scenes": [
@@ -17,15 +17,15 @@
     ],
     "objects": {
         "counter": {
-            "description": "Worn formica. Coffee rings overlap like a Venn diagram of despair."
+            "description": "Worn Formica, the color of a bruised sky. Coffee rings overlap like the seals on a confidential file."
         },
         "tv": {
-            "description": "An old CRT monitor. The reception is nonexistent. Faces form in the snow."
+            "description": "An old CRT monitor bolted to the wall. The reception is a blizzard of static. If you stare long enough, the snow starts to resemble faces you haven't seen in years."
         }
     },
     "choices": [
         {
-            "label": "Sit at the counter",
+            "label": "Take a seat at the counter",
             "type": "dialogue",
             "dialogue_id": "diner_waitress",
             "effects": [
@@ -43,7 +43,7 @@
                 "dc": 8
             },
             "on_success": {
-                "text": "The coffee is mud, but it's hot. It centers you.",
+                "text": "The coffee is bitter and tastes of scorched beans, but the heat anchors you. Real. Physical. Mundane.",
                 "effects": [
                     {
                         "type": "sanity",
@@ -52,7 +52,7 @@
                 ]
             },
             "on_fail": {
-                "text": "Maude watches your hand shake. 'Nerves, hon?' She smiles. It's not a kind smile.",
+                "text": "Maude watches your hand shake as you reach for the mug. 'Long night?' Her smile is a thin, surgical line across her face.",
                 "effects": [
                     {
                         "type": "sanity",
@@ -62,7 +62,7 @@
             }
         },
         {
-            "label": "Leave the diner",
+            "label": "Back out of the diner",
             "next_scene": "town_square"
         }
     ]

@@ -201,6 +201,50 @@ class HallucinationInsertRule(DistortionRule):
          return text
 
 
+class ArchetypeAwareDistortionRule(DistortionRule):
+    """Applies distortions specific to the player's epistemic archetype."""
+    
+    def __init__(self):
+        self.archetype = None
+        self.skeptic_replacements = {
+            "truth": ["data", "variable", "correlation"],
+            "god": ["error", "prime mover", "null"],
+            "spirit": ["static", "anomaly", "residual trace"],
+            "magic": ["glitch", "unexplained phenomenon", "faulty logic"]
+        }
+        self.believer_replacements = {
+            "truth": ["vision", "revelation", "THE PATTERN"],
+            "data": ["signs", "omens", "whispers"],
+            "system": ["prison", "veil", "machine"],
+            "logic": ["blindness", "shackles", "narrow method"]
+        }
+
+    def set_archetype(self, archetype: Optional[str]):
+        self.archetype = archetype
+
+    def apply(self, text: str, intensity: float, seed: int) -> str:
+        if not self.archetype or intensity < 0.3:
+            return text
+            
+        rng = random.Random(seed + 5)
+        replacements = self.skeptic_replacements if self.archetype == "skeptic" else self.believer_replacements
+        
+        words = text.split()
+        new_words = []
+        replace_chance = (intensity - 0.2) * 0.5
+        
+        for word in words:
+            clean_word = word.lower().strip('.,!?')
+            if clean_word in replacements and rng.random() < replace_chance:
+                rep = rng.choice(replacements[clean_word])
+                if word[0].isupper(): rep = rep.capitalize()
+                new_words.append(rep + word[len(clean_word.strip('.,!?')):]) # Keep punct
+            else:
+                new_words.append(word)
+                
+        return " ".join(new_words)
+
+
 class DistortionManager:
     """Manages the application of distortion rules based on game state."""
     
@@ -210,7 +254,8 @@ class DistortionManager:
             SentenceFragmentationRule(),
             RepetitionRule(),
             RedactionRule(),
-            HallucinationInsertRule()
+            HallucinationInsertRule(),
+            ArchetypeAwareDistortionRule()
         ]
         
     def generate_seed(self, text: str, game_state: Dict[str, Any]) -> int:
@@ -235,7 +280,7 @@ class DistortionManager:
         
         return text_hash + time_val + int(sanity)
 
-    def calculate_distortion_intensity(self, game_state: Dict[str, Any]) -> float:
+    def calculate_distortion_intensity(self, game_state: Dict[str, Any], archetype: Optional[str] = None) -> float:
         """
         Calculate global distortion intensity (0.0 to 1.0).
         Based on Sanity (low = high distortion) and Reality (low = high distortion).
@@ -250,21 +295,23 @@ class DistortionManager:
         # Use the maximum stressor
         base_intensity = max(sanity_factor, reality_factor)
         
-        # Boost if fear level is high (if Week 15 psych state exists)
-        psych_state = game_state.get("psychological_state") 
-        # Note: game_state passed here might be the flat player_state dict or the full game object get_game_state()
-        # Let's assume it's a dict that might contain 'fear_level'
+        # Boost if fear level is high
         fear = game_state.get("fear_level", 0)
         fear_factor = min(1.0, fear / 100.0) * 0.3 # adds up to 0.3
         
-        final_intensity = min(1.0, base_intensity + fear_factor)
+        # Archetype specific modifiers? (e.g. Believers are more prone to narrative entropy)
+        archetype_mod = 0.0
+        if archetype == "believer" and base_intensity > 0.5:
+             archetype_mod = 0.1
+             
+        final_intensity = min(1.0, base_intensity + fear_factor + archetype_mod)
         return final_intensity
 
-    def apply_distortions(self, text: str, game_state: Dict[str, Any]) -> str:
+    def apply_distortions(self, text: str, game_state: Dict[str, Any], archetype: Optional[str] = None) -> str:
         """
         Apply all active distortion rules to the text.
         """
-        intensity = self.calculate_distortion_intensity(game_state)
+        intensity = self.calculate_distortion_intensity(game_state, archetype)
         
         # If no stress, return fast
         if intensity <= 0.05:
@@ -276,6 +323,11 @@ class DistortionManager:
         for i, rule in enumerate(self.rules):
             # Pass a modified seed to each rule so they don't sync up weirdly
             rule_seed = seed + i * 1000
+            
+            # If a rule is archetype-aware, pass it. (TODO: update rules if needed)
+            if hasattr(rule, 'set_archetype'):
+                rule.set_archetype(archetype)
+                
             current_text = rule.apply(current_text, intensity, rule_seed)
             
         return current_text

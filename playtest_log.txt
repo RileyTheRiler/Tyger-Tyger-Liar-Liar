@@ -1,0 +1,28 @@
+[95m=== FULL NARRATIVE LOOP PLAYTEST ===[0m
+[ENDGAME] Loaded 5 endings.
+[MEMORY] Loaded 5 suppressed memories
+[InjurySystem] Loaded 10 injury templates.
+[TraumaSystem] Loaded 8 trauma templates.
+[ChaseSystem] Loaded 5 chase scenarios.
+[CombatManager] Loaded 4 encounter templates.
+[FearManager] Loaded fear events from aurora_exposure.json
+[FearManager] Loaded fear events from entity_close.json
+[FearManager] Loaded fear events from isolation_dread.json
+[FearManager] Loaded fear events from supernatural_witness.json
+[HallucinationEngine] Loaded 10 visual hallucinations
+[HallucinationEngine] Loaded 10 auditory hallucinations
+[HallucinationEngine] Loaded 8 memory drifts
+[Inventory] Loaded 4 documents into database.
+
+[DEBUG] Forcing start at 'scene_wakeup'...
+[DEBUG] Simulating Player Choice: High PRESENCE (Haunted Lens)
+
+[96m>>> LOADING: scene_wakeup[0m
+Traceback (most recent call last):
+  File "C:\Users\riley\Desktop\Tyger Tyger Liar Liar\tyger_game\playtest_full_loop.py", line 74, in <module>
+    run_playtest()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\riley\Desktop\Tyger Tyger Liar Liar\tyger_game\playtest_full_loop.py", line 55, in run_playtest
+    desc = game.scene_manager.get_description(game.skill_system) # Pass system as character
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SceneManager' object has no attribute 'get_description'

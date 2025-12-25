@@ -56,6 +56,30 @@ class FlashbackManager:
         self.original_archetype = None
         self.current_pov_name = None
 
+    def get_memory_text(self, memory_data: Dict[str, Any]) -> str:
+        """
+        Retrieves the appropriate memory text based on current sanity.
+        Supports 'objective' (High Sanity) vs 'traumatic' (Low Sanity) variants.
+        """
+        text_data = memory_data.get("text")
+        
+        # If text is just a string, return it (backward compatibility)
+        if isinstance(text_data, str):
+            return text_data
+            
+        # If it's a dictionary, select based on sanity
+        if isinstance(text_data, dict):
+            sanity = self.player_state.get("sanity", 100)
+            # Tier 0-2 (Breakdown/Psychosis/Hysteria) -> Traumatic (< 50 sanity)
+            # Tier 3-4 (Unsettled/Stable) -> Objective (>= 50 sanity)
+            
+            if sanity < 50:
+                return text_data.get("traumatic", text_data.get("objective", "Memory corrupted."))
+            else:
+                return text_data.get("objective", text_data.get("traumatic", "Memory unavailable."))
+                
+        return "[MEMORY ERROR: INVALID DATA FORMAT]"
+
     def check_unreliable_narrator(self, text: str, context: Dict[str, Any]) -> str:
         """
         If Skepticism is high, highlights potential contradictions in the flashback.

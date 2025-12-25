@@ -4,12 +4,21 @@
     "location_id": "town_center",
     "time_cost": 10,
     "text": {
-        "base": "The square is an open wound in the forest. The statue in the center is draped in plastic sheeting that snaps in the wind. Fog rolls through the streets like a tide, erasing buildings from the waist down.",
+        "base": "The square is an open wound in the forest. A centerpiece of gray stone and dead grass where the wind doesn't blow so much as it orbits. The statue in the center is draped in heavy black plastic that snaps and ripples with a rhythmic precision. Fog rolls through the streets like a tide, erasing the buildings from the waist down.",
         "lens": {
-            "believer": "The geometry here is wrong. The streets spiral *in* towards the statue, not out. You are standing in the center of a drain.",
-            "skeptic": "Population density is zero. But the trash cans are full. There are footprints in the mud that haven't been washed away. People were here *minutes* ago.",
-            "haunted": "Exposure. You are watched from a dozen windows. You can feel the eyes on your neck, heavy and wet."
-        }
+            "believer": "The geometry here is an insult. The streets don't intersect; they spiral *in* towards the statue, narrowing as they go, as if the town is a drain designed to catch something falling from the sky.",
+            "skeptic": "The trash cans are overflowing with fresh garbage. Newspaper headlines from two days ago. Footprints in the mud that hasn't had time to settle. The town square is a stage where the actors just stepped into the wings.",
+            "haunted": "You are standing on a bullseye. A dozen dark windows overlook the square like rows of unblinking eyes. You can feel the weight of their attention, cold and damp, settling on the back of your neck."
+        },
+        "inserts": [
+            {
+                "condition": {
+                    "flag": "day4_birds_found"
+                },
+                "text": "The birds are still here. A thousand dead starlings forming three perfect concentric rings around the statue. The smell of rot is cold and sweet.",
+                "insert_at": "AFTER_LENS"
+            }
+        ]
     },
     "connected_scenes": [
         "diner",
@@ -18,21 +27,21 @@
     ],
     "choices": [
         {
-            "label": "Enter the Diner",
+            "label": "Duck into the Last Stop Diner",
             "next_scene": "diner"
         },
         {
-            "label": "Head to the Trailhead",
+            "label": "Follow the trail into the woods",
             "next_scene": "trailhead"
         },
         {
-            "label": "[Logic] Analyze the statue's draping",
+            "label": "[Logic] Study the movement of the statue's draping",
             "check": {
                 "skill": "Logic",
                 "dc": 12
             },
             "on_success": {
-                "text": "The wind isn't moving the plastic. Something *under* the plastic is moving.",
+                "text": "The wind is blowing north-west. The plastic on the statue is rippling south. Whatever is moving under that shroud, it has its own weather.",
                 "effects": [
                     {
                         "type": "sanity",
@@ -46,7 +55,34 @@
                 ]
             },
             "on_fail": {
-                "text": "Just wind. Just plastic. Keep moving."
+                "text": "Wind and plastic. A chaotic system, easily misinterpreted by a tired mind."
+            }
+        },
+        {
+            "label": "[Logic - Forensics] Examine the dead birds",
+            "condition": {
+                "flag": "day4_birds_found"
+            },
+            "check": {
+                "skill": "Forensics",
+                "dc": 14
+            },
+            "on_success": {
+                "text": "No rigor mortis. No external trauma. They didn't hit the ground; they were placed here. The spacing is mathematically consistent. 10cm apart. This wasn't a flock dying mid-air. It was a mosaic.",
+                "effects": [
+                    {
+                        "type": "sanity",
+                        "value": -3
+                    },
+                    {
+                        "type": "thought",
+                        "target": "thought_birds_geometry",
+                        "value": true
+                    }
+                ]
+            },
+            "on_fail": {
+                "text": "Mass die-off. Avian flu? Or maybe the cold snap froze them in mid-air. It's tragic, but nature is cruel."
             }
         }
     ]

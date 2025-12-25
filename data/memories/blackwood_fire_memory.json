@@ -1,11 +1,14 @@
 {
     "id": "blackwood_fire_memory",
     "type": "memory",
-    "text": "═══════════════════════════════════════════════════════════\n                    FLASHBACK: 10 YEARS AGO\n═══════════════════════════════════════════════════════════\n\nThe smoke is thick. Acrid. You're younger—so much younger.\n\nThe screams are real. They echo in your skull even now.\n\nYou see the faces in the windows. Pressed against the glass. Hands pounding. The flames climbing higher.\n\nYou could have—\n\nNo. You didn't. You couldn't have.\n\nThe fire chief pulls you back. \"Nothing we can do,\" he says.\n\nBut you weren't trying to go in.\n\nYou were just... watching.\n\n...Weren't you?\n\n═══════════════════════════════════════════════════════════",
+    "text": {
+        "objective": "═══════════════════════════════════════════════════════════\n                    INCIDENT REPORT: 10 YEARS AGO\n═══════════════════════════════════════════════════════════\n\nThermal output significant. Structure fully engaged.\n\nThe Blackwood residence. 0300 Hours.\n\nWindows blowout outward. Pressure differential consistent with accelerant.\n\nChief Miller stands at the perimeter. His badge reflects the orange light.\n\n\"Circuits,\" Miller states. Official cause of ignition. \"Old wiring. Shame.\"\n\nHe places a hand on your shoulder. Restraining force: Minimal.\n\n\"Go home, kid. Nothing to see.\"\n\nSound of structural collapse from interior. Miller checks his watch.\n\nTimeline consistent with controlled burn.\n\n═══════════════════════════════════════════════════════════",
+        "traumatic": "═══════════════════════════════════════════════════════════\n                    SCAR TISSUE: 10 YEARS AGO\n═══════════════════════════════════════════════════════════\n\nThe heat isn't hot. It's cold. It burns like ice against your skin.\n\nThe Blackwood house isn't burning down. It's burning *up*. The smoke is falling back into the chimney.\n\nThere are people on the lawn. Their mouths are open but the sound has been cut.\n\nMiller is there. His hand on your shoulder is a vice. A clamp. He's holding you down.\n\n\"Circuits,\" Miller says. But his eyes are bleeding. \"Just... wiring.\"\n\nInside the house, something slams against the front door. From the inside.\n\nIt knocks three times. \n\nThen four.\n\nThen seven.\n\nMiller smiles. It's the wrong shape.\n\n═══════════════════════════════════════════════════════════"
+    },
     "background_media": null,
     "choices": [
         {
-            "text": "[Return to present]",
+            "text": "[He knew. We both knew.]",
             "next_scene": null,
             "effects": {
                 "unlock_thought": "i_was_there"

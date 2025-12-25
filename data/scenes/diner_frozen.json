@@ -1,0 +1,109 @@
+{
+    "id": "diner_frozen",
+    "title": "The Last Stop Diner (Frozen)",
+    "location_id": "town",
+    "time_cost": 15,
+    "text": {
+        "base": "The diner is silent, save for the wind howling outside. The heating is dead. On Table 4, a cup of coffee has spilled, but the liquid is frozen in a solid, brown arch reaching for the floor. The jukebox is playing something slowed down to a crawl.",
+        "lens": {
+            "believer": "Time stopped here. The freeze was instant—supernatural. The jukebox isn't slow; it's counting down. The frost patterns on the window form a map of the town.",
+            "skeptic": "Furnace failure. Flash freeze due to the door blowing open. The coffee spill happened earlier, then froze over hours as the temperature plummeted. The jukebox motor is failing due to the cold.",
+            "haunted": "It's the waiting room all over again. Cold coffee. Empty chairs. The music sounds like the lullaby box from the intake ward. They left because of you. You walked in, and they vanished."
+        }
+    },
+    "connected_scenes": [
+        "town_square"
+    ],
+    "interactables": {
+        "coffee": "A sculpture of negligence. Brown ice. Touching it burns your skin with cold.",
+        "jukebox": {
+            "base": "An old Wurlitzer. The lights are dim and flickering.",
+            "lens": {
+                "believer": "It's playing a funeral dirge for a funeral that hasn't happened yet.",
+                "skeptic": "The belt drive is slipping. Simple mechanical failure.",
+                "haunted": "It's the song that was playing in the car."
+            }
+        },
+        "kitchen_door": "Locked. The metal handle is frosted over."
+    },
+    "choices": [
+        {
+            "label": "Touch the frozen coffee",
+            "check": {
+                "skill": "Composure",
+                "dc": 10
+            },
+            "on_success": {
+                "text": "You pull your hand back just before the frostbite sets in. It's not just cold; it's an absence of heat so profound it feels like a vacuum.",
+                "effects": [
+                    {
+                        "type": "sanity",
+                        "value": 1
+                    }
+                ]
+            },
+            "on_fail": {
+                "text": "It burns. You gasp, the cold shooting up your arm like a needle. The pain is a sharp, grounding anchor.",
+                "effects": [
+                    {
+                        "type": "sanity",
+                        "value": -1
+                    },
+                    {
+                        "type": "health",
+                        "value": -1
+                    }
+                ]
+            }
+        },
+        {
+            "label": "Try to fix the jukebox",
+            "check": {
+                "skill": "Technology",
+                "dc": 9
+            },
+            "on_success": {
+                "text": "You percussive-maintenance the side of the machine. The belt catches. The music speeds up to a normal, tinny country whine. It's almost comforting.",
+                "effects": [
+                    {
+                        "type": "sanity",
+                        "value": 2
+                    }
+                ]
+            },
+            "on_fail": {
+                "text": "You hit it. The light dies completely. The silence that rushes in to fill the void is heavier than the noise.",
+                "effects": [
+                    {
+                        "type": "sanity",
+                        "value": -2
+                    }
+                ]
+            }
+        },
+        {
+            "label": "Inspect the Kitchen Door",
+            "check": {
+                "skill": "Investigation",
+                "dc": 8
+            },
+            "on_success": {
+                "text": "The lock isn't frozen shut; it's locked from the *outside*. Someone trapped whatever is in there inside.",
+                "effects": [
+                    {
+                        "type": "theory_unlock",
+                        "value": "flash_freeze_sabotage"
+                    }
+                ]
+            },
+            "on_fail": {
+                "text": "It won't budge. The metal is so cold it feels sticky.",
+                "effects": []
+            }
+        },
+        {
+            "label": "Leave the diner",
+            "next_scene": "town_square"
+        }
+    ]
+}

@@ -82,6 +82,17 @@ class SceneManager:
         # Apply on-entry effects
         self._apply_on_entry_effects(scene)
 
+        # Process text variations (Phase 7)
+        if scene.get("type") == "memory" or scene.get("type") == "flashback":
+             # We need to preserve the original structure in self.scenes but modify the active instance
+             # Actually, simpler to just modify the return object or a temporary 'render_data'
+             # For now, let's inject it into current_scene_data
+             processed_text = self.flashback_manager.get_memory_text(scene)
+             # Update the current data reference (careful not to mutate the original cache if we want re-evaluation)
+             # Best practice: Copy the scene dict
+             self.current_scene_data = scene.copy()
+             self.current_scene_data["text"] = processed_text
+
         return self.current_scene_data
 
     def _apply_on_entry_effects(self, scene):

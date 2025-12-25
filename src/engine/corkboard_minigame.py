@@ -5,7 +5,7 @@ Allows players to manually connect clues to unlock hidden theories or trigger re
 
 from typing import Dict, List, Optional, Tuple, Set
 from board import Board
-from inventory_system import InventoryManager, Evidence
+# inventory_system import moved to local scope
 
 # Eureka Patterns: Specific combinations of links that unlock theories
 # Format: { (ev1_id, ev2_id): {"theory_id": "...", "message": "..."} }
@@ -34,7 +34,8 @@ FALSE_TRAILS = {
 }
 
 class CorkboardMinigame:
-    def __init__(self, board: Board, inventory: InventoryManager):
+    def __init__(self, board: Board, inventory): # Type hint removed to avoid generic issue or import
+        from inventory_system import InventoryManager, Evidence
         self.board = board
         self.inventory = inventory
         self.links = set() # Set of frozensets (pairs of evidence IDs)

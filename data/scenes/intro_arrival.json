@@ -4,11 +4,11 @@
     "location_id": "harbor",
     "time_cost": 0,
     "text": {
-        "base": "The ferry engine creates a headache that vibrates in your teeth. You stand on the rusted deck, watching Kaltvik emerge from the gray fog like a developed photograph. The town is small, clustered against the base of a cliff that looks like it's leaning forward, threatening to push the houses into the sea.",
+        "base": "The ferry engine is a low-frequency violence that vibrates in your teeth. You stand on the rusted deck, watching Kaltvik emerge from the gray fog like a developed photograph. The town is a cluster of dark roofs huddled against the base of a cliff that leans forward, patient and heavy, like it's waiting for a reason to fall.",
         "lens": {
-            "believer": "The fog isn't natural. It moves against the wind, coiling around the church spire like a serpent constricting its prey. Kaltvik feels less like a town and more like a secret kept by the earth itself.",
-            "skeptic": "Economic depression is visible from a mile out. Rusted roofs, failed infrastructure, zero new construction. The 'fog' is likely trapped particulate matter from the old coal seams burning underground.",
-            "haunted": "You've been here before. In a nightmare, or a memory, it doesn't matter. The cliff face looks exactly like the wall you stared at for three months in the ward. Gray. Unforgiving. Silent."
+            "believer": "The fog doesn't drift; it reaches. It coils around the church spire with a purpose that isn't meteorology. Kaltvik isn't just a town; it's a wound that refused to scar over.",
+            "skeptic": "Economic collapse is the only thing truly visible here. The 'fog' is likely a micro-climate created by the thermal mass of the cliff trapped against the cold harbor—compounded by the old coal seam fires that have been smoldering underground since '94.",
+            "haunted": "The cliff face matches the texture of the Psych Ward wall. Cold. Pitted. Unresponsive. You've been staring at this town for months in your sleep. Now the dream has stopped being a choice."
         }
     },
     "connected_scenes": [
@@ -18,14 +18,14 @@
         "port": "lobby_interrogation"
     },
     "interactables": {
-        "fog": "It's thick, wet, and cold. It tastes of salt and ash.",
-        "cliff": "Jagged black rock. It looms over the town, blocking out the weak sun.",
-        "ferry": "The 'Saint Anne'. A rusting hulk that smells of diesel and dead fish."
+        "fog": "Wet, cold, and tasting of copper. It doesn't just block vision; it swallows sound.",
+        "cliff": "Jagged black rock. It looms over the harbor, a vertical graveyard for the sunlight.",
+        "ferry": "The 'Saint Anne'. A rusting hulk that smells of diesel, ozone, and wet wool."
     },
     "music": "ambient_fog.mp3",
     "choices": [
         {
-            "label": "Disembark and head to the hotel",
+            "label": "Step onto the pier and find the hotel",
             "next_scene": "lobby_interrogation"
         }
     ]

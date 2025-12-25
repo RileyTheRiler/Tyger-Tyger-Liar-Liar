@@ -103,7 +103,11 @@ class DialogueManager:
         
         # 1. Use SkillSystem's unified passive check logic
         # We construct a context string from the node text
-        context_text = node.get("text", "")
+        text_data = node.get("text", "")
+        if isinstance(text_data, dict):
+            context_text = text_data.get("base", "")
+        else:
+            context_text = text_data
         # Get current time if possible (stub for now as player_state doesn't have it explicitly updated every tick in test env)
         current_time = 0.0
         sanity = self.player_state.get("sanity", 100.0)

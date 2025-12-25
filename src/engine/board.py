@@ -50,6 +50,9 @@ class Theory:
         self.evidence_count: int = 0  # Supporting evidence
         self.contradictions: int = 0  # Contradicting evidence
         self.linked_evidence: List[str] = []  # Evidence IDs
+        
+        # Week 20: Epistemic Friction
+        self.friction_level = 0  # 0-100, representing the mental cost of this belief
 
 class Board:
     def __init__(self):
@@ -64,7 +67,7 @@ class Board:
     def get_theory(self, theory_id: str) -> Optional[Theory]:
         return self.theories.get(theory_id)
 
-    def can_internalize(self, theory_id: str) -> Tuple[bool, str]:
+    def can_internalize(self, theory_id: str, force: bool = False) -> Tuple[bool, str]:
         theory = self.get_theory(theory_id)
         if not theory:
             return False, "Theory not found."
@@ -76,14 +79,21 @@ class Board:
             return False, "No available slots."
             
         # Check conflicts
+        conflicting_theories = []
         for other_id, other_t in self.theories.items():
             if other_t.status == "active" and (other_id in theory.conflicts_with or theory_id in other_t.conflicts_with):
-                return False, f"Conflicts with active theory: {other_t.name}"
+                conflicting_theories.append(other_t.name)
+        
+        if conflicting_theories:
+            if not force:
+                return False, f"Conflicts with active theories: {', '.join(conflicting_theories)}. You must choose one or FORCE the connection."
+            else:
+                return True, "FORCED"
 
         return True, "OK"
 
-    def start_internalizing(self, theory_id: str) -> bool:
-        can, reason = self.can_internalize(theory_id)
+    def start_internalizing(self, theory_id: str, force: bool = False) -> bool:
+        can, reason = self.can_internalize(theory_id, force=force)
         if not can:
             print(f"[BOARD] Cannot internalize {theory_id}: {reason}")
             return False
@@ -92,12 +102,25 @@ class Board:
         theory.status = "internalizing"
         theory.internalization_progress_minutes = 0
         
-        # NEW: Apply auto-locks
-        for locked_theory_id in theory.auto_locks:
-            locked_theory = self.get_theory(locked_theory_id)
-            if locked_theory and locked_theory.status == "available":
-                locked_theory.status = "locked"
-                print(f"[BOARD] Theory '{locked_theory.name}' is now incompatible and locked.")
+        # Apply friction if forced
+        if force or reason == "FORCED":
+            # Baseline friction: 15 per conflict
+            conflicts = 0
+            for other_id, other_t in self.theories.items():
+                if other_t.status == "active" and (other_id in theory.conflicts_with or theory_id in other_t.conflicts_with):
+                    conflicts += 1
+            
+            theory.friction_level = 20 * conflicts
+            print(f"[BOARD] Epistemic Friction triggered: {theory.friction_level} level for '{theory.name}'")
+        
+        # NEW: Apply auto-locks (Only if NOT forcing?)
+        # Design choice: If you force, you DON'T lock out others.
+        if not force:
+            for locked_theory_id in theory.auto_locks:
+                locked_theory = self.get_theory(locked_theory_id)
+                if locked_theory and locked_theory.status == "available":
+                    locked_theory.status = "locked"
+                    print(f"[BOARD] Theory '{locked_theory.name}' is now incompatible and locked.")
         
         return True
 
@@ -130,6 +153,14 @@ class Board:
             if t.status in ["active", "internalizing"]:
                 count += 1
         return count
+
+    def get_total_friction(self) -> int:
+        """Returns the sum of friction levels for all active theories."""
+        total = 0
+        for t in self.theories.values():
+            if t.status == "active":
+                total += t.friction_level
+        return total
 
     def discover_theory(self, theory_id: str) -> bool:
         """Unlocks a theory, making it available for internalization."""
@@ -247,6 +278,21 @@ class Board:
                 critical.append(theory_id)
         return critical
     
+    def get_ui_distortion_factor(self, sanity: float = 100.0) -> float:
+        """
+        Calculates a 0.0-1.0 distortion factor for the UI.
+        Based on low sanity and number of contradictions on the board.
+        """
+        # Sanity component: 0.0 at 100, 1.0 at 0
+        sanity_factor = (100.0 - sanity) / 100.0
+        
+        # Contradiction component: 0.1 per contradiction, max 0.5
+        total_contradictions = sum(t.contradictions for t in self.theories.values())
+        contradiction_factor = min(0.5, total_contradictions * 0.1)
+        
+        # Combined factor
+        return min(1.0, sanity_factor + contradiction_factor)
+
     def get_theory_health_status(self, theory_id: str) -> dict:
         """Get health status of a theory for UI display."""
         theory = self.get_theory(theory_id)
@@ -273,11 +319,7 @@ class Board:
             "evidence_count": theory.evidence_count
         }
 
-        return proven
-
-        return {"nodes": nodes, "links": links}
-
-    def get_board_data(self) -> dict:
+    def get_board_data(self, archetype: str = "neutral", score_ratio: int = 0) -> dict:
         """
         Returns graph data for the frontend visualization.
         Nodes: Theories and Evidence
@@ -296,6 +338,8 @@ class Board:
             "gathered": "#cccccc"      # Grey (Evidence)
         }
 
+        archetype = archetype.lower()
+
         # Add Active/Internalizing Theories as Nodes
         for t_id, theory in self.theories.items():
             if theory.status not in ["active", "internalizing", "closed"]:
@@ -307,35 +351,59 @@ class Board:
             elif theory.proven is False: color = status_colors["disproven"]
             elif theory.health < 20: color = "#ff4444" # Critical health red
 
+            # Glitch detection
+            is_glitched = False
+            label = theory.name
+            if archetype == "skeptic" and theory.lens_bias == "believer" and theory.health < 50:
+                is_glitched = True
+                label = "█" * 8 + " [LOGICAL ERROR] "
+
             nodes.append({
                 "id": t_id,
-                "label": theory.name,
+                "label": label,
                 "type": "theory",
                 "status": theory.status,
                 "health": theory.health,
+                "friction": theory.friction_level,
                 "proven": theory.proven,
                 "color": color,
-                "shape": "rect" # Visual hint
+                "shape": "rect",
+                "is_glitched": is_glitched,
+                "is_strained": theory.friction_level > 0
             })
             
             # Add Linked Evidence as Nodes and Links
             for ev_id in theory.linked_evidence:
-                # Check if node exists (evidence might be linked to multiple theories)
+                # Add evidence node if not already present
                 if not any(n["id"] == ev_id for n in nodes):
+                    ev_glitched = False
+                    ev_label = ev_id
+                    if archetype == "believer" and score_ratio < -10: # Extreme believer
+                        ev_glitched = True
+                        ev_label = "[TRIVIAL MATTER]"
+
                     nodes.append({
                         "id": ev_id,
-                        "label": ev_id, # Placeholder
+                        "label": ev_label,
                         "type": "evidence",
                         "status": "gathered",
                         "color": status_colors["gathered"],
-                        "shape": "circle"
+                        "shape": "circle",
+                        "is_glitched": ev_glitched
                     })
                 
+                # Check for friction in this link
+                has_friction = False
+                if (theory.lens_bias == "believer" and score_ratio > 3) or \
+                   (theory.lens_bias == "skeptic" and score_ratio < -3):
+                    has_friction = True
+
                 links.append({
                     "source": ev_id,
                     "target": t_id,
                     "type": "supporting", 
-                    "color": "#ff0000" if theory.status == "closed" else "#ffffff" # Red string styling
+                    "color": "#ff0000" if (theory.status == "closed" or has_friction) else "#ffffff",
+                    "has_friction": has_friction
                 })
     def to_dict(self) -> dict:
         """Serialize board state to dictionary."""

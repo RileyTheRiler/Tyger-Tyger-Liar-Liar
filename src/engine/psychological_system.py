@@ -42,6 +42,8 @@ class PsychologicalState:
             self.player_state["hallucination_history"] = []
         if "active_failures" not in self.player_state:
             self.player_state["active_failures"] = []
+        if "narrative_entropy" not in self.player_state:
+            self.player_state["narrative_entropy"] = 0.0
     
     # ==================== SOFT FAILURE SYSTEM ====================
 
@@ -419,6 +421,25 @@ class PsychologicalState:
             }
         
         return {"messages": [], "amount_decayed": 0}
+
+    def modify_entropy(self, amount: float, reason: str = "Unstable thoughts") -> Dict:
+        """
+        Modify narrative entropy and return messages.
+        Higher entropy represents a loosening grip on objective reality.
+        """
+        old_entropy = self.player_state.get("narrative_entropy", 0.0)
+        self.player_state["narrative_entropy"] = max(0.0, min(100.0, old_entropy + amount))
+        
+        result = {
+            "messages": [],
+            "current": self.player_state["narrative_entropy"]
+        }
+        
+        if amount != 0:
+            sign = "+" if amount > 0 else ""
+            result["messages"].append(f"[NARRATIVE ENTROPY {sign}{amount:.1f}] {reason}")
+            
+        return result
     
     # ==================== STATE QUERIES ====================
     

@@ -241,9 +241,9 @@ class IntegrationSystem:
             return None
         
         clues = {
-            "believer": "A faint shimmer around their head, like heat distortion.",
-            "skeptic": "Their story has inconsistencies. Small details that don't add up.",
-            "haunted": "They remind you of someone. Everyone does now."
+            "believer": "A faint shimmer around their head, like heat distortion or a halo of wrongness.",
+            "skeptic": "Their blinking pattern is rhythmic. It matches the ticking of the clock exactly.",
+            "haunted": "For a second, their face was someone else's. Someone dead."
         }
         
         return clues.get(lens_type)

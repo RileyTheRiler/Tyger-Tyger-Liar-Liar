@@ -33,6 +33,43 @@
 
   /* Measurements */
   --scanline-gap: 4px;
+
+  /* Archetype Themes (Default: Neutral) */
+  --theme-tint: rgba(0, 0, 0, 0);
+  --theme-glow: var(--ui-phosphor);
+}
+
+/* Theme Gradients */
+.theme-believer {
+  --theme-tint: rgba(255, 176, 0, 0.05);
+  /* Amber/Gold tint */
+  --theme-glow: #ffb000;
+  --ui-phosphor: #ffcc00;
+}
+
+.theme-skeptic {
+  --theme-tint: rgba(0, 100, 255, 0.05);
+  /* Cold blue tint */
+  --theme-glow: #00ffff;
+  --ui-phosphor: #00d9ff;
+}
+
+.theme-haunted {
+  --theme-tint: rgba(70, 90, 70, 0.08);
+  /* Sepia/Eerie green tint */
+  --theme-glow: #7c947c;
+  --ui-phosphor: #a3b18a;
+}
+
+/* Global Theme Overlay */
+#root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: var(--theme-tint);
+  pointer-events: none;
+  z-index: 9995;
+  mix-blend-mode: color;
 }
 
 body {

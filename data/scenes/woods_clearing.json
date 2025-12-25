@@ -4,11 +4,11 @@
     "location_id": "woods",
     "time_cost": 10,
     "text": {
-        "base": "The forest floor drops away into a bowl of dead earth. No birdsong. No insect hum. Just a pressure against the eardrums, like deep water. In the center, the stone pillar stands not like a ruin, but like a bone pushed up through the skin of the world.",
+        "base": "The path ends. Not naturally, but as if the forest simply gave up. A perfect circle of dead earth, thirty feet across. The silence here has weight; it presses against the eardrums like deep water. In the center, the stone pillar waits. It doesn't look ruined. It looks like it was pushed up through the skin of the world.",
         "lens": {
-            "believer": "The silence isn't empty; it's holding its breath. The trees lean inward, a jury of twisted wood waiting for a verdict. The pillar is a lightning rod for things that don't have names.",
-            "skeptic": "Geiger counter would likely scream here. The grass pattern suggests a localized die-off from subsurface leakage. The pillar? Old survey marker, likely granite, heavily weathered by acid rain.",
-            "haunted": "The light is wrong here. Grey and flat, like the fluorescent tubes in the Psych Ward hallway. You can smell the antiseptic ghost of that place rising from the dirt."
+            "believer": "The trees aren't just dead; they're leaning away. A radial pattern of avoidance. The air tastes like ozone and copper, the way a storm tastes before it breaks. Something is listening.",
+            "skeptic": "Geiger counter activity would be high. The vegetation pattern indicates a localized soil toxicity event, likely heavy metals or subsurface leakage. The pillar is granite, standard survey marker dimensions, though the surface weathering is inconsistent with local rainfall.",
+            "haunted": "It smells like the basement. Not earth—damp concrete and old ammonia. The light is too flat here, grey and buzzing, like a fluorescent tube about to fail. You've been here before. You know you have."
         },
         "inserts": [
             {
@@ -17,7 +17,7 @@
                         "Perception": 4
                     }
                 },
-                "text": "The moss on the pillar hasn't grown over it; it's shying away. Leaving a gap of bare, grey stone.",
+                "text": "The moss stops exactly one inch from the pillar's base. It hasn't died back. It's retreated.",
                 "insert_at": "AFTER_BASE"
             }
         ]
@@ -28,13 +28,13 @@
     ],
     "objects": {
         "pillar": {
-            "description": "It absorbs the light. Touching it feels like touching a fevered forehead—damp, and impossibly warm.",
+            "description": "Black stone, matte finish. It drinks the light. Touching it feels wrong—not cold, but fever-warm. Damp.",
             "interactions": {
-                "use": "You press your palm to the stone. The warmth travels up your arm, settling in your teeth. A low thrum, like a generator beneath the earth."
+                "use": "You place your palm against the stone. The heat is immediate, invasive. It travels up your wrist, settling in the jaw. A vibration, low and constant. Like a generator running far underground."
             }
         },
         "grass": {
-            "description": "Yellow. Brittle. It crunches like insect wings under your boots."
+            "description": "Yellow. Brittle. It doesn't bend under your boots; it snaps. The sound is too loud in the quiet."
         }
     },
     "passive_clues": [
@@ -54,11 +54,11 @@
     "memory_trigger": {
         "skill": "Subconscious",
         "dc": 14,
-        "text": "A flash of memory: a child's laughter, abruptly cut off by a sound like tearing metal. You are standing in this exact spot, but the pillar is new and unblemished."
+        "text": "Movement in the periphery. A child's yellow coat, bright against the grey. Then a sound—wet and heavy, like dropped meat. When you turn, the clearing is empty."
     },
     "choices": [
         {
-            "label": "Inspect the pillar more closely",
+            "label": "Examine the pillar's surface",
             "next_scene": "woods_clearing",
             "effects": [
                 {
@@ -73,11 +73,11 @@
             ]
         },
         {
-            "label": "Walk back to the trailhead",
+            "label": "Leave before the headache gets worse",
             "next_scene": "trailhead"
         },
         {
-            "label": "[Empathy (Hard)] Close your eyes and feel the atmosphere",
+            "label": "[Empathy (Hard)] Open yourself to the silence",
             "check": {
                 "skill": "Empathy",
                 "dc": 12

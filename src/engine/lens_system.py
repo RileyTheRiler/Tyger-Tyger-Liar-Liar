@@ -10,7 +10,7 @@ class LensSystem:
         self.skill_system = skill_system
         self.board = board
         self.locked = False # Permanent worldview commitment (endgame)
-        self.current_lens = "neutral" # neutral, believer, skeptic
+        self.current_lens = "neutral" # neutral, believer, skeptic, haunted
         
     def calculate_lens(self) -> str:
         """
@@ -21,34 +21,44 @@ class LensSystem:
         if self.locked:
             return self.current_lens
             
-        # 1. Get base scores from skills
-        # We use effective levels (including theory bonuses/penalties)
-        believer_score = (
+        # 1. Get base scores from attributes (The "Core" bias)
+        believer_score = self.skill_system.attributes["INTUITION"].value * 2
+        skeptic_score = self.skill_system.attributes["REASON"].value * 2
+        haunted_score = self.skill_system.attributes["PRESENCE"].value * 2
+
+        # 2. Add scores from skills
+        believer_score += (
             self.skill_system.get_skill_total("Paranormal Sensitivity") +
             self.skill_system.get_skill_total("Instinct")
         )
         
-        skeptic_score = (
+        skeptic_score += (
             self.skill_system.get_skill_total("Logic") +
             self.skill_system.get_skill_total("Skepticism")
         )
         
-        # 2. Add weight from active theories
-        # Certain theories heavily bias the lens
+        # 3. Add weight from active theories
         if self.board.theories.get("i_want_to_believe") and self.board.theories["i_want_to_believe"].status == "active":
             believer_score += 4
             
         if self.board.theories.get("there_is_a_rational_explanation") and self.board.theories["there_is_a_rational_explanation"].status == "active":
             skeptic_score += 4
             
-        # 3. Threshold check
-        # A significant lead (e.g., 3 points) is required to switch lens
-        diff = believer_score - skeptic_score
+        # 4. Determine dominant lens
+        scores = {
+            "believer": believer_score,
+            "skeptic": skeptic_score,
+            "haunted": haunted_score
+        }
         
-        if diff >= 3:
-            self.current_lens = "believer"
-        elif diff <= -3:
-            self.current_lens = "skeptic"
+        dominant = max(scores, key=scores.get)
+        max_score = scores[dominant]
+        
+        # Check for significant lead
+        # If no one has a 3pt lead over second place, it stays neutral
+        other_scores = [v for k, v in scores.items() if k != dominant]
+        if max_score >= max(other_scores) + 3:
+            self.current_lens = dominant
         else:
             self.current_lens = "neutral"
             
@@ -68,6 +78,8 @@ class LensSystem:
             return variants["believer"]
         elif lens == "skeptic" and "skeptic" in variants:
             return variants["skeptic"]
+        elif lens == "haunted" and "haunted" in variants:
+            return variants["haunted"]
             
         return base_text
 

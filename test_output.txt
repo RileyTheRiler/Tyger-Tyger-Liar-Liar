@@ -1,0 +1,8 @@
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.006s
+
+OK
+DEBUG: sys.path[0] = C:\Users\riley\Desktop\Tyger Tyger Liar Liar\src\engine
+DEBUG: src exists: True
+DEBUG: src contents: ['content', 'debug', 'engine', 'tests', 'ui', '__init__.py', '__pycache__']

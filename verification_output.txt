@@ -1,0 +1,13 @@
+=== TESTING UNIFIED SKILL VOICES ===
+
+[TEST 1] High Sanity - Logic & Theory
+You are standing in the middle of the crime scene. There is a strange residue on the walls.
+
+[95m[SUBCONSCIOUS]: "The pattern is everywhere. You just have to see it."[0m
+
+blue[LOGIC]: "That timeline doesn't add up."[0m
+
+[TEST 2] Low Sanity - Hallucination (Paranoia)
+THIS IS NOT REAL.. The evidence is right in front of you. A simple clue. [INTERNAL CONFLICT]: Logic and Occult Knowledge are at odds over this. - LOGIC: "There's a flaw in her argument." - OCCULT KNOWLEDGE: "That symbol is inverted." [95m[SUBCONSCIOUS]: "The pattern is everywhere. You just have to ! it."[0m
+
+[TEST 3] Extreme Low Sanity - Voice Corruption

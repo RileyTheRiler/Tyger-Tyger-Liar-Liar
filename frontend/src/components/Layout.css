@@ -56,7 +56,25 @@
 
     /* Device screen text color */
     color: var(--ui-phosphor);
-    font-family: var(--font-ui);
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    /* Typewriter font */
+    text-shadow: 0 0 2px rgba(255, 176, 0, 0.4);
+}
+
+/* Watermark for Case File */
+.main-content::after {
+    content: "CONFIDENTIAL // EYES ONLY";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 8rem;
+    color: rgba(0, 0, 0, 0.03);
+    pointer-events: none;
+    z-index: 0;
+    font-family: 'Impact', sans-serif;
+    letter-spacing: 1rem;
+    white-space: nowrap;
 }
 
 /* Example CRT effect specific to the sidebar container */

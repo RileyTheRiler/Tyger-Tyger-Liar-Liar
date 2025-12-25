@@ -1,0 +1,139 @@
+{
+    "start_node": "maude_greet",
+    "nodes": [
+        {
+            "id": "maude_greet",
+            "speaker": "Maude",
+            "text": {
+                "base": "She doesn't look up from her ledger. The pen scrawls across the yellowed paper with a sound like a dry branch dragging on a windowpane. \"I told you. No vacancies. Kaltvik is full. Has been since '98.\"",
+                "lens": {
+                    "believer": "Her pen isn't writing words. It's drawing sigils. Each stroke binds the room tighter, sealing you into this purgatory of lemon polish and dust.",
+                    "skeptic": "The ledger is a mess of ink blots and crossed-out dates. She's clearly overwhelmed or incompetent. Purgatory is just bad management with a better PR team.",
+                    "haunted": "She has the same clinical detachment as the nurses. You can see the reflection of a surgical light in her spectacles. She isn't checking you in; she's admitting you."
+                },
+                "inserts": [
+                    {
+                        "condition": {
+                            "skill_gte": {
+                                "Empathy": 4
+                            }
+                        },
+                        "text": "[PRESENCE - Empathy] Her hand is trembling. Not from age. From fear. She's writing so she doesn't have to look at you.",
+                        "insert_at": "AFTER_LENS"
+                    },
+                    {
+                        "condition": {
+                            "skill_gte": {
+                                "Logic": 5
+                            }
+                        },
+                        "text": "[REASON - Logic] The pages she's writing on... they're dated 1999. She's filling out a log for a year that's already passed.",
+                        "insert_at": "AFTER_BASE"
+                    }
+                ]
+            },
+            "choices": [
+                {
+                    "text": "“I'm not looking for a room. I'm looking for answers.”",
+                    "next": "maude_answers"
+                },
+                {
+                    "text": "“Why 1998?”",
+                    "next": "maude_1998"
+                },
+                {
+                    "text": "[Haunted] “You were there, weren't you? At the Blackwood fire?”",
+                    "condition": {
+                        "archetype": "haunted"
+                    },
+                    "next": "maude_fire_shared"
+                },
+                {
+                    "text": "[Leave]",
+                    "next": "EXIT_DIALOGUE"
+                }
+            ]
+        },
+        {
+            "id": "maude_answers",
+            "speaker": "Maude",
+            "text": "She finally looks up. Her eyes are like two cold pebbles found at the bottom of a well. \"Answers aren't on the menu, hon. We only serve cold comfort and regret. Try the diner if you want to chew on something bitter.\"",
+            "choices": [
+                {
+                    "text": "“1998. What happened?”",
+                    "next": "maude_1998"
+                }
+            ]
+        },
+        {
+            "id": "maude_1998",
+            "speaker": "Maude",
+            "text": {
+                "base": "The pen snaps. A black bloom of ink spreads across the page. \"The year the world stopped spinning and started to list. We all felt it. Some of us just decided to stay behind where it was safe.\"",
+                "lens": {
+                    "believer": "\"The sky turned the color of a bruised plum. The static on the radio started speaking in the voices of the unborn.\"",
+                    "skeptic": "\"Mass panic. Some chemical spill in the woods, probably. Government hush-up. Everyone here just collective-memory-holed the details.\"",
+                    "haunted": "\"The fire. You remember the smell of burning pine? It never leaves the back of your throat. It was the year we all burned, Vance. Some of us just took longer to turn to ash.\""
+                },
+                "inserts": [
+                    {
+                        "condition": {
+                            "skill_gte": {
+                                "Paranormal Sensitivity": 6
+                            }
+                        },
+                        "text": "[INTUITION - Paranormal Sensitivity] The ink isn't spreading naturally. It's forming a shape. A tree. Or a lung.",
+                        "insert_at": "AFTER_LENS"
+                    }
+                ]
+            },
+            "choices": [
+                {
+                    "text": "“Safe? This doesn't feel safe.”",
+                    "next": "EXIT_DIALOGUE",
+                    "effects": {
+                        "sanity": -2,
+                        "theory_unlock": "the_1998_anomaly"
+                    }
+                },
+                {
+                    "text": "[Believer] “You heard them too, didn't you? The voices in the static?”",
+                    "condition": {
+                        "archetype": "believer"
+                    },
+                    "next": "EXIT_DIALOGUE",
+                    "effects": {
+                        "sanity": -3,
+                        "theory_unlock": "the_green_pulse"
+                    }
+                },
+                {
+                    "text": "[Skeptic] “A chemical spill explains the memory loss. And the 'voices'.”",
+                    "condition": {
+                        "archetype": "skeptic"
+                    },
+                    "next": "EXIT_DIALOGUE",
+                    "effects": {
+                        "reality": 5,
+                        "theory_unlock": "mass_hysteria"
+                    }
+                }
+            ]
+        },
+        {
+            "id": "maude_fire_shared",
+            "speaker": "Maude",
+            "text": "The clinical mask cracks. For a split second, you see the terror underneath—the girl who hid in the cellar while the world screamed. \"I don't talk about the fire. No one does. We made a pact. If we don't speak its name, it can't find its way back to us.\"",
+            "choices": [
+                {
+                    "text": "“It's already back, Maude. I brought the smell with me.”",
+                    "next": "EXIT_DIALOGUE",
+                    "effects": {
+                        "reality": -5,
+                        "unlock_thought": "The Smolder"
+                    }
+                }
+            ]
+        }
+    ]
+}

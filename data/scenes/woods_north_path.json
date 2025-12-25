@@ -8,7 +8,16 @@
             "believer": "The wind dies here. Not stopped—removed. The stillness is artificial. Something is listening to your heartbeat.",
             "skeptic": "Tire tracks. Heavy tread, military grade, partially washed away. Too wide for a ranger vehicle. Someone drove a deuce-and-a-half through here recently.",
             "haunted": "There's a fence post to your left. Barbed wire cut clean. You remember the sound of wire cutters. Keep moving. Don't look at the post."
-        }
+        },
+        "inserts": [
+            {
+                "condition": {
+                    "flag": "old_tom_missing"
+                },
+                "text": "A heavy canvas toolbag sits near the treeline, half-buried in pine needles. It's covered in frost. Stenciled on the side in white paint: 'MAINTENANCE - T. MHLLER'. The 'I' has been scratched out.",
+                "insert_at": "AFTER_LENS"
+            }
+        ]
     },
     "connected_scenes": [
         "woods_clearing",

@@ -93,6 +93,16 @@ function App() {
       <AudioManager
         music={getCurrentMusic()}
         sfxQueue={uiState?.sfx_queue}
+        fearLevel={uiState?.fear_level}
+        mentalLoad={uiState?.mental_load}
+      />
+
+      <VHSEffect
+        active={!showTitle}
+        mentalLoad={uiState?.mental_load}
+        attention={uiState?.attention_level}
+        disorientation={uiState?.psych_flags?.disorientation}
+        instability={uiState?.psych_flags?.instability}
       />
 
       {showTitle && (
@@ -104,51 +114,53 @@ function App() {
       )}
 
       {!showTitle && !booting && (
-        <Layout
-          uiState={uiState}
-          sidebar={<StatusHUD uiState={uiState} />}
-        >
-          <div className="main-feed">
-            <div className="header-deco">
-              <GlitchText text="TYGER_TYGER_LIAR_LIAR" className="title-glitch" />
-              <div className="system-status">
-                SYS.ONLINE
-                <span className="ctrl-divider">|</span>
-                <button className="ctrl-btn" onClick={() => setShowBoard(true)}>
-                  [VIEW_MINDMAP]
-                </button>
-                <span className="ctrl-divider">|</span>
-                <button className="ctrl-btn" onClick={handleShutdown}>
-                  [EXIT_SYSTEM]
-                </button>
+        <div className={`app-theme-wrapper theme-${uiState?.archetype || 'neutral'}`}>
+          <Layout
+            uiState={uiState}
+            sidebar={<StatusHUD uiState={uiState} />}
+          >
+            <div className="main-feed">
+              <div className="header-deco">
+                <GlitchText text="TYGER_TYGER_LIAR_LIAR" className="title-glitch" />
+                <div className="system-status">
+                  SYS.ONLINE
+                  <span className="ctrl-divider">|</span>
+                  <button className="ctrl-btn" onClick={() => setShowBoard(true)}>
+                    [VIEW_MINDMAP]
+                  </button>
+                  <span className="ctrl-divider">|</span>
+                  <button className="ctrl-btn" onClick={handleShutdown}>
+                    [EXIT_SYSTEM]
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <Terminal history={history} />
+              <Terminal history={history} />
 
-            {uiState?.choices && uiState.choices.length > 0 && (
-              <ChoiceGrid
-                choices={uiState.choices}
-                handleChoice={handleSend}
+              {uiState?.choices && uiState.choices.length > 0 && (
+                <ChoiceGrid
+                  choices={uiState.choices}
+                  handleChoice={handleSend}
+                  loading={loading}
+                />
+              )}
+
+              <InputConsole
+                input={input}
+                setInput={setInput}
+                handleSend={handleSend}
                 loading={loading}
               />
+            </div>
+
+            {showBoard && (
+              <MindMap
+                boardData={uiState?.board_data}
+                onClose={() => setShowBoard(false)}
+              />
             )}
-
-            <InputConsole
-              input={input}
-              setInput={setInput}
-              handleSend={handleSend}
-              loading={loading}
-            />
-          </div>
-
-          {showBoard && (
-            <MindMap
-              boardData={uiState?.board_data}
-              onClose={() => setShowBoard(false)}
-            />
-          )}
-        </Layout>
+          </Layout>
+        </div>
       )}
     </>
   )

@@ -1,0 +1,47 @@
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.147s
+
+OK
+[FearManager] Loaded fear events from aurora_exposure.json
+[FearManager] Loaded fear events from entity_close.json
+[FearManager] Loaded fear events from isolation_dread.json
+[FearManager] Loaded fear events from supernatural_witness.json
+[HallucinationEngine] Loaded 10 visual hallucinations
+[HallucinationEngine] Loaded 10 auditory hallucinations
+[HallucinationEngine] Loaded 8 memory drifts
+[ENDGAME] Loaded 7 endings.
+[MEMORY] Loaded 5 suppressed memories
+[InjurySystem] Loaded 10 injury templates.
+[TraumaSystem] Loaded 8 trauma templates.
+[ChaseSystem] Loaded 5 chase scenarios.
+[CombatManager] Loaded 4 encounter templates.
+[Inventory] Loaded 4 documents into database.
+[FearManager] Loaded fear events from aurora_exposure.json
+[FearManager] Loaded fear events from entity_close.json
+[FearManager] Loaded fear events from isolation_dread.json
+[FearManager] Loaded fear events from supernatural_witness.json
+[HallucinationEngine] Loaded 10 visual hallucinations
+[HallucinationEngine] Loaded 10 auditory hallucinations
+[HallucinationEngine] Loaded 8 memory drifts
+[ENDGAME] Loaded 7 endings.
+[MEMORY] Loaded 5 suppressed memories
+[InjurySystem] Loaded 10 injury templates.
+[TraumaSystem] Loaded 8 trauma templates.
+[ChaseSystem] Loaded 5 chase scenarios.
+[CombatManager] Loaded 4 encounter templates.
+[Inventory] Loaded 4 documents into database.
+[FearManager] Loaded fear events from aurora_exposure.json
+[FearManager] Loaded fear events from entity_close.json
+[FearManager] Loaded fear events from isolation_dread.json
+[FearManager] Loaded fear events from supernatural_witness.json
+[HallucinationEngine] Loaded 10 visual hallucinations
+[HallucinationEngine] Loaded 10 auditory hallucinations
+[HallucinationEngine] Loaded 8 memory drifts
+[ENDGAME] Loaded 7 endings.
+[MEMORY] Loaded 5 suppressed memories
+[InjurySystem] Loaded 10 injury templates.
+[TraumaSystem] Loaded 8 trauma templates.
+[ChaseSystem] Loaded 5 chase scenarios.
+[CombatManager] Loaded 4 encounter templates.
+[Inventory] Loaded 4 documents into database.

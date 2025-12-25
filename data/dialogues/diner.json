@@ -4,7 +4,14 @@
         {
             "id": "diner_intro",
             "speaker": "Waitress",
-            "text": "She doesn't look up. The coffee pot hovers over your cup, pouring until the black liquid threatens the rim. Stops exactly at the terrifying edge.",
+            "text": {
+                "base": "She doesn't look up. The coffee pot hovers over your cup, pouring until the black liquid threatens the rim. Stops exactly at the terrifying edge.",
+                "lens": {
+                    "believer": "The steam rising from the cup forms shapes that look like reaching hands. She isn't just pouring coffee; she's performing a ritual of preservation.",
+                    "skeptic": "Surface tension is the only thing keeping the counter clean. Her hands are steady, suggesting repetitive labor has numbed her to the risk of a spill.",
+                    "haunted": "The black liquid is a mirror. For a second, you see the boathouse reflected in the heat. Then the surface breaks. She knows you're looking at it."
+                }
+            },
             "passive_checks": [
                 {
                     "skill": "Perception",
@@ -33,6 +40,13 @@
                     }
                 },
                 {
+                    "text": "[Haunted] “I remember the coffee in the hospital.”",
+                    "condition": {
+                        "archetype": "haunted"
+                    },
+                    "next": "haunted_shared_trauma"
+                },
+                {
                     "text": "[Empathy ≥ 3] “Who are you waiting for?”",
                     "skill_gate": {
                         "skill": "Empathy",
@@ -43,6 +57,17 @@
                 {
                     "text": "[Leave] Drop a bill. Walk out.",
                     "next": "EXIT_DIALOGUE"
+                }
+            ]
+        },
+        {
+            "id": "haunted_shared_trauma",
+            "speaker": "Waitress",
+            "text": "The pot clatters against the ceramic. A single droplet hits your hand. It's cold. \"The plastic chairs. The vending machine hum. You were there too, weren't you? Kaltvik doesn't let go of people who've sat in those rooms.\"",
+            "choices": [
+                {
+                    "text": "“The North Path. Did they take him there?”",
+                    "next": "branch_empathy"
                 }
             ]
         },
@@ -71,8 +96,45 @@
         {
             "id": "branch_empathy",
             "speaker": "Waitress",
-            "text": "The rag stops moving. She looks at the window. The reflection shows a hollow room. \"He didn't come back. The North Path. He said he found the door.\"",
+            "text": {
+                "base": "The rag stops moving. She looks at the window. The reflection shows a hollow room. \"He didn't come back. The North Path. He said he found the door.\"",
+                "lens": {
+                    "believer": "\"He said the door was made of light and bone. I thought he was high. Now I just think he was right.\"",
+                    "skeptic": "\"Probably fell into a sinkhole. The geography up there is Swiss cheese. But people like to tell stories about 'doors'.\"",
+                    "haunted": "\"The same door we all see when the lights go out. He just decided to walk through it instead of waking up.\""
+                }
+            },
             "choices": [
+                {
+                    "text": "[Believer] “Light and bone?”",
+                    "condition": {
+                        "archetype": "believer"
+                    },
+                    "next": "EXIT_DIALOGUE",
+                    "effects": {
+                        "theory_unlock": "missing_brother_case"
+                    }
+                },
+                {
+                    "text": "[Skeptic] “Sinkholes don't glow.”",
+                    "condition": {
+                        "archetype": "skeptic"
+                    },
+                    "next": "EXIT_DIALOGUE",
+                    "effects": {
+                        "theory_unlock": "missing_brother_case"
+                    }
+                },
+                {
+                    "text": "[Haunted] “I'm awake.”",
+                    "condition": {
+                        "archetype": "haunted"
+                    },
+                    "next": "EXIT_DIALOGUE",
+                    "effects": {
+                        "theory_unlock": "missing_brother_case"
+                    }
+                },
                 {
                     "text": "“The door.”",
                     "next": "EXIT_DIALOGUE",

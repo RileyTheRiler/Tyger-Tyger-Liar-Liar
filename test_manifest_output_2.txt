@@ -1,0 +1,88 @@
+FFF
+======================================================================
+FAIL: test_ending_effect (__main__.TestEntityManifestation.test_ending_effect)
+Verify ending effect triggers endgame manager.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\riley\Desktop\Tyger Tyger Liar Liar\tests\test_entity_manifestation.py", line 66, in test_ending_effect
+    self.game.endgame_manager.trigger_ending.assert_called_with("integrated_forced")
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\unittest\mock.py", line 976, in assert_called_with
+    raise AssertionError(error_message)
+AssertionError: expected call not found.
+Expected: trigger_ending('integrated_forced')
+  Actual: not called.
+
+======================================================================
+FAIL: test_manifestation_trigger (__main__.TestEntityManifestation.test_manifestation_trigger)
+Verify attention > 100 triggers the manifestation scene.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\riley\Desktop\Tyger Tyger Liar Liar\tests\test_entity_manifestation.py", line 38, in test_manifestation_trigger
+    self.game.scene_manager.load_scene.assert_called_with("entity_manifestation")
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\unittest\mock.py", line 976, in assert_called_with
+    raise AssertionError(error_message)
+AssertionError: expected call not found.
+Expected: load_scene('entity_manifestation')
+  Actual: not called.
+
+======================================================================
+FAIL: test_teleport_effect (__main__.TestEntityManifestation.test_teleport_effect)
+Verify teleport effect moves player and loads scene.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\riley\Desktop\Tyger Tyger Liar Liar\tests\test_entity_manifestation.py", line 51, in test_teleport_effect
+    self.assertEqual(self.game.player_state["current_location"], "clinic_bed")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'trailhead' != 'clinic_bed'
+- trailhead
++ clinic_bed
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.153s
+
+FAILED (failures=3)
+[FearManager] Loaded fear events from aurora_exposure.json
+[FearManager] Loaded fear events from entity_close.json
+[FearManager] Loaded fear events from isolation_dread.json
+[FearManager] Loaded fear events from supernatural_witness.json
+[HallucinationEngine] Loaded 10 visual hallucinations
+[HallucinationEngine] Loaded 10 auditory hallucinations
+[HallucinationEngine] Loaded 8 memory drifts
+[ENDGAME] Loaded 7 endings.
+[MEMORY] Loaded 5 suppressed memories
+[InjurySystem] Loaded 10 injury templates.
+[TraumaSystem] Loaded 8 trauma templates.
+[ChaseSystem] Loaded 5 chase scenarios.
+[CombatManager] Loaded 4 encounter templates.
+[Inventory] Loaded 4 documents into database.
+[FearManager] Loaded fear events from aurora_exposure.json
+[FearManager] Loaded fear events from entity_close.json
+[FearManager] Loaded fear events from isolation_dread.json
+[FearManager] Loaded fear events from supernatural_witness.json
+[HallucinationEngine] Loaded 10 visual hallucinations
+[HallucinationEngine] Loaded 10 auditory hallucinations
+[HallucinationEngine] Loaded 8 memory drifts
+[ENDGAME] Loaded 7 endings.
+[MEMORY] Loaded 5 suppressed memories
+[InjurySystem] Loaded 10 injury templates.
+[TraumaSystem] Loaded 8 trauma templates.
+[ChaseSystem] Loaded 5 chase scenarios.
+[CombatManager] Loaded 4 encounter templates.
+[Inventory] Loaded 4 documents into database.
+[FearManager] Loaded fear events from aurora_exposure.json
+[FearManager] Loaded fear events from entity_close.json
+[FearManager] Loaded fear events from isolation_dread.json
+[FearManager] Loaded fear events from supernatural_witness.json
+[HallucinationEngine] Loaded 10 visual hallucinations
+[HallucinationEngine] Loaded 10 auditory hallucinations
+[HallucinationEngine] Loaded 8 memory drifts
+[ENDGAME] Loaded 7 endings.
+[MEMORY] Loaded 5 suppressed memories
+[InjurySystem] Loaded 10 injury templates.
+[TraumaSystem] Loaded 8 trauma templates.
+[ChaseSystem] Loaded 5 chase scenarios.
+[CombatManager] Loaded 4 encounter templates.
+[Inventory] Loaded 4 documents into database.

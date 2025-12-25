@@ -7,9 +7,38 @@
         "base": "The floor is cold. Not cool—cold. It sucks the heat from your cheek like a lamprey. The air tastes of copper and stale electricity. You try to sit up, but the room tilts, sliding away from your center of gravity.",
         "lens": {
             "believer": "This isn't waking up. This is a reinsertion. You were somewhere else—somewhere vast and screaming—and you've been shoved back into this meat like a hand into a tight glove.",
-            "skeptic": "Symptom check: Photophobia. Nausea. Metallic taste. Classic post-ictal state or acute toxicity. You've been drugged, or you've had a seizure. Prioritize hydration and weapon acquisition.",
+            "skeptic": "Light hurts. Stomach hurts. Mouth tastes like you've been sucking on a car battery. You either drank everything in the minibar or someone slipped you something. First things first: get water, find something heavy to hold.",
             "haunted": "The copper taste... it's the exact same taste as that night in the Boathouse. You swore you'd never feel this weak again. You lied."
-        }
+        },
+        "inserts": [
+            {
+                "condition": {
+                    "skill_gte": {
+                        "Logic": 4
+                    }
+                },
+                "text": "[REASON - Logic] The rhythmic vibration under your cheek. It's the hotel generator. You're still in Kaltvik. You're still inside.",
+                "insert_at": "AFTER_LENS"
+            },
+            {
+                "condition": {
+                    "skill_gte": {
+                        "Endurance": 3
+                    }
+                },
+                "text": "[CONSTITUTION - Endurance] Your heart is hammering against your ribs, a frantic bird in a cage. Breathe. The floor is cold, but you are still warm enough to hurt.",
+                "insert_at": "AFTER_BASE"
+            },
+            {
+                "condition": {
+                    "skill_gte": {
+                        "Subconscious": 5
+                    }
+                },
+                "text": "[INTUITION - Subconscious] In the darkness behind your eyelids, the boathouse door is still open. It's always open.",
+                "insert_at": "AFTER_LENS"
+            }
+        ]
     },
     "choices": [
         {

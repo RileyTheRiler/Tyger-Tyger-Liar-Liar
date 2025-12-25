@@ -1,0 +1,66 @@
+[95m=== FULL NARRATIVE LOOP PLAYTEST ===[0m
+[FearManager] Loaded fear events from aurora_exposure.json
+[FearManager] Loaded fear events from entity_close.json
+[FearManager] Loaded fear events from isolation_dread.json
+[FearManager] Loaded fear events from supernatural_witness.json
+[HallucinationEngine] Loaded 10 visual hallucinations
+[HallucinationEngine] Loaded 10 auditory hallucinations
+[HallucinationEngine] Loaded 8 memory drifts
+[ENDGAME] Loaded 5 endings.
+[MEMORY] Loaded 5 suppressed memories
+[InjurySystem] Loaded 10 injury templates.
+[TraumaSystem] Loaded 8 trauma templates.
+[ChaseSystem] Loaded 5 chase scenarios.
+[CombatManager] Loaded 4 encounter templates.
+[Inventory] Loaded 4 documents into database.
+
+[DEBUG] Forcing start at 'scene_wakeup'...
+[DEBUG] Simulating Player Choice: High PRESENCE (Haunted Lens)
+
+[96m>>> LOADING: scene_wakeup[0m
+[92mLENS: HAUNTED[0m
+[92mTEXT:[0m The floor is cold. Not coolùcold. It sucks the heat from your cheek like a lamprey. The air tastes o...
+
+[96m>>> LOADING: scene_mirror_gaze[0m
+[92mLENS: HAUNTED[0m
+[92mTEXT:[0m The bathroom light hums, a dying insect trapped in amber. You grip the porcelain sink. It's cracked....
+
+[96m>>> LOADING: intro_arrival[0m
+[92mLENS: HAUNTED[0m
+[92mTEXT:[0m The ferry engine creates a headache that vibrates in your teeth. You stand on the rusted deck, watch...
+[PASS] Haunted Lens verified in Intro.
+
+[96m>>> LOADING: lobby_interrogation[0m
+[92mLENS: HAUNTED[0m
+[92mTEXT:[0m You step off the pier and into the only hotel in town. The lobby smells of lemon polish and dust. A ...
+
+[96m>>> LOADING: diner[0m
+[92mLENS: HAUNTED[0m
+[92mTEXT:[0m You push open the door. The bell chimes, a sharp, nervous sound. The diner smells of stale coffee an...
+
+[96m>>> LOADING: trailhead[0m
+[92mLENS: HAUNTED[0m
+[92mTEXT:[0m The iron gate hangs off one hinge, twisted outwardùas if something large forced its way *out*, not i...
+
+[96m>>> LOADING: radio_tower[0m
+[92mLENS: HAUNTED[0m
+[92mTEXT:[0m The path ends at a rusty chain-link fence. Beyond it, the tower juts out of the snow like a skeletal...
+
+[96m>>> LOADING: frozen_victim[0m
+[92mLENS: HAUNTED[0m
+[92mTEXT:[0m The body lies in the center of the clearing, not encased in ice, but *blooming* with it. Translucent...
+[PASS] Haunted Lens verified in Frozen Victim.
+
+[96m>>> LOADING: entity_manifestation[0m
+[92mLENS: HAUNTED[0m
+[92mTEXT:[0m There is no sky. There is only the hum. It starts in the marrow of your bones, a vibration that matc...
+
+[96m>>> TESTING DIALOGUE: maude_checkin (HAUNTED)[0m
+Traceback (most recent call last):
+  File "C:\Users\riley\Desktop\Tyger Tyger Liar Liar\tyger_game\playtest_full_loop.py", line 129, in <module>
+    run_playtest()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\riley\Desktop\Tyger Tyger Liar Liar\tyger_game\playtest_full_loop.py", line 92, in run_playtest
+    game.dialogue_manager.load_dialogue("maude_checkin")
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+TypeError: DialogueManager.load_dialogue() missing 1 required positional argument: 'dialogues_dir'

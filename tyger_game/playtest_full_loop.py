@@ -43,7 +43,8 @@ def run_playtest():
     
     # Mocking the attribute boost usually done by Mirror choice
     print("[DEBUG] Simulating Player Choice: High PRESENCE (Haunted Lens)")
-    game.skill_system.attributes["PRESENCE"].value = 5 
+    game.skill_system.attributes["PRESENCE"].value = 5
+    game.skill_system.get_skill("Composure").base_level = 5
     game.skill_system.attributes["REASON"].value = 1
     game.skill_system.attributes["INTUITION"].value = 1
     
@@ -51,8 +52,27 @@ def run_playtest():
         print(f"\n{Colors.CYAN}>>> LOADING: {scene_id}{Colors.ENDC}")
         game.scene_manager.load_scene(scene_id)
         
-        # Capture description
-        desc = game.scene_manager.get_description(game.skill_system) # Pass system as character
+        # Capture description using the same logic as Game.display_scene
+        current_lens = game.lens_system.calculate_lens()
+        archetype_map = {
+            "believer": "believer", "skeptic": "skeptic", "haunted": "haunted"
+        }
+        from engine.text_composer import Archetype
+        arch_obj_map = {
+            "believer": Archetype.BELIEVER,
+            "skeptic": Archetype.SKEPTIC,
+            "haunted": Archetype.HAUNTED
+        }
+        archetype = arch_obj_map.get(current_lens, Archetype.NEUTRAL)
+        
+        scene = game.scene_manager.current_scene_data
+        text_data = scene.get("text", {"base": "..."})
+        if isinstance(text_data, str):
+            text_data = {"base": text_data}
+            
+        composed = game.text_composer.compose(text_data, archetype, game.player_state)
+        desc = composed.full_text
+        print(f"{Colors.GREEN}LENS: {current_lens.upper()}{Colors.ENDC}")
         print(f"{Colors.GREEN}TEXT:{Colors.ENDC} {desc[:100]}...")
         
         # Verify Lens trigger
@@ -67,6 +87,29 @@ def run_playtest():
                  print("[PASS] Haunted Lens verified in Frozen Victim.")
             else:
                  print(f"{Colors.FAIL}[FAIL] Haunted Lens MISSING in Frozen Victim!{Colors.ENDC}")
+
+    # 3. Verify Dialogue Branching (Maude)
+    print(f"\n{Colors.CYAN}>>> TESTING DIALOGUE: maude_checkin (HAUNTED){Colors.ENDC}")
+    dialogues_dir = os.path.join(os.getcwd(), "data", "dialogues")
+    game.dialogue_manager.load_dialogue("maude_checkin", dialogues_dir)
+    
+    # Check start node (maude_greet HAS a lens, so no (familiar) expected)
+    render_data = game.dialogue_manager.get_render_data()
+    print(f"{Colors.GREEN}SPEAKER (Node 1):{Colors.ENDC} {render_data['speaker']}")
+    
+    # Test Branching: Choice 3 (indexed as "3" in input) is Haunted exclusive
+    print("[DEBUG] Selecting Haunted Choice (3)...")
+    game.dialogue_manager.process_input("3")
+    
+    # Check second node (maude_fire_shared HAS NO lens, so (familiar) IS expected)
+    render_data_2 = game.dialogue_manager.get_render_data()
+    print(f"{Colors.GREEN}SPEAKER (Node 2):{Colors.ENDC} {render_data_2['speaker']}")
+    print(f"{Colors.GREEN}TEXT:{Colors.ENDC} {render_data_2['text'][:100]}...")
+    
+    if "(familiar)" in render_data_2['speaker'] and game.dialogue_manager.current_node_id == "maude_fire_shared":
+        print("[PASS] Haunted Dialogue Branching & Modulation verified.")
+    else:
+        print(f"{Colors.FAIL}[FAIL] Haunted Verification failed! Node: {game.dialogue_manager.current_node_id}, Speaker: {render_data_2['speaker']}{Colors.ENDC}")
 
     print("\n=== PLAYTEST COMPLETE ===")
 

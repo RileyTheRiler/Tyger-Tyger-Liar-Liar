@@ -1,18 +1,21 @@
 {
     "id": "first_disappearance_memory",
     "type": "memory",
-    "text": "═══════════════════════════════════════════════════════════\n                    SUPPRESSED MEMORY\n═══════════════════════════════════════════════════════════\n\nHer name was Sarah.\n\nYou remember now. How could you have forgotten?\n\nThe coffee shop. The way she laughed. The way she looked at you.\n\nThe last time you saw her, she was walking toward the woods.\n\nYou called out. She turned. Smiled.\n\n\"I'll be right back,\" she said.\n\nShe never came back.\n\nAnd you never told anyone.\n\nWhy didn't you tell anyone?\n\n═══════════════════════════════════════════════════════════",
+    "text": {
+        "objective": "═══════════════════════════════════════════════════════════\n                    CASE FILE: SUBJECT 01\n═══════════════════════════════════════════════════════════\n\nRain on the window. 11:00 PM. The diner is empty save for the waitress cleaning the counter.\n\nSarah stands at the door.\n\n\"Don't wait up,\" she says. Her raincoat is yellow. Standard issue.\n\nThe bell chimes. Single note.\n\nShe exits onto Main Street, heading North relative to the treeline.\n\nYou stir your coffee. Clock check: 11:01 PM.\n\nThe bell does not chime again.\n\nSubject did not re-enter premises.\n\nVisual contact lost at 11:05 PM.\n\nYou paid the bill ($4.50) and exited.\n\n═══════════════════════════════════════════════════════════",
+        "traumatic": "═══════════════════════════════════════════════════════════\n                    FRACTURED RECALL\n═══════════════════════════════════════════════════════════\n\nThe rain isn't water. It's static. Hissing against the glass like a thousand insects.\n\nSarah.\n\nShe's looking at you, but her eyes are wrong. Too wide. Like she's seeing something behind you.\n\n\"Don't wait,\" she whispers. The sound doesn't match her lips.\n\nThe door opens. The night outside isn't dark. It's *heavy*.\n\nThe bell screams. Brass tearing.\n\nShe walks into the trees and the trees *open* for her. Not branches moving. The dark simply unzips.\n\nYou stir your coffee. It's cold. It's black. It's looking back at you.\n\nShe didn't leave. She was erased.\n\n═══════════════════════════════════════════════════════════"
+    },
     "background_media": null,
     "choices": [
         {
-            "text": "[You should have said something]",
+            "text": "[I thought she just went home]",
             "next_scene": null,
             "effects": {
                 "sanity": -5
             }
         },
         {
-            "text": "[It wouldn't have mattered]",
+            "text": "[I knew. I always knew.]",
             "next_scene": null,
             "effects": {
                 "reality": -5

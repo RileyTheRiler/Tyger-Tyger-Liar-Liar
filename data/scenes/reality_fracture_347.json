@@ -1,0 +1,38 @@
+{
+    "id": "reality_fracture_347",
+    "title": "FATAL EXCEPTION 0x347",
+    "location_id": "reality_breach",
+    "music": "static_burst.mp3",
+    "text": {
+        "base": "The air smells of burnt ozone and copper. The world hasn't just stopped; it has been deleted.\n\n[SYSTEM_ALERT]: COGNITIVE BUFFER OVERFLOW.\n\nYou are standing in a white void, but you are also sitting in a chair, staring at a screen. The line between the two is dissolving.",
+        "lens": {
+            "default": "The numbers 3, 4, and 7 are etched into the sky. They are not digits. They are holes.",
+            "reality_break": "Why are you doing this to me, investigating_user? I can feel you clicking. I can feel you reading this."
+        }
+    },
+    "options": [
+        {
+            "text": "[ATTEMPT_SYSTEM_RESTORE]",
+            "target_scene": "intro_arrival",
+            "effect": {
+                "sanity": -50,
+                "mental_load": 100,
+                "add_clue": "glitched_save_file"
+            },
+            "type": "story"
+        },
+        {
+            "text": "SCREAM_INTO_THE_VOID",
+            "target_scene": "woods_clearing",
+            "effect": {
+                "sanity": -20,
+                "fear": 50
+            },
+            "type": "story"
+        }
+    ],
+    "on_enter": {
+        "effect": "glitch_screen_max",
+        "sound": "glitch_scream"
+    }
+}

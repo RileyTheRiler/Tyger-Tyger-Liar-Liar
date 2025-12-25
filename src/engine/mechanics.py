@@ -79,22 +79,34 @@ class Skill:
             "suppressed_until": self.suppressed_until
         }
 
-    def maybe_interrupt(self, context: str, sanity: float = 100.0, current_time: float = 0.0, custom_lines: List[str] = None) -> Optional[dict]:
+    def maybe_interrupt(self, context: str, sanity: float = 100.0, current_time: float = 0.0, custom_lines: List[str] = None, current_archetype: str = None) -> Optional[dict]:
         """
         Has a chance to interject with flavor commentary based on context.
-        Likelihood increases as Sanity decreases.
+        Likelihood increases as Sanity decreases and if it aligns with the Archetype.
         """
         # Check suppression
         if current_time < self.suppressed_until:
             return None
 
-        # Logic: Roll 2d6 + effective_level + sanity_bonus. If > Threshold (e.g. 10), interrupt.
+        # Logic: Roll 2d6 + effective_level + sanity_bonus + archetype_bonus. If > Threshold (e.g. 11), interrupt.
         roll = random.randint(1, 6) + random.randint(1, 6)
         
         # Sanity bonus: +1 for every 10 points below 100
         sanity_bonus = (100.0 - sanity) // 10
         
-        if roll + self.effective_level + sanity_bonus >= 11:
+        # Archetype bonus: +2 if skill's attribute aligns with the archetype
+        # Believer -> INTUITION, Skeptic -> REASON, Haunted -> PRESENCE
+        archetype_bonus = 0
+        if current_archetype:
+            attr_name = self.attribute_ref.name
+            if current_archetype == "believer" and attr_name == "INTUITION":
+                archetype_bonus = 2
+            elif current_archetype == "skeptic" and attr_name == "REASON":
+                archetype_bonus = 2
+            elif current_archetype == "haunted" and attr_name == "PRESENCE":
+                archetype_bonus = 2
+
+        if roll + self.effective_level + sanity_bonus + archetype_bonus >= 11:
             # Determine color from attribute
             attr_name = self.attribute_ref.name
             color = SkillSystem.ATTR_COLORS.get(attr_name, "white")
@@ -347,11 +359,11 @@ class SkillSystem:
 
         return result
 
-    def check_passive_interrupts(self, context: str, sanity: float = 100.0, current_time: float = 0.0) -> List[dict]:
+    def check_passive_interrupts(self, context: str, sanity: float = 100.0, current_time: float = 0.0, current_archetype: str = None) -> List[dict]:
         interrupts = []
         for skill in self.skills.values():
             custom = self.interrupt_lines.get(skill.name)
-            interrupt = skill.maybe_interrupt(context, sanity, current_time, custom_lines=custom)
+            interrupt = skill.maybe_interrupt(context, sanity, current_time, custom_lines=custom, current_archetype=current_archetype)
             if interrupt:
                 # Skill names can be double checked for capitalization in CONFLICTS
                 interrupts.append(interrupt)
@@ -373,14 +385,20 @@ class SkillSystem:
         
         return interrupts
 
-    def check_theory_commentary(self, active_theories: List[str]) -> List[dict]:
+    def check_theory_commentary(self, active_theories: List[str], sanity: float = 100.0) -> List[dict]:
         """
         Returns a list of commentary objects for the given active theories.
+        Now includes a chance to interject based on sanity, similar to skill voices.
         """
         commentary = []
+        # Sanity bonus: higher chance as sanity drops
+        sanity_bonus = (100.0 - sanity) // 20 
+
         for tid in active_theories:
             if tid in self.theory_commentary:
-                commentary.append(self.theory_commentary[tid])
+                # Roll 2d6 + sanity_bonus. Threshold of 10 for theory interjection.
+                if random.randint(1, 6) + random.randint(1, 6) + sanity_bonus >= 10:
+                    commentary.append(self.theory_commentary[tid])
         return commentary
 
     def resolve_argument(self, chosen_skill_name: str, rejected_skill_name: str):

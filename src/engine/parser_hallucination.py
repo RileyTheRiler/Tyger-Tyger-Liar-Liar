@@ -31,11 +31,17 @@ class ParserHallucinationEngine:
 
         return random.random() < chance
 
-    def generate_ghost_commands(self, count: int = 1) -> List[str]:
+    def generate_ghost_commands(self, count: int = 1, archetype: Optional[str] = None) -> List[str]:
         """Generate a list of hallucinated command suggestions."""
-        return random.sample(self.ghost_verbs, min(count, len(self.ghost_verbs)))
+        verbs = list(self.ghost_verbs)
+        if archetype == "skeptic":
+            verbs += ["DEBUG", "REBOOT", "VERIFY", "LOG"]
+        elif archetype == "believer":
+            verbs += ["ASCEND", "OBSERVE", "BEHOLD", "REVEAL"]
+            
+        return random.sample(verbs, min(count, len(verbs)))
 
-    def intercept_command(self, verb: str, target: str) -> Optional[str]:
+    def intercept_command(self, verb: str, target: str, archetype: Optional[str] = None) -> Optional[str]:
         """
         Potentially override a valid command with a hallucinated response.
         Returns the hallucinated response text if intercepted, else None.
@@ -60,6 +66,12 @@ class ParserHallucinationEngine:
                 "LIES. ALL LIES."
             ]
         }
+        
+        # Archetype specific overrides
+        if archetype == "skeptic":
+            overrides["VERIFY"] = ["ERROR: SOURCE UNRELIABLE", "Data corrupted by observer effect.", "Logic loop detected."]
+        elif archetype == "believer":
+            overrides["OBSERVE"] = ["The Pattern acknowledges you.", "It is blinding.", "The Sigil is complete."]
 
         if verb in overrides:
              return random.choice(overrides[verb])

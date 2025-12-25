@@ -4,11 +4,11 @@
     "location_id": "woods_edge",
     "time_cost": 5,
     "text": {
-        "base": "The iron gate hangs off one hinge, twisted outward—as if something large forced its way *out*, not in. To the south, the safety of the paved road. To the north, the trees swallow the light, ancient and patient.",
+        "base": "The iron gate hangs off a single hinge, twisted outward with a violent, surgical precision. To the south, the paved road is a black ribbon of known things. To the north, the trees don't just grow; they wait. The forest floor is a carpet of shadow that refuses to acknowledge the sun.",
         "lens": {
-            "believer": "The gate wasn't broken by force; it was dissolved. The iron is pitted with corrosion patterns that look like fingerprints. The woods breathe, a slow, heavy rhythm that matches your own pulse.",
-            "skeptic": "Impact deformity on the gate indicates localized force application exceeding 40,000 PSI. Likely heavy machinery or a vehicle collision, though the lack of paint transfer is anomalous. The forest density is high; visibility is less than 20 meters.",
-            "haunted": "You know this gate. You used to dare each other to touch it. It's colder now than it was then. Crossing this threshold was the first mistake. Coming back is the second."
+            "believer": "The gate wasn't forced; it was unmade. The iron is pitted with corrosion patterns that look like frost on a window—delicate, intentional, and cold. The woods breathe with a slow, heavy rhythm that matches the thrum in your own teeth.",
+            "skeptic": "The deformity on the gate indicates a localized force application exceeding 40,000 PSI. There are no tire tracks. No paint transfer. No hydraulic fluid. Just a clean, impossible snap. The forest density here is anomalous; the trees are spaced with a mathematical regularity that suggests a plantation, or a cage.",
+            "haunted": "You know this gate. You used to dare each other to touch it when the sun went down. It feels smaller now. Or maybe you've just seen what happens to people who cross it. Coming back was the first mistake. Staying is the second."
         }
     },
     "connected_scenes": [
@@ -17,13 +17,13 @@
     ],
     "objects": {
         "gate": {
-            "description": "Jagged iron teeth. The metal is cold enough to burn your skin.",
+            "description": "Jagged iron teeth. The metal is so cold it feels like it's trying to pull the heat directly out of your blood.",
             "interactions": {
-                "touch": "You press your gloved hand to the metal. It hums, a low-frequency vibration that rattles your teeth."
+                "touch": "You press your hand to the cold iron. It hums - a low-frequency vibration that you feel in your jaw before you hear it. Like a generator buried deep beneath the dirt."
             }
         },
         "map": {
-            "description": "The plexiglass case is shattered. The map underneath has been selectively burned. 'KALTVIK' is circled in what looks like black grease marker."
+            "description": "The plexiglass case is shattered. The map underneath has been selectively charred. The town of Kaltvik is circled in a greasy black substance that smells of old sulfur."
         }
     },
     "board_updates": [
@@ -37,17 +37,17 @@
     ],
     "choices": [
         {
-            "label": "Cross the threshold into the woods",
+            "label": "Cross the threshold into the dark",
             "next_scene": "woods_clearing"
         },
         {
-            "label": "Examine the damaged map",
+            "label": "Examine the charred map",
             "check": {
                 "skill": "Perception",
                 "dc": 6
             },
             "on_success": {
-                "text": "Under a shard of plexiglass, you find a sticker: 'PROPERTY OF [REDACTED] GEOLOGICAL SURVEY'. The date is from next year.",
+                "text": "Under a shard of plexiglass, you find a sticker: 'PROPERTY OF [REDACTED] GEOLOGICAL SURVEY'. The date is crisp, clear, and exactly fourteen months in the future.",
                 "effects": [
                     {
                         "type": "sanity",
@@ -61,11 +61,11 @@
                 ]
             },
             "on_fail": {
-                "text": "It's just vandalism. Teenagers and lighters."
+                "text": "It's just vandalism. A bored teenager with a lighter and a sense of drama."
             }
         },
         {
-            "label": "Return to town",
+            "label": "Turn back toward the town",
             "next_scene": "town_square"
         }
     ]

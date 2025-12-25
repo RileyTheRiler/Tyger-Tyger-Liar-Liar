@@ -401,6 +401,36 @@ class PopulationSystem:
         
         return result
 
+    def get_dissonance_factor(self) -> float:
+        """
+        Calculate the 'Dissonance Factor' (0.0 - 1.0) based on deviation from 347.
+        Used for narrative distortions and mechanics.
+        """
+        if self.population == self.target_population:
+            return 0.0
+            
+        # Calculation variables
+        # 1. Count Deviation: How far are we from 347?
+        diff = abs(self.population - self.target_population)
+        
+        # 2. Time Deviation: How long have we been wrong?
+        # Cap time component at 24 hours (full saturation)
+        time_factor = min(1.0, self.hours_off_target / 24.0)
+        
+        # Base dissonance from count (small error = small dissonance)
+        # 1 person wrong = 0.1, 5 people wrong = 0.5, 10+ = 1.0
+        count_factor = min(1.0, diff * 0.1)
+        
+        # Final calculation: Weighted average favoring time
+        # Immediate wrongness is disturbing (0.2), but persistent wrongness is reality-breaking (0.8)
+        dissonance = (count_factor * 0.3) + (time_factor * 0.7)
+        
+        # Ensure we return at least a small value if count is wrong but time hasn't passed
+        if diff > 0 and dissonance < 0.05:
+            dissonance = 0.05
+            
+        return min(1.0, dissonance)
+
 
     def advance_day(self, new_day: int = None):
         """Advance to a new day."""

@@ -47,6 +47,16 @@ PARADIGM_DB = {
         temp_effect=lambda c: None,
         perm_effect=lambda c: None,
         alignment_shift={"believer": 2, "chaos": 1}
+    ),
+    "signal_in_static": Paradigm(
+        pid="signal_in_static",
+        name="The Signal in the Static",
+        problem_text="The anomalies aren't random. There is a pattern in the interference...",
+        solution_text="You've tuned your mind to the frequency. The noise has become a language.",
+        internalization_time=5,
+        temp_effect=lambda c: None, # Placeholder for future signal decoding bonus
+        perm_effect=lambda c: c.modify_reality(-2), # Small reality hit
+        alignment_shift={"believer": 1, "chaos": 1}
     )
 }
 

@@ -4,6 +4,12 @@ import os
 import time
 import random
 
+# Pre-import inventory_system to prevent circular dependency issues
+try:
+    import inventory_system
+except ImportError:
+    pass
+
 # Ensure src and its subdirectories are in path
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -37,18 +43,19 @@ from parser_memory import ParserMemory
 from content.dialogue_manager import DialogueManager
 from combat import CombatManager
 from corkboard_minigame import CorkboardMinigame
-from autopsy_system import AutopsyMinigame
 from engine.flashback_system import FlashbackManager
 from ui.io_system import OutputBuffer
-from inventory_system import InventoryManager, Item, Evidence
+# inventory_system import moved to __init__ to avoid circular dependency
 from save_system import EventLog, SaveSystem
 from journal_system import JournalManager
 from ui.interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result, Colors
 from engine.text_composer import TextComposer, Archetype
-from location_system import LocationManager
-from trigger_system import TriggerManager
-from liar_engine import LiarEngine
-from population_system import PopulationSystem
+from engine.scene_manager import SceneManager
+# Removed incorrect import
+from engine.clue_system import ClueSystem
+from engine.board import Board
+from engine.attention_system import AttentionSystem
+from engine.manifestation_manager import ManifestationManager
 from engine.injury_system import InjurySystem
 from engine.trauma_system import TraumaSystem
 from engine.chase_system import ChaseSystem
@@ -60,10 +67,17 @@ from engine.narrative_memory_system import NarrativeMemorySystem
 from engine.parser_hallucination import ParserHallucinationEngine
 from npc_system import NPCSystem
 from fracture_system import FractureSystem
+from location_system import LocationManager
+from trigger_system import TriggerManager
+from liar_engine import LiarEngine
+from population_system import PopulationSystem
+from engine.story_manager import StoryManager
 
+
+from npc_manager import NPCManager
 
 class Game:
-    def __init__(self):
+    def __init__(self, content_root=None):
         # Initialize Output Buffer
         self.output = OutputBuffer()
 
@@ -71,6 +85,18 @@ class Game:
         import json
         with open(resource_path('game.config.json'), 'r') as f:
             self.config = json.load(f)
+
+        # Determine Content Root
+        if content_root:
+            self.content_root = content_root
+        else:
+            active_episode = self.config.get("active_episode", "default")
+            if active_episode == "default":
+                self.content_root = "data"
+            else:
+                self.content_root = os.path.join("episodes", active_episode)
+                
+        print(f"[SYSTEM] Loading content from: {self.config.get('active_episode', 'default')} ({self.content_root})")
 
         # Player State
         self.player_state = {
@@ -112,11 +138,18 @@ class Game:
         self.time_system = TimeSystem()
         self.board = Board()
         self.board_ui = BoardUI(self.board)
-        self.skill_system = SkillSystem(resource_path(os.path.join('data', 'skills.json')))
-        self.lens_system = LensSystem(self.skill_system, self.board)
+        self.skill_system = SkillSystem(resource_path(os.path.join(self.content_root, 'skills.json')))
+        self.clue_system = ClueSystem()
         self.attention_system = AttentionSystem()
+        self.manifestation_manager = ManifestationManager(
+            self.board, self.player_state, self.attention_system
+        )
+        
+        # Load Systems
         self.integration_system = IntegrationSystem()
         self.char_ui = CharacterSheetUI(self.skill_system)
+        
+        from inventory_system import InventoryManager, Item, Evidence
         self.inventory_system = InventoryManager()
         self.corkboard = CorkboardMinigame(self.board, self.inventory_system)
         self.event_log = EventLog()
@@ -130,20 +163,51 @@ class Game:
         # Link Time System to Board
         self.time_system.add_listener(self.on_time_passed)
         
+        # Initialize Psychological Systems (Week 15) - Initialized early for TextComposer
+        self.psych_state = PsychologicalState(self.player_state)
+        self.fear_manager = FearManager()
+        self.hallucination_engine = HallucinationEngine()
+        
+        # Load data for psych systems
+        fear_events_path = resource_path(os.path.join(self.content_root, 'fear_events'))
+        self.fear_manager.load_fear_events(fear_events_path)
+        hallucinations_path = resource_path(os.path.join(self.content_root, 'hallucinations'))
+        self.hallucination_engine.load_hallucination_templates(hallucinations_path)
+        
         # Initialize Text Composer (Replaces LensSystem eventually)
-        self.text_composer = TextComposer(self.skill_system, self.board, self.player_state)
+        self.text_composer = TextComposer(
+            self.skill_system, 
+            self.board, 
+            self.player_state,
+            hallucination_engine=self.hallucination_engine
+        )
         self.text_composer.developer_commentary = self.config.get("developer_commentary", False)
+        self.last_composed_text = ""
 
         # Initialize Flashback Manager (Phase 6)
         self.flashback_manager = FlashbackManager(self.skill_system, self.player_state)
+
 
         # Initialize Scene Manager
         # Initialize Population & Liar Engine
         self.population_system = PopulationSystem()
         self.liar_engine = LiarEngine(self.skill_system, self.inventory_system)
         
+        # Initialize StoryManager (Week 16)
+        self.story_manager = StoryManager(
+            self.time_system, 
+            self.population_system, 
+            self.player_state,
+            output_buffer=self.output
+        )
+
+        # Initialize NPC Manager
+        self.npc_manager = NPCManager(os.path.join(self.content_root, "npcs"))
+        
+
+
         # Initialize NPC System (Week 11)
-        npcs_dir = resource_path(os.path.join('data', 'npcs'))
+        npcs_dir = resource_path(os.path.join(self.content_root, 'npcs'))
         self.npc_system = NPCSystem(npcs_dir if os.path.exists(npcs_dir) else None)
         
         # Initialize Scene Manager (Now requires NPC, Attention, Inventory)
@@ -172,19 +236,19 @@ class Game:
             self.board, 
             self.player_state, 
             self.skill_system,
-            endings_path=resource_path(os.path.join('data', 'endings'))
+            endings_path=resource_path(os.path.join(self.content_root, 'endings'))
         )
-        self.memory_system = MemorySystem(resource_path(os.path.join('data', 'memories', 'memories.json')))
+        self.memory_system = MemorySystem(resource_path(os.path.join(self.content_root, 'memories', 'memories.json')))
         
         # Initialize Week 13 Systems: Injury, Trauma, Chase, Environmental
         self.injury_system = InjurySystem()
-        self.injury_system.load_injury_database(resource_path(os.path.join('data', 'injuries.json')))
+        self.injury_system.load_injury_database(resource_path(os.path.join(self.content_root, 'injuries.json')))
         
         self.trauma_system = TraumaSystem()
-        self.trauma_system.load_trauma_database(resource_path(os.path.join('data', 'trauma_types.json')))
+        self.trauma_system.load_trauma_database(resource_path(os.path.join(self.content_root, 'trauma_types.json')))
         
         self.chase_system = ChaseSystem()
-        self.chase_system.load_chase_scenarios(resource_path(os.path.join('data', 'chase_scenarios.json')))
+        self.chase_system.load_chase_scenarios(resource_path(os.path.join(self.content_root, 'chase_scenarios.json')))
         
         self.environmental_effects = EnvironmentalEffects()
         # Apply environmental modifiers to skill system
@@ -198,29 +262,18 @@ class Game:
             trauma_system=self.trauma_system,
             inventory_system=self.inventory_system
         )
-        self.combat_manager.load_encounter_templates(resource_path(os.path.join('data', 'encounters.json')))
+        self.combat_manager.load_encounter_templates(resource_path(os.path.join(self.content_root, 'encounters.json')))
         
         # Initialize Journal Manager (Week 6)
         self.journal = JournalManager()
         
         # Initialize Location and Trigger Systems (Week 7)
         self.location_manager = LocationManager()
-        self.location_manager.load_locations(resource_path(os.path.join('data', 'locations.json')))
+        self.location_manager.load_locations(resource_path(os.path.join(self.content_root, 'locations.json')))
         self.player_state["location_states"] = self.location_manager.initialize_states()
         
         self.trigger_manager = TriggerManager()
-        self.trigger_manager.load_triggers(resource_path(os.path.join('data', 'triggers.json')))
-        
-        # Initialize Psychological Systems (Week 15)
-        self.psych_state = PsychologicalState(self.player_state)
-        
-        self.fear_manager = FearManager()
-        fear_events_path = resource_path(os.path.join('data', 'fear_events'))
-        self.fear_manager.load_fear_events(fear_events_path)
-        
-        self.hallucination_engine = HallucinationEngine()
-        hallucinations_path = resource_path(os.path.join('data', 'hallucinations'))
-        self.hallucination_engine.load_hallucination_templates(hallucinations_path)
+        self.trigger_manager.load_triggers(resource_path(os.path.join(self.content_root, 'triggers.json')))
         
         self.parser_hallucination_engine = ParserHallucinationEngine()
 
@@ -238,12 +291,12 @@ class Game:
         self.current_autopsy = None # Phase 5 autopsies
         
         # Load Documents (Phase 6)
-        docs_path = resource_path(os.path.join('data', 'documents', 'documents.json'))
+        docs_path = resource_path(os.path.join(self.content_root, 'documents', 'documents.json'))
         self.inventory_system.load_documents(docs_path)
         
         # Load Scenes
-        scenes_dir = resource_path(os.path.join('data', 'scenes'))
-        root_scenes = resource_path('scenes.json')
+        scenes_dir = resource_path(os.path.join(self.content_root, 'scenes'))
+        root_scenes = resource_path(os.path.join(self.content_root, 'scenes.json'))
         self.scene_manager.load_scenes_from_directory(scenes_dir, root_scenes)
 
     
@@ -257,7 +310,46 @@ class Game:
             for m in msgs:
                 self.print(f" -> {m}")
             self.print("********************\n")
-        
+        # Epistemic Friction: Continuous Mental Load from conflicting theories
+        total_friction = self.board.get_total_friction()
+        if total_friction > 0:
+            # Friction is an int (e.g. 20). Apply per hour?
+            # Let's say friction value is "Load per 4 hours" to be subtle, or "Load per hour"?
+            # If total_friction is 20, let's make it 20 load per hour.
+            # minutes is the delta.
+            friction_load = (total_friction / 60.0) * minutes
+            if friction_load > 0:
+                self.psych_state.add_mental_load(int(friction_load), "Epistemic Friction")
+
+        # BEACON EFFECT: High Mental Load attracts Attention
+        mental_load = self.psych_state.player_state.get("mental_load", 0)
+        if mental_load > 70:
+            # Beacon active
+            beacon_amount = int((mental_load - 70) / 10) # 1-3 points per tick (tick is usually small?)
+            # Wait, on_time_passed takes 'minutes'. 
+            # Let's scale it to hours.
+            hours_passed = minutes / 60.0
+            if hours_passed > 0:
+                beacon_gain = int(beacon_amount * hours_passed)
+                if beacon_gain > 0:
+                     self.attention_system.add_attention(beacon_gain, "Mental Beacon")
+
+        # 347 RULE & RESONANCE CHECK
+        curr_time = self.time_system.get_total_minutes()
+        resonance = self.manifestation_manager.check_resonance(curr_time)
+        if resonance["triggered"]:
+            self.print(f"\n[WARNING] {resonance.get('message', 'Reality shifts.')}\n", Colors.RED)
+            
+            # Handle forced scene transition
+            if "force_scene" in resonance:
+                target_scene = resonance["force_scene"]
+                self.print(f"[ENTITY INTERVENTION] TRANSITIONING TO {target_scene}...", Colors.MAGENTA)
+                # Force save before fracture? Optional.
+                self.scene_manager.load_scene(target_scene)
+                # Ensure we update state immediately
+                self.handle_scene_enter(target_scene)
+                return # Skip rest of update to force draw
+
         # Attention decay
         hours = minutes / 60.0
         self.attention_system.decay_attention(hours)
@@ -303,11 +395,11 @@ class Game:
                 integration_event = self.attention_system.trigger_integration_attempt()
                 if integration_event["triggered"]:
                     self.print(f"\n{Colors.RED}*** {integration_event['message'].upper()} ***{Colors.RESET}")
-                    # Force scene if specified
+                    
                     if integration_event.get("force_scene"):
-                        # Ideally we'd transition, but for now just print warning
-                        self.print("[SYSTEM] The Entity is manifesting. Prepare yourself.")
-                        # TODO: Trigger actual manifestation scene when available
+                        self.print("[SYSTEM] The Entity is manifesting. Reality bends around you.")
+                        # Force transition to manifestation scene
+                        self.scene_manager.load_scene("entity_manifestation")
 
         # Week 16: Check Resonance (347 Rule)
         self.population_system.hours_off_target = self.population_system.hours_off_target + hours if self.population_system.population != 347 else 0
@@ -494,8 +586,29 @@ class Game:
             new_scene = self.scene_manager.load_scene(scene_id)
             if new_scene:
                 self.print(f"\n[Something pulled you to a new perspective...]")
-                # We don't return here because we want other effects to finish
-                # The main loop will display the new scene
+
+        # Teleport Effect (Move + Scene)
+        if "teleport" in effects:
+            target_data = effects["teleport"]
+            # Handle both string (id) and dict target formats
+            target_id = target_data["target"] if isinstance(target_data, dict) else target_data
+            
+            # Update location
+            self.player_state["current_location"] = target_id
+            self.player_state["discovered_locations"].add(target_id)
+            
+            # Load the target scene (or location's entry scene)
+            # Typically teleport loads a specific scene ID if passed, or just moves the player.
+            # For Entity Manifestation, it's usually moving the player to a "safe" spot like the clinic.
+            new_scene = self.scene_manager.load_scene(target_id)
+            if new_scene:
+                self.print(f"\n[You wake up in {target_id}...]")
+        
+        # Ending Trigger
+        if "ending" in effects:
+            ending_data = effects["ending"]
+            ending_id = ending_data["target"] if isinstance(ending_data, dict) else ending_data
+            self.endgame_manager.trigger_ending(ending_id)
 
     def go_to_location(self, target_id):
         """Move the player to a new location."""
@@ -746,22 +859,31 @@ class Game:
         return {
             "sanity": self.player_state.get("sanity", 100),
             "reality": self.player_state.get("reality", 100),
+            "mental_load": self.player_state.get("mental_load", 0),
+            "fear_level": self.player_state.get("fear_level", 0),
+            "archetype": self.lens_system.calculate_lens(),
+            "psych_flags": {
+                "disorientation": self.player_state.get("disorientation", False),
+                "instability": self.player_state.get("instability", False)
+            },
             "time": self.time_system.get_time_string(),
             "location": scene.get("name", "Unknown"),
             "inventory": [i.name for i in self.inventory_system.carried_items],
-            "passive_interrupts": self.skill_system.check_passive_interrupts(
-                self.last_composed_text,
-                self.player_state["sanity"]
-            ),
+            "passive_interrupts": [], # Now handled inline by TextComposer
             "population_status": self.population_system.get_population_status(),
             "theories_active": self.board.get_active_or_internalizing_count(),
             "input_mode": self.input_mode.name if hasattr(self.input_mode, 'name') else str(self.input_mode),
             "choices": choices,
-            "board_data": self.board.get_board_data(),
+            "board_data": self.board.get_board_data(
+                archetype=self.lens_system.calculate_lens(),
+                # Rough derivation for legacy compatibility
+                score_ratio=(100 - self.player_state.get("reality", 100)) // 10 if self.lens_system.calculate_lens() == "skeptic" else -((100 - self.player_state.get("sanity", 100)) // 10)
+            ),
             "music": self.current_music,
             "sfx_queue": sfx_to_play,
             "active_failures": self.player_state.get("active_failures", []),
-            "game_over": self.endgame_manager.triggered
+            "game_over": self.endgame_manager.triggered,
+            "npcs": self.npc_manager.get_ui_data()
         }
 
     def run_passive_mechanics(self):
@@ -975,7 +1097,7 @@ class Game:
         curr_time = (self.time_system.current_time - self.time_system.start_time).total_seconds() / 60.0
         
         
-        interrupts = self.skill_system.check_passive_interrupts(self.last_composed_text, sanity, curr_time)
+        interrupts = self.skill_system.check_passive_interrupts(self.last_composed_text, sanity, curr_time, current_archetype=current_lens)
         
         # Theory Commentary Pass
         active_tids = [t.id for t in self.board.theories.values() if t.status == "active"]
@@ -1978,19 +2100,100 @@ class Game:
     def apply_effects(self, effects):
         if not effects: return
         
-        for key, value in effects.items():
-            if key == "sanity":
-                self.player_state["sanity"] = max(0, min(100, self.player_state["sanity"] + value))
-                print(f"[SANITY {'+' if value > 0 else ''}{value}]")
-            elif key == "reality":
-                self.player_state["reality"] = max(0, min(100, self.player_state["reality"] + value))
-                print(f"[REALITY {'+' if value > 0 else ''}{value}]")
-            elif key == "xp":
-                print(f"[XP +{value}]")
-            elif key == "unlock_thought":
-                if value not in self.player_state["thoughts"]:
-                    self.player_state["thoughts"].append(value)
-                    print(f"[THOUGHT UNLOCKED: {value}]")
+        # Normalize to list of dicts if it's a simple key-value dict
+        effect_list = []
+        if isinstance(effects, dict):
+            # Convert {"sanity": -5} to [{"type": "sanity", "value": -5}]
+            # Or handle directly. For backward compat, we can just process dict items.
+            for key, value in effects.items():
+                if isinstance(value, dict) and "type" in value:
+                     # Already complex object? Rare in legacy.
+                     effect_list.append(value) # value should be full effect obj
+                else:
+                     # Simple key-value
+                     effect_list.append({"type": key, "value": value})
+        elif isinstance(effects, list):
+            effect_list = effects
+            
+        for effect in effect_list:
+            if not isinstance(effect, dict): continue
+            
+            # Helper to get type/value whether it's normalized or raw
+            eff_type = effect.get("type", "").lower()
+            val = effect.get("value")
+            
+            # Handle specific key overrides for normalized dicts
+            # (e.g. if we normalized {"sanity": -5} -> type="sanity", value=-5)
+            
+            if eff_type == "sanity":
+                self.player_state["sanity"] = max(0, min(100, self.player_state["sanity"] + val))
+                self.print(f"[SANITY {'+' if val > 0 else ''}{val}]")
+                
+            elif eff_type == "reality":
+                self.player_state["reality"] = max(0, min(100, self.player_state["reality"] + val))
+                self.print(f"[REALITY {'+' if val > 0 else ''}{val}]")
+                
+            elif eff_type == "xp":
+                self.skill_system.add_xp(val)
+                self.print(f"[XP +{val}]") # add_xp usually prints too
+                
+            elif eff_type == "add_item":
+                self.inventory_system.add_item_by_id(val) if isinstance(val, str) else self.inventory_system.add_item(val)
+                self.print(f"[ITEM ADDED: {val}]")
+                
+            elif eff_type == "add_evidence":
+                self.inventory_system.add_evidence_by_id(val) if isinstance(val, str) else self.inventory_system.add_evidence(val)
+                self.print(f"[EVIDENCE ADDED: {val}]")
+                
+            elif eff_type == "unlock_thought":
+                if val not in self.player_state["thoughts"]:
+                    self.player_state["thoughts"].append(val)
+                    self.print(f"[THOUGHT UNLOCKED: {val}]")
+                    
+            elif eff_type == "attribute":
+                # input: {"type": "attribute", "target": "REASON", "value": 1}
+                # or normalized: {"type": "attribute", "value": {"target": "REASON", "value": 1}}
+                target = effect.get("target")
+                if not target and isinstance(val, dict): target = val.get("target")
+                
+                amount = effect.get("value")
+                if isinstance(amount, dict): amount = amount.get("value", 0)
+                
+                if target in self.skill_system.attributes:
+                    self.skill_system.attributes[target].value += amount
+                    self.print(f"[ATTRIBUTE MODIFIED: {target} -> {self.skill_system.attributes[target].value}]")
+            
+            elif eff_type == "teleport":
+                # {"type": "teleport", "target": "clinic_bed"}
+                target_id = effect.get("target")
+                # Fallback: Check inside 'value' if it's a dict (normalization artifact)
+                if not target_id and isinstance(val, dict):
+                    target_id = val.get("target")
+                # Fallback: Check if 'value' is the target string directly
+                if not target_id and isinstance(val, str):
+                    target_id = val
+
+                if target_id:
+                    self.player_state["current_location"] = target_id
+                    self.player_state["discovered_locations"].add(target_id)
+                    new_scene = self.scene_manager.load_scene(target_id)
+                    if new_scene:
+                         self.print(f"\n[Moved to {target_id}...]")
+            
+            elif eff_type == "ending":
+                 # {"type": "ending", "target": "integrated_forced"}
+                 ending_id = effect.get("target")
+                 # Fallback: Check inside 'value'
+                 if not ending_id and isinstance(val, dict):
+                     ending_id = val.get("target")
+                 # Fallback: Direct string
+                 if not ending_id and isinstance(val, str):
+                     ending_id = val
+
+                 if ending_id:
+                     self.endgame_manager.trigger_ending(ending_id)
+
+
     
     def handle_save_menu(self):
         """Interactive save menu."""
@@ -2395,6 +2598,18 @@ class Game:
             return True, result
         else:
             self.log_event("skill_check", skill=skill_name, difficulty=difficulty, success=False, total=result['total'])
+            
+            # Week 25: Echo System Integration
+            # Failures increase Narrative Entropy and trigger Echoes
+            entropy_gain = 2.0 if difficulty >= 15 else 0.5
+            entropy_result = self.psych_state.modify_entropy(entropy_gain, f"Failed {skill_name} check")
+            for msg in entropy_result["messages"]:
+                self.print(msg)
+                
+            # Trigger sensory echo
+            echo_id = self.text_composer.echo_manager.trigger_echo_from_failure(skill_name)
+            self.log_event("echo_triggered", echo_id=echo_id, source=skill_name)
+            
             return False, result
 
     def start_dialogue(self, dialogue_id):
@@ -2573,24 +2788,7 @@ class Game:
         print("\nCommands: 'evidence <theory_id> <evidence_id>' | 'contradict <theory_id> <evidence_id>'")
         print("          'prove <theory_id>' | 'disprove <theory_id>'\n")
 
-    def apply_effects(self, effects):
-        for key, value in effects.items():
-            if key == "sanity":
-                self.player_state["sanity"] += value
-                print(f"[Sanity {'+' if value > 0 else ''}{value}]")
-            elif key == "reality":
-                self.player_state["reality"] += value
-                print(f"[Reality {'+' if value > 0 else ''}{value}]")
-            elif key == "add_item":
-                item = Item.from_dict(value)
-                self.inventory_system.add_item(item)
-            elif key == "add_evidence":
-                ev = Evidence.from_dict(value)
-                self.inventory_system.add_evidence(ev)
-            elif key == "unlock_thought":
-                if value not in self.player_state["thoughts"]:
-                    self.player_state["thoughts"].append(value)
-                    print(f"[THOUGHT UNLOCKED: {value}]")
+
 
 if __name__ == "__main__":
     game = Game()

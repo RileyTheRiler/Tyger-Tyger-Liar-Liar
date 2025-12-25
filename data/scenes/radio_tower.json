@@ -7,10 +7,28 @@
         "base": "The path ends at a rusty chain-link fence. Beyond it, the tower juts out of the snow like a skeletal finger pointing at an indifferent sky. The flakes here aren't falling; they're hovering, suspended in a weak gravitational field. The wind creates a low, discordant drone—not a whistle, but a choir. A thousand voices trying to whisper the same word at once.",
         "lens": {
             "believer": "It's not transmitting. The array is pointed *down*, into the earth. It's a localized containment field. And it's failing.",
-            "skeptic": "Atmospheric pressure anomaly detected. 1040 millibars and rising. That drone is aeroelastic flutter, but the frequency is interfering with your inner ear. You feel nauseous.",
+            "skeptic": "Atmospheric pressure is dropping. The wind is hitting the loose grating on the upper platform, causing that vibration. It's just simple acoustics, distorted by the cold.",
             "haunted": "It looks like the tower near the old creek, where you used to hide. The sound of the shed door banging... it sounds exactly like a gavel. Or a coffin lid, closing over and over."
         },
         "inserts": [
+            {
+                "condition": {
+                    "skill_gte": {
+                        "Shivers": 5
+                    }
+                },
+                "text": "[INTUITION - Shivers] The tower isn't just metal and wire. It's an antenna for the town's collective nightmare. Every bad thought in Kaltvik is being broadcast into the stars.",
+                "insert_at": "AFTER_BASE"
+            },
+            {
+                "condition": {
+                    "skill_gte": {
+                        "Technology": 4
+                    }
+                },
+                "text": "[REASON - Technology] The array is silent, but the power draw is immense. Something is drinking the grid dry from this junction.",
+                "insert_at": "AFTER_LENS"
+            },
             {
                 "condition": {
                     "skill_gte": {

@@ -1,37 +1,81 @@
 {
-    "Paranormal Sensitivity": [
-        "Her aura is lying.",
-        "The air around him tastes like pennies. Blood.",
-        "Something is watching from behind his eyes."
-    ],
-    "Deception": [
-        "She's hesitating. That's your in.",
-        "He's buying it. Push harder.",
-        "Don't let him see you sweat. Lie better."
-    ],
-    "Empathy": [
-        "She's not angry, she's terrified.",
-        "He's hiding pain behind that smile.",
-        "There's a deep sadness here."
-    ],
     "Logic": [
         "That timeline doesn't add up.",
         "He's contradicting himself.",
-        "There's a flaw in her argument."
+        "There's a flaw in her argument.",
+        "The variables are fixed. Any other conclusion is sentiment, not science.",
+        "Structural integrity is compromised. The center cannot hold."
     ],
-    "Authority": [
-        "Take control. He's weak.",
-        "Don't let her disrespect you.",
-        "Establish dominance now."
+    "Forensics": [
+        "The dead speak if you listen. These bruises aren't from a fall.",
+        "Blood spatter is a narrative. This one was written in a hurry.",
+        "Copper and iron. The smell is fresh. Someone was here minutes ago."
     ],
     "Skepticism": [
         "That's impossible. Dig deeper.",
         "He's hiding something.",
-        "Don't trust the obvious answer."
+        "Don't trust the obvious answer.",
+        "Coincidence is the refuge of the lazy investigator.",
+        "Everything has a rational floor. You haven't hit it yet."
     ],
-    "Occult Knowledge": [
-        "That symbol is inverted.",
-        "This ritual is familiar.",
-        "He speaks the words of the Old Ones."
+    "Pattern Recognition": [
+        "Everything connects. The missing button, the flickering light...",
+        "Wait. You've seen this sequence before. It's a loop.",
+        "This isn't chaos. It's a highly complex, deliberate arrangement."
+    ],
+    "Paranormal Sensitivity": [
+        "Her aura is lying.",
+        "The air around him tastes like pennies. Blood.",
+        "Something is watching from behind his eyes.",
+        "The walls are breathing. Can't you hear the rhythm?",
+        "The threshold is thin here. Paper-thin."
+    ],
+    "Instinct": [
+        "Run. Now.",
+        "Something is behind you. Don't look.",
+        "The hair on your neck is standing up for a reason.",
+        "Hunger. Fear. Predator. You are the prey."
+    ],
+    "Subconscious": [
+        "The static is speaking your name.",
+        "You've been here in a dream. The door was different then.",
+        "The Boathouse... it's never really empty, is it?",
+        "Symbols. The world is leaking meanings you can't quite grasp."
+    ],
+    "Perception": [
+        "Wait. Look at the dust on the shelf. It's too even.",
+        "A micro-tremor in his left hand. He's vibrating.",
+        "The light is hitting the floor at the wrong angle. There's a cavity beneath."
+    ],
+    "Empathy": [
+        "She's not angry, she's terrified.",
+        "He's hiding pain behind that smile.",
+        "There's a deep sadness here.",
+        "The silence between his words is heavy with regret.",
+        "He wants to be found. He just doesn't know how to ask."
+    ],
+    "Authority": [
+        "Take control. He's weak.",
+        "Don't let her disrespect you.",
+        "Establish dominance now.",
+        "You are the law in this room. Act like it.",
+        "Their silence is a challenge. Break it."
+    ],
+    "Volition": [
+        "Keep walking. The cold is just a sensation.",
+        "You are a fortress. The shadows can't reach the core.",
+        "Focus. One detail at a time. Do not let the mind wander.",
+        "This isn't the end. You've survived worse."
+    ],
+    "Shivers": [
+        "The Arctic wind is a choir of the forgotten.",
+        "Kaltvik is a mouth, and it's starting to chew.",
+        "The ice knows your name. It's whispering it to the tide.",
+        "Somewhere, far to the North, a door is being left ajar."
+    ],
+    "Composure": [
+        "Smooth the coat. Steady the hand. You are perfectly calm.",
+        "Ignore the screaming. It's unbecoming.",
+        "A stoic mask. That's all the world gets to see."
     ]
 }
