@@ -32,55 +32,74 @@ class Case:
     resolution: Optional[str] = None # ID of the outcome achieved
 
 class CaseSystem:
-    def __init__(self, board=None, clue_system=None, journal_system=None):
+    def __init__(self, board=None, clue_system=None, journal_system=None, cases_dir=None):
         self.cases: Dict[str, Case] = {}
         self.active_case_id: Optional[str] = None
         self.board = board
         self.clue_system = clue_system
         self.journal_system = journal_system
-        self._load_cases() # TODO: Implement actual loading
+
+        # Default directory relative to execution
+        import os, sys
+        def resource_path(relative_path):
+             try:
+                 base_path = sys._MEIPASS
+             except Exception:
+                 base_path = os.path.abspath(".")
+             return os.path.join(base_path, relative_path)
+
+        self.cases_dir = cases_dir or resource_path(os.path.join('data', 'cases'))
+        self._load_cases()
 
     def _load_cases(self):
-        # Initial dummy data for Week 22 vertical slice
+        import os
+        if not os.path.exists(self.cases_dir):
+            print(f"[CASE SYSTEM] Warning: Cases directory not found at {self.cases_dir}")
+            return
 
-        # Example Case: The Missing Teenager
-        self.cases["case_missing_teen"] = Case(
-            id="case_missing_teen",
-            title="The Disappearance of Elias Vane",
-            hook="Elias Vane, 16, vanished three nights ago. His bike was found near the treeline.",
-            description="Investigate the disappearance. Determine if he ran away, was taken, or if something else happened.",
-            clues=["clue_bloody_glass", "clue_diary_page", "clue_cult_symbol"],
-            theories=["ran_away", "cult_abduction", "entity_snatch"],
-            outcomes=[
-                Outcome(
-                    id="outcome_ran_away",
-                    type=OutcomeType.FALSE,
-                    description="You conclude Elias ran away to escape abuse.",
-                    required_theory="ran_away",
-                    required_clues=["clue_diary_page"],
-                    consequences={"trust_local": -10, "flags": {"elias_still_missing": True}},
-                    narrative_text="You file the report. Elias is listed as a runaway. The police scale back the search. Weeks later, his shoes are found in the ice."
-                ),
-                Outcome(
-                    id="outcome_cult",
-                    type=OutcomeType.PARTIAL,
-                    description="You accuse the Church of Ice.",
-                    required_theory="cult_abduction",
-                    required_clues=["clue_cult_symbol"],
-                    consequences={"faction_church_hostile": True},
-                    narrative_text="You raid the church basement. You find symbols, but no Elias. The cult denies everything, and now they are watching you."
-                ),
-                Outcome(
-                    id="outcome_entity",
-                    type=OutcomeType.ACCURATE,
-                    description="You realize the Aurora took him.",
-                    required_theory="entity_snatch",
-                    required_clues=["clue_bloody_glass", "clue_cult_symbol"], # Maybe he was running from cult into entity?
-                    consequences={"sanity": -10, "flags": {"knows_entity_truth": True}},
-                    narrative_text="You track the energy signatures. You find him... or what's left of him, crystallized in the permafrost. At least his parents have closure."
-                )
-            ]
+        for filename in os.listdir(self.cases_dir):
+            if filename.endswith(".json"):
+                try:
+                    with open(os.path.join(self.cases_dir, filename), 'r') as f:
+                        data = json.load(f)
+                        if isinstance(data, list):
+                            for case_data in data:
+                                self._load_single_case(case_data)
+                        else:
+                             self._load_single_case(data)
+                except Exception as e:
+                    print(f"[CASE SYSTEM] Error loading case {filename}: {e}")
+
+    def _load_single_case(self, data: dict):
+        outcomes = []
+        for out_data in data.get("outcomes", []):
+            try:
+                out_type = OutcomeType[out_data["type"]] # Expecting string like "FALSE" or "ACCURATE"
+            except KeyError:
+                # Fallback or error
+                out_type = OutcomeType.PARTIAL
+
+            outcomes.append(Outcome(
+                id=out_data["id"],
+                type=out_type,
+                description=out_data["description"],
+                required_theory=out_data["required_theory"],
+                required_clues=out_data.get("required_clues", []),
+                consequences=out_data.get("consequences", {}),
+                narrative_text=out_data.get("narrative_text", "")
+            ))
+
+        case = Case(
+            id=data["id"],
+            title=data["title"],
+            hook=data["hook"],
+            description=data["description"],
+            clues=data.get("clues", []),
+            theories=data.get("theories", []),
+            outcomes=outcomes
         )
+        self.cases[case.id] = case
+        print(f"[CASE SYSTEM] Loaded case: {case.title}")
 
     def start_case(self, case_id: str):
         if case_id in self.cases:

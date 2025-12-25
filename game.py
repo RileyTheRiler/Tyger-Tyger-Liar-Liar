@@ -544,6 +544,22 @@ class Game:
             else:
                 self.print("\nNo active case.")
             return "refresh"
+
+        if clean in ['timeline']:
+            self.print("\n" + "="*60)
+            self.print("CASE TIMELINE")
+            self.print("="*60)
+            timeline_events = self.journal.get_timeline()
+            if not timeline_events:
+                 # If explicit timeline events are missing, fallback to journal entries with timestamps
+                 self.print("(No specific timeline events recorded. Showing recent journal activity.)")
+                 self.journal.display_journal(limit=5)
+            else:
+                for event in timeline_events:
+                     self.print(f"[{event.datetime_str}] {event.title}")
+                     self.print(f"  {event.details}")
+            self.print("="*60)
+            return "refresh"
         
         if clean.startswith('start_case '):
             parts = clean.split(maxsplit=1)

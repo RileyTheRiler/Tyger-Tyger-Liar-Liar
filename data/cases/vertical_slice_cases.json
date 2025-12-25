@@ -1,0 +1,39 @@
+[
+  {
+    "id": "case_missing_teen",
+    "title": "The Disappearance of Elias Vane",
+    "hook": "Elias Vane, 16, vanished three nights ago. His bike was found near the treeline.",
+    "description": "Investigate the disappearance. Determine if he ran away, was taken, or if something else happened.",
+    "clues": ["clue_bloody_glass", "clue_diary_page", "clue_cult_symbol"],
+    "theories": ["ran_away", "cult_abduction", "entity_snatch"],
+    "outcomes": [
+      {
+        "id": "outcome_ran_away",
+        "type": "FALSE",
+        "description": "You conclude Elias ran away to escape abuse.",
+        "required_theory": "ran_away",
+        "required_clues": ["clue_diary_page"],
+        "consequences": {"trust_local": -10, "flags": {"elias_still_missing": true}},
+        "narrative_text": "You file the report. Elias is listed as a runaway. The police scale back the search. Weeks later, his shoes are found in the ice."
+      },
+      {
+        "id": "outcome_cult",
+        "type": "PARTIAL",
+        "description": "You accuse the Church of Ice.",
+        "required_theory": "cult_abduction",
+        "required_clues": ["clue_cult_symbol"],
+        "consequences": {"faction_church_hostile": true},
+        "narrative_text": "You raid the church basement. You find symbols, but no Elias. The cult denies everything, and now they are watching you."
+      },
+      {
+        "id": "outcome_entity",
+        "type": "ACCURATE",
+        "description": "You realize the Aurora took him.",
+        "required_theory": "entity_snatch",
+        "required_clues": ["clue_bloody_glass", "clue_cult_symbol"],
+        "consequences": {"sanity": -10, "flags": {"knows_entity_truth": true}},
+        "narrative_text": "You track the energy signatures. You find him... or what's left of him, crystallized in the permafrost. At least his parents have closure."
+      }
+    ]
+  }
+]
