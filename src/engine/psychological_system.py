@@ -33,6 +33,8 @@ class PsychologicalState:
             self.player_state["instability"] = False
         if "hallucination_history" not in self.player_state:
             self.player_state["hallucination_history"] = []
+        if "daily_hallucination_count" not in self.player_state:
+            self.player_state["daily_hallucination_count"] = 0
     
     # ==================== SANITY SYSTEM ====================
     
@@ -354,16 +356,24 @@ class PsychologicalState:
     
     def is_hallucinating(self) -> bool:
         """Check if player should experience hallucinations."""
+        # Test Build Restriction: Limit to 1 per day/session
+        if self.player_state.get("daily_hallucination_count", 0) >= 1:
+            return False
+
         tier = self.get_sanity_tier()
         return tier <= 2  # Sanity < 50
     
     def can_have_visual_hallucinations(self) -> bool:
         """Check if player can have visual hallucinations."""
+        if self.player_state.get("daily_hallucination_count", 0) >= 1:
+            return False
         tier = self.get_sanity_tier()
         return tier <= 1  # Sanity < 25
     
     def can_have_auditory_hallucinations(self) -> bool:
         """Check if player can have auditory hallucinations."""
+        if self.player_state.get("daily_hallucination_count", 0) >= 1:
+            return False
         tier = self.get_sanity_tier()
         return tier <= 2  # Sanity < 50
     
@@ -371,6 +381,8 @@ class PsychologicalState:
         """Record that a hallucination has been shown to avoid repetition."""
         if hallucination_id not in self.player_state["hallucination_history"]:
             self.player_state["hallucination_history"].append(hallucination_id)
+
+        self.player_state["daily_hallucination_count"] = self.player_state.get("daily_hallucination_count", 0) + 1
     
     def has_seen_hallucination(self, hallucination_id: str) -> bool:
         """Check if a specific hallucination has already been shown."""
