@@ -89,7 +89,9 @@
         "text": {
             "base": "Four parallel lines of rubber scorched into the asphalt. They don't point toward the cliff. They point away, then loop back.",
             "lens": {
-                "skeptic": "Test driving? Some kind of high-speed maneuver before the final plunge."
+                "believer": "The pattern is deliberate. A warding circle, hastily drawn in burnt rubber.",
+                "skeptic": "Test driving? Some kind of high-speed maneuver before the final plunge.",
+                "haunted": "You've seen these marks before. Outside your own driveway, the night she left."
             }
         },
         "choices": [
@@ -107,7 +109,8 @@
             "base": "You pry open the glovebox. Inside is a single envelope, sealed with red wax. The name 'Kaltvik' is written on the front in a shaking hand.",
             "lens": {
                 "skeptic": "Looks like a standard legal document. Or a confession.",
-                "believer": "The wax is warm. It feels like it's holding something... alive... inside."
+                "believer": "The wax is warm. It feels like it's holding something... alive... inside.",
+                "haunted": "The handwriting. It's your father's. But he died twenty years ago."
             }
         },
         "choices": [
@@ -135,6 +138,8 @@
         "text": {
             "base": "'If you're reading this, the integration has already begun. Don't look for me. I'm already part of the static.' The ink is still wet.",
             "lens": {
+                "believer": "The ink is shimmering. As you read, the letters rearrange themselves into a prayer.",
+                "skeptic": "Typical psychotic break. Delusions of grandeur and dissociation. They need help, not an exorcist.",
                 "haunted": "This is your handwriting. You know it is."
             }
         },
@@ -159,7 +164,9 @@
         "text": {
             "base": "The walls are covered in a bioluminescent lichen. It pulses in time with the hum. In the center of the chamber is a pedestal made of the same silver metal as the car.",
             "lens": {
-                "believer": "It's an altar. They were sacrificing more than just a car here."
+                "believer": "It's an altar. They were sacrificing more than just a car here.",
+                "skeptic": "Phosphorescent algae. Rare, but explainable. The pedestal is likely industrial debris, maybe part of the old mine.",
+                "haunted": "The pulsing light matches the rhythm of your own heart. It speeds up as you approach."
             }
         },
         "choices": [
@@ -184,6 +191,8 @@
         "text": {
             "base": "As you touch the metal, the lichen turns from blue to a blinding white. The hum becomes a scream. You see a face in the metal—not the driver's, but your own.",
             "lens": {
+                "believer": "The scream isn't sound. It's a tear in the fabric of reality. You are the needle.",
+                "skeptic": "Hallucinogenic spores. The lichen released them when disturbed. You need fresh air, now.",
                 "haunted": "You remember now. You didn't arrive today. You've been here for months."
             }
         },
