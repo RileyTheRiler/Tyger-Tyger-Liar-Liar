@@ -697,8 +697,11 @@ class Game:
                         # Format structured interrupt
                         skill = item['skill']
                         text = item['text']
-                        # Simple color simulation for CLI text if supported or just text
-                        self.print(f" [{skill}] {text}")
+                        # Highlight for Tutorial
+                        if self.tutorial_mode:
+                             self.print(f" {Colors.CYAN}[PASSIVE: {skill}] {text}{Colors.RESET}")
+                        else:
+                             self.print(f" [{skill}] {text}")
                     else:
                         self.print(f" {item}")
                 self.print("~" * 60)
@@ -926,25 +929,23 @@ class Game:
                 check = self.skill_system.roll_check("Medicine", 10, "hidden", check_id=f"thermal_hot_{obj_name}_{temp}")
                 if check["success"]:
                     status = "overclocked" if temp > 101 else "feverish"
-                    msg = {
-                        "skill": "MEDICINE",
-                        "text": f"Object '{obj_name}' is {temp}°F. It doesn't look sick; it looks... {status}.",
-                        "color": "blue", # Reason color
-                        "icon": "medicine"
-                    }
-                    self.print(f" [MEDICINE] {msg['text']}")
+                    text = f"Object '{obj_name}' is {temp}°F. It doesn't look sick; it looks... {status}."
+
+                    if self.tutorial_mode:
+                        self.print(f" {Colors.CYAN}[PASSIVE: MEDICINE] {text}{Colors.RESET}")
+                    else:
+                        self.print(f" [MEDICINE] {text}")
 
             # Cold Check
             elif temp < 32.0:
                  check = self.skill_system.roll_check("Logic", 10, "hidden", check_id=f"thermal_cold_{obj_name}_{temp}")
                  if check["success"]:
-                    msg = {
-                        "skill": "LOGIC",
-                        "text": f"Object '{obj_name}' is {temp}°F. Entropy is being reversed here.",
-                        "color": "blue",
-                        "icon": "logic"
-                    }
-                    self.print(f" [LOGIC] {msg['text']}")
+                    text = f"Object '{obj_name}' is {temp}°F. Entropy is being reversed here."
+
+                    if self.tutorial_mode:
+                        self.print(f" {Colors.CYAN}[PASSIVE: LOGIC] {text}{Colors.RESET}")
+                    else:
+                        self.print(f" [LOGIC] {text}")
 
     def display_choices(self, choices):
         # Week 7: Show current location context

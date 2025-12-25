@@ -371,10 +371,10 @@ class TitleScreen {
             '4': 'text-decoration:underline',
         };
 
-        const parts = text.split(/(\033\[[0-9;]+m)/);
+        const parts = text.split(/(\x1B\[[0-9;]+m)/);
 
         for (let part of parts) {
-            if (part.startsWith('\033[')) {
+            if (part.startsWith('\x1B[')) {
                 // Parse code
                 const codes = part.substring(2, part.length - 1).split(';');
                 for (let c of codes) {
@@ -410,7 +410,9 @@ prompt.style.position = 'absolute';
 prompt.style.bottom = '20%';
 prompt.style.width = '100%';
 prompt.style.textAlign = 'center';
-prompt.style.color = '#555';
+prompt.style.color = '#FFF';
+prompt.style.zIndex = '1000';
+prompt.style.cursor = 'pointer';
 prompt.style.fontFamily = 'VT323';
 prompt.style.fontSize = '2rem';
 prompt.id = 'start-prompt';

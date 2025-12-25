@@ -8,6 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error("GLOBAL ERROR: " + message + " at " + source + ":" + lineno);
+        };
+        console.log("Index.html loaded. Scripts starting...");
+    </script>
 </head>
 <body>
     <div class="main-container">
@@ -38,7 +44,7 @@
             </div>
         </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="socket.io.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
