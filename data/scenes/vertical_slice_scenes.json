@@ -3,6 +3,8 @@
     "id": "scene_arrival",
     "title": "Arrival in Kaltvik",
     "location_id": "loc_town_entrance",
+    "location_type": "town_entrance",
+    "tags": ["outdoors", "town_entrance"],
     "time_cost": 0,
     "text": {
       "base": "The bus grinds to a halt at the edge of town. You're the only one getting off. The driver doesn't look at you as you step into the cold. The polar night has been going for three weeks now. Streetlights create islands of orange in an ocean of darkness. Population: 347, reads the sign. Someone has crossed out the last digit.",
@@ -46,6 +48,8 @@
     "id": "scene_hotel_lobby",
     "title": "Hotel Kaltvik - Lobby",
     "location_id": "loc_hotel_lobby",
+    "location_type": "hotel_lobby",
+    "tags": ["indoors", "hotel"],
     "time_cost": 5,
     "text": {
       "base": "The lobby is warmer than outside, but not by much. A single lamp illuminates the front desk. The floorboards creak with every step. A clock on the wall ticks loudly in the silence. The air smells of old coffee and something else—something metallic, underneath.",
@@ -116,6 +120,8 @@
     "id": "scene_sheriff_office",
     "title": "Sheriff's Office",
     "location_id": "loc_sheriff_office",
+    "location_type": "sheriff_office",
+    "tags": ["indoors", "office"],
     "time_cost": 5,
     "text": {
       "base": "A cramped office lit by fluorescent tubes. Filing cabinets line the walls. A map of the region dominates one wall, covered in pins and string. Sheriff Bergman sits behind a desk cluttered with papers. He doesn't look up when you enter.",

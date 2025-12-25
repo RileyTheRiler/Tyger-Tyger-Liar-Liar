@@ -1098,6 +1098,9 @@ class Game:
             # Restore player state
             if "character_state" in save_data and "player_state" in save_data["character_state"]:
                 self.player_state = save_data["character_state"]["player_state"]
+                # Re-link player_state to systems
+                self.environmental_system.player_state = self.player_state
+                self.ambient_system.player_state = self.player_state
             
             # Restore board
             if "board_state" in save_data:
