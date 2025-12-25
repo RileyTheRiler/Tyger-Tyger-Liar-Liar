@@ -102,6 +102,8 @@ class Game:
         # Initialize Journal Manager (Week 6)
         self.journal = JournalManager()
         
+        self.current_encounter_id = None
+
         # Load Scenes
         scenes_dir = resource_path(os.path.join('data', 'scenes'))
         root_scenes = resource_path('scenes.json')
@@ -247,6 +249,18 @@ class Game:
                 self.log_event("breakdown", breakdown_type="reality")
                 # Ideally move to fracture scene
                 continue
+
+            # Check for Encounters
+            if self.input_mode == InputMode.INVESTIGATION and self.scene_manager.current_scene_data:
+                enc = self.scene_manager.current_scene_data.get("encounter")
+                if enc:
+                    enc_id = enc.get("id")
+                    if enc_id and enc_id not in self.player_state["event_flags"]:
+                        print(f"\n[ENCOUNTER: {enc_id}]")
+                        self.current_encounter_id = enc_id
+                        self.combat_manager.start_encounter(enc["enemies"])
+                        self.input_mode = InputMode.COMBAT
+                        continue
 
             if self.in_dialogue:
                 self.run_dialogue_loop()
@@ -721,6 +735,13 @@ class Game:
         # Check if combat ended
         if not self.combat_manager.active:
             self.input_mode = InputMode.INVESTIGATION
+            # Mark encounter complete if we won
+            # (Assuming end_encounter clears enemies only if won/fled?
+            # If we died, game over logic handles it elsewhere?)
+            if self.current_encounter_id:
+                self.player_state["event_flags"].add(self.current_encounter_id)
+                self.current_encounter_id = None
+
             print("\n... returning to investigation ...")
 
     def handle_parser_command(self, verb, target):

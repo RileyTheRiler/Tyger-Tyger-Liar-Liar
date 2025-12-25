@@ -119,7 +119,13 @@
   },
   {
     "id": "bedroom_nightmare",
-    "text": "You close your eyes, but the darkness behind your lids is alive. Whispers claw at your mind. You cannot sleep.",
+    "text": "You close your eyes, but the darkness behind your lids is alive. Suddenly, a Shadow manifests from the corner!",
+    "encounter": {
+      "id": "shadow_fight_01",
+      "enemies": [
+        {"name": "Shadow", "hp": 3, "reflexes": 1, "attack": 1}
+      ]
+    },
     "choices": [
       {
         "text": "Wake up screaming.",

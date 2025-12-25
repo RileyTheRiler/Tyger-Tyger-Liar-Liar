@@ -74,26 +74,48 @@ class BoardUI:
         """Render a single theory entry."""
         lines = []
         
+        # ANSI Colors
+        GREEN = "\033[92m"
+        YELLOW = "\033[93m"
+        RED = "\033[91m"
+        WHITE = "\033[97m"
+        RESET = "\033[0m"
+
         # Status indicator with color
         if status_label == "ACTIVE":
-            indicator = "●"  # Green in terminal
+            indicator = f"{GREEN}●{RESET}"
+            label_display = f"{GREEN}[{status_label}]{RESET}"
         elif status_label == "DEGRADED":
-            indicator = "◐"  # Orange/yellow
+            indicator = f"{YELLOW}◐{RESET}"
+            label_display = f"{YELLOW}[{status_label}]{RESET}"
         elif status_label == "INTERNALIZING":
-            indicator = "○"  # White/hollow
+            indicator = f"{WHITE}○{RESET}"
+            label_display = f"{WHITE}[{status_label}]{RESET}"
         else:
             indicator = "◌"
+            label_display = f"[{status_label}]"
+
+        # Calculate visual length (excluding ANSI codes)
+        raw_len = len(f"║  [{status_label}] ● {theory.name}")
         
         # Theory name and status
-        theory_line = f"║  [{status_label}] {indicator} {theory.name}"
-        # Pad to 59 chars (61 - 2 for borders)
-        theory_line = theory_line.ljust(61) + "║"
+        theory_line = f"║  {label_display} {indicator} {theory.name}"
+        # Pad to align border (Account for ANSI codes not taking space)
+        # Target width is 61 chars (including borders)
+        # We need to manually calculate padding based on VISIBLE length
+        padding = 59 - (len(status_label) + 5 + len(theory.name))
+        # 5 comes from "[] ● "
+
+        if padding < 0: padding = 0
+        theory_line += " " * padding + "║"
         lines.append(theory_line)
         
         # Health bar (if active or degraded)
         if theory.status in ["active", "internalizing"]:
             health_bar = self._create_health_bar(theory.health)
-            lines.append(f"║    Health: {health_bar} {int(theory.health)}%".ljust(61) + "║")
+            # Health bar ANSI also needs checking? _create_health_bar returns plain text chars currently.
+            line = f"║    Health: {health_bar} {int(theory.health)}%"
+            lines.append(line.ljust(61) + "║")
         
         # Evidence and contradictions
         if theory.evidence_count > 0 or theory.contradictions > 0:

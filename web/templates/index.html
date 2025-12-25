@@ -3,105 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Terminal</title>
+    <title>TYGER TYGER TERMINAL</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
         body {
-            background-color: #1a1a1a;
-            color: #d0d0d0;
-            font-family: 'Courier New', Courier, monospace;
+            background-color: #050505;
+            color: #33ff33; /* Classic terminal green */
+            font-family: 'VT323', monospace;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            box-sizing: border-box;
+            overflow: hidden;
+            font-size: 20px;
         }
+
+        /* CRT Effects */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .glow {
+            text-shadow: 0 0 2px #33ff33, 0 0 10px #33ff33;
+        }
+
+        .flicker {
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            50% { opacity: 1; }
+            100% { opacity: 0.98; }
+        }
+
+        #terminal-container {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+        }
+
         #output-container {
             flex-grow: 1;
-            overflow-y: auto;
-            border: 1px solid #333;
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #000;
-            white-space: pre-wrap; /* Preserve formatting */
+            white-space: pre-wrap;
+            margin-bottom: 20px;
         }
-        #input-container {
+
+        #input-line {
             display: flex;
+            align-items: center;
+            border-top: 1px solid #33ff33;
+            padding-top: 10px;
         }
+
+        #prompt-symbol {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
         #command-input {
             flex-grow: 1;
-            background-color: #000;
-            border: 1px solid #333;
-            color: #fff;
-            padding: 10px;
-            font-family: inherit;
-            font-size: 16px;
+            background-color: transparent;
+            border: none;
+            color: #33ff33;
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            outline: none;
+            text-shadow: 0 0 5px #33ff33;
         }
-        button {
-            background-color: #333;
-            color: #fff;
-            border: 1px solid #555;
-            padding: 0 20px;
+
+        /* Buttons for choices */
+        .choice-btn {
+            background: transparent;
+            color: #33ff33;
+            border: 1px solid #33ff33;
+            padding: 5px 10px;
+            margin: 2px 0;
             cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            text-align: left;
+            display: inline-block;
+            transition: all 0.2s;
+            text-shadow: 0 0 2px #33ff33;
         }
-        button:hover {
-            background-color: #444;
+
+        .choice-btn:hover {
+            background: #33ff33;
+            color: #000;
+            text-shadow: none;
         }
-        .line {
-            line-height: 1.4;
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
         }
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #33ff33;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #66ff66;
+        }
+
+        /* ANSI Colors */
+        .ansi-red { color: #ff3333; text-shadow: 0 0 5px #ff0000; }
+        .ansi-green { color: #33ff33; text-shadow: 0 0 5px #00ff00; }
+        .ansi-yellow { color: #ffff33; text-shadow: 0 0 5px #ffff00; }
+        .ansi-blue { color: #3333ff; text-shadow: 0 0 5px #0000ff; }
+        .ansi-cyan { color: #33ffff; text-shadow: 0 0 5px #00ffff; }
+        .ansi-magenta { color: #ff33ff; text-shadow: 0 0 5px #ff00ff; }
+        .ansi-white { color: #ffffff; text-shadow: 0 0 5px #ffffff; }
+        .ansi-bold { font-weight: bold; }
+
     </style>
 </head>
-<body>
-    <div id="output-container"></div>
-    <div id="input-container">
-        <input type="text" id="command-input" placeholder="Type command..." autofocus autocomplete="off">
-        <button id="send-btn">Send</button>
+<body class="flicker">
+    <div class="scanlines"></div>
+
+    <div id="terminal-container">
+        <div id="output-container" class="glow"></div>
+
+        <div id="input-line">
+            <span id="prompt-symbol">&gt;</span>
+            <input type="text" id="command-input" autofocus autocomplete="off">
+        </div>
     </div>
 
     <script>
         const outputDiv = document.getElementById('output-container');
         const inputField = document.getElementById('command-input');
-        const sendBtn = document.getElementById('send-btn');
+
+        // ANSI Parser
+        function parseAnsi(text) {
+            // Basic ANSI escape code parser
+            // \033[91m -> <span class="ansi-red">
+            // \033[0m -> </span>
+
+            // Note: In Python output via SSE, escape char might be received literally or escaped.
+            // We'll try to catch standard sequences.
+
+            let formatted = text
+                .replace(/\u001b\[0m/g, '</span>')
+                .replace(/\u001b\[1m/g, '<span class="ansi-bold">')
+                .replace(/\u001b\[31m/g, '<span class="ansi-red">')
+                .replace(/\u001b\[32m/g, '<span class="ansi-green">')
+                .replace(/\u001b\[33m/g, '<span class="ansi-yellow">')
+                .replace(/\u001b\[34m/g, '<span class="ansi-blue">')
+                .replace(/\u001b\[35m/g, '<span class="ansi-magenta">')
+                .replace(/\u001b\[36m/g, '<span class="ansi-cyan">')
+                .replace(/\u001b\[37m/g, '<span class="ansi-white">')
+                // Bright colors (90-97)
+                .replace(/\u001b\[91m/g, '<span class="ansi-red">')
+                .replace(/\u001b\[92m/g, '<span class="ansi-green">')
+                .replace(/\u001b\[93m/g, '<span class="ansi-yellow">')
+                .replace(/\u001b\[94m/g, '<span class="ansi-blue">')
+                .replace(/\u001b\[95m/g, '<span class="ansi-magenta">')
+                .replace(/\u001b\[96m/g, '<span class="ansi-cyan">')
+                .replace(/\u001b\[97m/g, '<span class="ansi-white">');
+
+            return formatted;
+        }
+
+        function detectChoices(text) {
+            // Look for lines starting with "X. Some text" and convert to button
+            // Regex: ^(\d+)\.\s+(.*)$
+            const lines = text.split('\n');
+            let resultHtml = '';
+
+            lines.forEach(line => {
+                const choiceMatch = line.match(/^(\s*)(\d+)\.\s+(.*)$/);
+                if (choiceMatch) {
+                    const indent = choiceMatch[1];
+                    const num = choiceMatch[2];
+                    const content = choiceMatch[3];
+                    // Replace the line with a button
+                    resultHtml += `${indent}<button class="choice-btn" onclick="sendInput('${num}')">${num}. ${content}</button>\n`;
+                } else {
+                    resultHtml += line + '\n';
+                }
+            });
+            return resultHtml;
+        }
 
         // Setup EventSource for SSE
         const evtSource = new EventSource("/stream");
 
         evtSource.onmessage = function(e) {
-            const line = document.createElement('div');
-            line.className = 'line';
-            line.textContent = e.data; // Using textContent escapes HTML automatically, simpler security
-            outputDiv.appendChild(line);
-            outputDiv.scrollTop = outputDiv.scrollHeight; // Auto scroll
+            let rawText = e.data;
+
+            // If the server sends JSON or encoded newlines, handle it.
+            // Assuming the server sends lines.
+
+            // Fix newlines if they come as literal "\n" string from some JSON encoding
+            // rawText = rawText.replace(/\\n/g, '\n');
+
+            // 1. Parse ANSI
+            let htmlContent = parseAnsi(rawText);
+
+            // 2. Detect Choices (and wrap in buttons)
+            // Only convert if it looks like a choice list?
+            // Or just any line starting with number.
+            // Safest to just do it.
+            htmlContent = detectChoices(htmlContent);
+
+            const lineDiv = document.createElement('div');
+            lineDiv.innerHTML = htmlContent;
+            outputDiv.appendChild(lineDiv);
+
+            // Auto scroll
+            const terminalContainer = document.getElementById('terminal-container');
+            terminalContainer.scrollTop = terminalContainer.scrollHeight;
         };
 
         evtSource.onerror = function(e) {
             console.error("EventSource failed:", e);
         };
 
-        function sendCommand() {
-            const val = inputField.value;
-            // Optimistic echo (optional, but game might echo it anyway)
-            // const echo = document.createElement('div');
-            // echo.textContent = '> ' + val;
-            // echo.style.color = '#ffff00';
-            // outputDiv.appendChild(echo);
-
+        function sendInput(text) {
             fetch('/input', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({input: val})
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({input: text})
             });
             inputField.value = '';
+            inputField.focus();
         }
 
-        sendBtn.addEventListener('click', sendCommand);
+        // Expose sendInput globally for button onclick
+        window.sendInput = sendInput;
+
         inputField.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
-                sendCommand();
+                const val = inputField.value;
+                // Optimistic echo? No, server echoes.
+                sendInput(val);
             }
+        });
+
+        // Keep focus
+        document.addEventListener('click', () => {
+            inputField.focus();
         });
     </script>
 </body>
