@@ -21,3 +21,12 @@ export const sendAction = async (input) => {
         throw err;
     }
 };
+
+export const shutdownGame = async () => {
+    try {
+        await axios.post(`${API_URL}/shutdown`);
+        return true;
+    } catch (err) {
+        return true;
+    }
+};

@@ -1,0 +1,113 @@
+/* CRTEffect.css */
+
+/* The main container that curves the screen */
+.crt-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #000;
+    z-index: 9998;
+    /* Just below VHS effect if needed, or above content */
+    pointer-events: none;
+}
+
+/* The curved screen effect */
+.crt-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 90%, rgba(0, 0, 0, 0.8) 100%);
+    box-shadow: inset 0 0 5rem rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Scanline/Grid mesh */
+.crt-mesh {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0.6;
+}
+
+/* Subtle flicker animation */
+.crt-flicker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(18, 16, 16, 0.02);
+    opacity: 0;
+    pointer-events: none;
+    animation: flicker 0.15s infinite;
+    z-index: 8;
+}
+
+@keyframes flicker {
+    0% {
+        opacity: 0.02;
+    }
+
+    5% {
+        opacity: 0.05;
+    }
+
+    10% {
+        opacity: 0.02;
+    }
+
+    15% {
+        opacity: 0.06;
+    }
+
+    20% {
+        opacity: 0.02;
+    }
+
+    50% {
+        opacity: 0.02;
+    }
+
+    55% {
+        opacity: 0.05;
+    }
+
+    60% {
+        opacity: 0.02;
+    }
+
+    100% {
+        opacity: 0.02;
+    }
+}
+
+/* Optional: Slight barrel distortion for the whole app content if we wrap it */
+/* Note: Applying this to 'body' or 'root' can break fixed positioning interaction, 
+   so we often apply it visually via the overlay borders or just vignette. 
+   True barrel distortion requires heavy SVG filters or WebGL. 
+   We'll stick to vignette + corner masking for "fake" curve. */
+
+.crt-bezel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    z-index: 20;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}

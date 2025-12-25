@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import VHSEffect from './VHSEffect';
 import './Layout.css';
 
 const Layout = ({ children, uiState }) => {
@@ -14,6 +15,33 @@ const Layout = ({ children, uiState }) => {
 
     // Reality distortion (lower reality = more chromatic aberration/glitching)
     const glitchLevel = Math.max(0, (100 - reality) / 100);
+
+    // VHS Transition Logic
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const prevLocation = useRef(uiState?.location);
+    const prevSceneId = useRef(uiState?.scene_id);
+
+    useEffect(() => {
+        const currentLocation = uiState?.location;
+        const currentSceneId = uiState?.scene_id; // Assuming backend might send this
+
+        // Trigger if location changes or scene_id changes (if available)
+        // We use a comprehensive check to avoid triggering on initial load if we don't want to,
+        // but typically initial load might be nice to have a glitch too.
+        // For now, let's trigger on change.
+        const hasLocationChanged = prevLocation.current !== currentLocation;
+        const hasSceneChanged = currentSceneId && prevSceneId.current !== currentSceneId;
+
+        if (hasLocationChanged || hasSceneChanged) {
+            setIsTransitioning(true);
+            const timer = setTimeout(() => setIsTransitioning(false), 800); // 800ms duration
+            return () => clearTimeout(timer);
+        }
+
+        prevLocation.current = currentLocation;
+        prevSceneId.current = currentSceneId;
+    }, [uiState?.location, uiState?.scene_id]);
+
 
     return (
         <div className="layout-container">
@@ -33,7 +61,7 @@ const Layout = ({ children, uiState }) => {
             <main className="content-frame">
                 <AnimatePresence mode="wait">
                     <motion.div
-                        key={history.length} // Subtle re-triggering or just standard transition
+                        key={uiState?.location || 'init'} // Key logic for transition
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -5 }}
@@ -44,6 +72,9 @@ const Layout = ({ children, uiState }) => {
                     </motion.div>
                 </AnimatePresence>
             </main>
+
+            {/* VHS Overlay Effect */}
+            <VHSEffect active={isTransitioning} />
 
             {/* Optional: Add scanline overlay here if not in body */}
             <div className="scanlines" />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { startGame, sendAction } from './api'
+import { startGame, sendAction, shutdownGame } from './api'
 import Layout from './components/Layout'
 import Terminal from './components/Terminal'
 import InputConsole from './components/InputConsole'
@@ -55,6 +55,16 @@ function App() {
     setInput("")
   }
 
+  const handleShutdown = async () => {
+    setHistory(prev => [...prev, { type: 'output', text: "INITIATING_SHUTDOWN_SEQUENCE..." }])
+    await shutdownGame()
+    setTimeout(() => {
+      window.close() // Try to close tab
+      // If script can't close, show offline state
+      document.body.innerHTML = "<div style='background:black;color:red;height:100vh;display:flex;align-items:center;justify-content:center;font-family:monospace'>NO_SIGNAL</div>"
+    }, 1000)
+  }
+
   if (booting) {
     return <BootSequence onComplete={() => setBooting(false)} />
   }
@@ -69,6 +79,10 @@ function App() {
             <span className="ctrl-divider">|</span>
             <button className="ctrl-btn" onClick={() => setShowBoard(true)}>
               [VIEW_MINDMAP]
+            </button>
+            <span className="ctrl-divider">|</span>
+            <button className="ctrl-btn" onClick={handleShutdown}>
+              [EXIT_SYSTEM]
             </button>
           </div>
         </div>

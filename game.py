@@ -268,7 +268,7 @@ class Game:
             "location": scene.get("name", "Unknown"),
             "inventory": [i.name for i in self.inventory_system.carried_items],
             "theories_active": self.board.get_active_or_internalizing_count(),
-            "input_mode": self.input_mode.name,
+            "input_mode": self.input_mode.name if hasattr(self.input_mode, 'name') else str(self.input_mode),
             "choices": scene.get("choices", []),
             "board_data": self.board.get_board_data()
         }
@@ -405,11 +405,7 @@ class Game:
         real_status = "LUCID" if real >= 75 else "DOUBT" if real >= 50 else "DELUSION" if real >= 25 else "BROKEN"
 
         print_separator("=", color=Colors.CYAN, printer=self.print)
-        # Update Lens System state for Haunted calculation
-        self.lens_system.update_state(
-            attention_level=self.attention_system.attention_level,
-            sanity=san
-        )
+        # Lens system calculates based on current skill/board state automatically
         print_separator("=", printer=self.print)
         lens_str = self.lens_system.calculate_lens().upper()
         attention_display = self.attention_system.get_status_display()

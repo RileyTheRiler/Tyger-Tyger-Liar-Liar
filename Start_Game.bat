@@ -1,0 +1,3 @@
+@echo off
+echo Starting Tyger Tyger Liar Liar...
+python launcher.py
