@@ -42,11 +42,6 @@ class SchemaValidator:
                 except Exception as e:
                     self.errors.append(f"Failed to load schema {filename}: {e}")
 
-    def validate(self, obj: dict, schema_name: str) -> bool:
-        """Helper to return boolean status."""
-        valid, _ = self.validate_object(obj, schema_name)
-        return valid
-
     def validate_object(self, obj: dict, schema_name: str) -> Tuple[bool, List[str]]:
         """
         Validate an object against a schema.
