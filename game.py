@@ -5,17 +5,36 @@ import time
 import random
 
 # Ensure src is in path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    path = os.path.join(base_path, relative_path)
+    return path
+
+sys.path.append(resource_path('src'))
 
 from mechanics import SkillSystem, CharacterSheetUI
 from board import Board
+from board_ui import BoardUI
+from lens_system import LensSystem
+from attention_system import AttentionSystem
+from integration_system import IntegrationSystem
 from time_system import TimeSystem
 from endgame_manager import EndgameManager
+from memory_system import MemorySystem
 from scene_manager import SceneManager
 from input_system import CommandParser, InputMode
 from dialogue_manager import DialogueManager
+from combat import CombatManager
+from corkboard_minigame import CorkboardMinigame
 from src.inventory_system import InventoryManager, Item, Evidence
 from src.save_system import EventLog, SaveSystem
+from src.journal_system import JournalManager
 from interface import print_separator, print_boxed_title, print_numbered_list, format_skill_result
 
 class Game:
@@ -23,9 +42,14 @@ class Game:
         # Initialize Systems
         self.time_system = TimeSystem()
         self.board = Board()
-        self.skill_system = SkillSystem()
+        self.board_ui = BoardUI(self.board)
+        self.skill_system = SkillSystem(resource_path(os.path.join('data', 'skills.json')))
+        self.lens_system = LensSystem(self.skill_system, self.board)
+        self.attention_system = AttentionSystem()
+        self.integration_system = IntegrationSystem()
         self.char_ui = CharacterSheetUI(self.skill_system)
         self.inventory_system = InventoryManager()
+        self.corkboard = CorkboardMinigame(self.board, self.inventory_system)
         self.event_log = EventLog()
         self.save_system = SaveSystem()
         self.parser = CommandParser()
@@ -42,7 +66,14 @@ class Game:
             "reality": 100.0,
             "inventory": [],
             "thoughts": [],
-            "injuries": []
+            "injuries": [],
+            "moral_corruption_score": 0,
+            "critical_choices": [],
+            "suppressed_memories_unlocked": [],
+            "event_flags": set(),
+            "playtime_minutes": 0,
+            "failed_reds": [],
+            "checked_whites": []
         }
 
         # Initialize Scene Manager
@@ -61,9 +92,20 @@ class Game:
         )
         self.in_dialogue = False
         
+        # Initialize Endgame and Memory Systems
+        self.endgame_manager = EndgameManager(self.board, self.player_state, self.skill_system)
+        self.memory_system = MemorySystem(resource_path(os.path.join('data', 'memories', 'memories.json')))
+        
+        # Initialize Combat Manager
+        self.combat_manager = CombatManager(self.skill_system, self.player_state)
+        
+        # Initialize Journal Manager (Week 6)
+        self.journal = JournalManager()
+        
         # Load Scenes
-        scenes_dir = os.path.join(os.path.dirname(__file__), 'data', 'scenes')
-        self.scene_manager.load_scenes_from_directory(scenes_dir)
+        scenes_dir = resource_path(os.path.join('data', 'scenes'))
+        root_scenes = resource_path('scenes.json')
+        self.scene_manager.load_scenes_from_directory(scenes_dir, root_scenes)
 
     def on_time_passed(self, minutes: int):
         msgs = self.board.on_time_passed(minutes)
@@ -72,6 +114,32 @@ class Game:
             for m in msgs:
                 print(f" -> {m}")
             print("********************\n")
+        
+        # Attention decay
+        hours = minutes / 60.0
+        self.attention_system.decay_attention(hours)
+        
+        # Integration progression
+        self.integration_system.update_from_attention(self.attention_system.attention_level)
+        stage_info = self.integration_system.get_stage_info()
+        
+        # Apply integration sanity/reality drain
+        if stage_info['sanity_drain'] > 0:
+            drain = stage_info['sanity_drain'] * hours
+            self.player_state['sanity'] -= drain
+        if stage_info.get('reality_drain', 0) > 0:
+            drain = stage_info['reality_drain'] * hours
+            self.player_state['reality'] -= drain
+        
+        # Check for stage advancement
+        if self.integration_system.integration_progress >= 100:
+            result = self.integration_system.advance_stage()
+            if result:
+                print(f"\n*** INTEGRATION STAGE {result['stage']}: {result['name']} ***")
+                print(f"{result['description']}")
+                if result.get('game_over'):
+                    print("\n=== GAME OVER: INTEGRATED ===\n")
+                    return  # End game
         
         # Update Modifiers
         self.update_board_effects()
@@ -121,6 +189,49 @@ class Game:
         while True:
             # Check autosave
             # self.check_autosave()
+            
+            # Check for Endgame Triggers
+            triggered, reason = self.endgame_manager.check_endgame_triggers()
+            if triggered:
+                print(f"\n{'='*60}")
+                print(f"  ENDGAME TRIGGERED: {reason}")
+                print(f"{'='*60}\n")
+                self.endgame_manager.run_ending_sequence()
+                break
+            
+            # Check for Memory Unlocks
+            game_state_for_memory = {
+                "skill_system": self.skill_system,
+                "player_state": self.player_state,
+                "board": self.board,
+                "current_scene": self.scene_manager.current_scene_id,
+                "event_flags": self.player_state.get("event_flags", set())
+            }
+            newly_unlocked = self.memory_system.check_memory_triggers(game_state_for_memory)
+            for memory_id in newly_unlocked:
+                memory = self.memory_system.get_memory(memory_id)
+                if memory:
+                    # Apply memory effects
+                    for stat, value in memory.effects.items():
+                        if stat in self.player_state:
+                            self.player_state[stat] += value
+                            print(f"[{stat.upper()} {'+' if value > 0 else ''}{value}]")
+                    
+                    # Add to unlocked list
+                    self.player_state["suppressed_memories_unlocked"].append(memory_id)
+                    
+                    # Load memory scene
+                    scene_path = self.memory_system.get_memory_scene_path(memory_id)
+                    if scene_path and os.path.exists(scene_path):
+                        print(f"\n[Press Enter to experience the memory...]")
+                        input()
+                        # Load and display memory scene
+                        with open(scene_path, 'r', encoding='utf-8') as f:
+                            import json
+                            memory_scene = json.load(f)
+                            print("\n" + memory_scene.get("text", ""))
+                            print("\n[Press Enter to continue...]")
+                            input()
             
             # Check for Breakdowns
             if self.player_state["sanity"] <= 0:
@@ -240,7 +351,15 @@ class Game:
         real_status = "LUCID" if real >= 75 else "DOUBT" if real >= 50 else "DELUSION" if real >= 25 else "BROKEN"
 
         print_separator("=")
-        print(f"TIME: {self.time_system.get_time_string()} | SANITY: {san:.0f}% ({san_status}) | REALITY: {real:.0f}% ({real_status})")
+        lens_str = self.lens_system.calculate_lens().upper()
+        attention_display = self.attention_system.get_status_display()
+        integration_display = self.integration_system.get_status_display()
+        print(f"TIME: {self.time_system.get_time_string()} | [LENS: {lens_str}]")
+        if attention_display:
+            print(f"{attention_display}")
+        if integration_display:
+            print(f"{integration_display}")
+        print(f"SANITY: {san:.0f}% ({san_status}) | REALITY: {real:.0f}% ({real_status})")
         print_separator("=")
         
         print_boxed_title(scene.get("name", "Unknown Area"))
@@ -249,7 +368,10 @@ class Game:
             media = scene["background_media"]
             print(f"[MEDIA: Loading {media['type']} '{media['src']}']")
         
-        display_text = self.apply_reality_distortion(scene["text"])
+        variants = scene.get("variants", {})
+        base_text = scene.get("text", "...")
+        filtered_text = self.lens_system.filter_text(base_text, variants)
+        display_text = self.apply_reality_distortion(filtered_text)
         print("\n" + display_text + "\n")
         
         # Show specific ambient indicators
@@ -299,8 +421,52 @@ class Game:
             if clean in ['i', 'inventory', 'inv']:
                 self.inventory_system.list_inventory()
                 return "refresh"
-            if clean in ['e', 'evidence']:
-                self.inventory_system.view_board()
+            if clean in ['e', 'evidence', 'board', 'corkboard', 'cb']:
+                self.corkboard.run_minigame()
+                return "refresh"
+            
+            # Week 6: Journal Commands
+            if clean in ['j', 'journal']:
+                self.journal.display_journal()
+                return "refresh"
+            
+            # Taboo Actions (Attention System)
+            taboo_map = {
+                'whistle': 'whistle_at_aurora',
+                'sing': 'sing_outdoors',
+                'wave': 'wave_at_lights',
+                'photograph': 'photograph_aurora',
+                'call': 'call_out',
+                'dance': 'dance'
+            }
+            if clean in taboo_map:
+                result = self.attention_system.perform_taboo(taboo_map[clean])
+                if result['success']:
+                    print(f"\n{result['action_description']}")
+                    if result.get('warning'):
+                        print(f"[WARNING: {result['warning']}]")
+                    if result.get('threshold_crossed'):
+                        print("\n*** THE ENTITY IS AWARE OF YOU ***")
+                        self.player_state['sanity'] -= 10
+                        print("[SANITY -10]")
+                        # Trigger integration check
+                        self.integration_system.update_from_attention(self.attention_system.attention_level)
+                return "refresh"
+            
+            if clean.startswith('inspect '):
+                parts = raw.split(maxsplit=1)
+                if len(parts) > 1:
+                    evidence_id = parts[1].strip()
+                    self.inspect_evidence(evidence_id)
+                else:
+                    print("Usage: inspect <evidence_id>")
+                return "refresh"
+            
+            if clean in ['time', 't']:
+                print(f"\nCurrent Time: {self.time_system.get_time_string()}")
+                date_data = self.time_system.get_date_data()
+                print(f"Date: {date_data['date_str']}")
+                print(f"Day: {date_data['day_name']}")
                 return "refresh"
             
             # Wait Command
@@ -330,6 +496,78 @@ class Game:
                 self.debug_mode = not self.debug_mode
                 print(f"[DEBUG MODE: {'ON' if self.debug_mode else 'OFF'}]")
                 return "refresh"
+            
+            # Theory Resolution Commands
+            if clean.startswith('prove '):
+                parts = raw.split(maxsplit=1)
+                if len(parts) > 1:
+                    theory_id = parts[1].strip()
+                    if self.board.resolve_theory(theory_id, True):
+                        print(f"[THEORY PROVEN: {theory_id}]")
+                    else:
+                        print(f"[ERROR: Theory '{theory_id}' not found]")
+                return "refresh"
+            
+            if clean.startswith('disprove '):
+                parts = raw.split(maxsplit=1)
+                if len(parts) > 1:
+                    theory_id = parts[1].strip()
+                    if self.board.resolve_theory(theory_id, False):
+                        print(f"[THEORY DISPROVEN: {theory_id}]")
+                    else:
+                        print(f"[ERROR: Theory '{theory_id}' not found]")
+                return "refresh"
+            
+            if clean.startswith('evidence '):
+                parts = raw.split()
+                if len(parts) >= 3:
+                    theory_id = parts[1]
+                    evidence_id = parts[2]
+                    if self.board.add_evidence_to_theory(theory_id, evidence_id):
+                        print(f"[Evidence linked to theory]")
+                    else:
+                        print(f"[ERROR: Could not link evidence]")
+                else:
+                    print("Usage: evidence <theory_id> <evidence_id>")
+                return "refresh"
+            
+            if clean.startswith('talk '):
+                parts = raw.split(maxsplit=1)
+                if len(parts) > 1:
+                    dialogue_id = parts[1].strip()
+                    self.start_dialogue(dialogue_id)
+                else:
+                    print("Usage: talk <dialogue_id>")
+                return "refresh"
+            
+            if clean.startswith('contradict '):
+                parts = raw.split()
+                if len(parts) >= 3:
+                    theory_id = parts[1]
+                    evidence_id = parts[2]
+                    result = self.board.add_contradiction_to_theory(theory_id, evidence_id)
+                    if result.get('success'):
+                        print(f"[{result['message']}]")
+                        if result.get('sanity_damage', 0) > 0:
+                            self.player_state['sanity'] -= result['sanity_damage']
+                            print(f"[SANITY -{result['sanity_damage']}]")
+                    else:
+                        print(f"[ERROR: {result.get('message', 'Could not add contradiction')}]")
+                else:
+                    print("Usage: contradict <theory_id> <evidence_id>")
+                return "refresh"
+            
+            # Endgame Commands
+            if clean in ['submit_report', 'submit']:
+                self.player_state["event_flags"].add("submit_report")
+                print("[You prepare to submit your final report...]")
+                return "refresh"
+            
+            if clean in ['leave_town', 'leave']:
+                self.player_state["event_flags"].add("leave_town")
+                print("[You pack your bags and prepare to leave Tyger Tyger...]")
+                return "refresh"
+
             
             if self.debug_mode:
                 # Debug: Force Save
@@ -432,7 +670,8 @@ class Game:
 
         if verb == "EXAMINE":
             if not target:
-                print("Examine what?")
+                # Standalone LOOK / EXAMINE: Re-display scene
+                self.display_scene()
                 return
             
             # Improved fuzzy match for target in objects
@@ -679,7 +918,7 @@ class Game:
     
     def log_event(self, event_type: str, **details):
         """Log a significant game event."""
-        self.event_log.add_event(event_type, details)
+        self.event_log.add_event(event_type, **details)
 
     def process_choice(self, choice):
         # Handle Skill Checks
@@ -742,7 +981,7 @@ class Game:
 
     def start_dialogue(self, dialogue_id):
         print(f"\n... Entering Dialogue: {dialogue_id} ...")
-        dialogues_dir = os.path.join(os.path.dirname(__file__), 'data', 'dialogues')
+        dialogues_dir = resource_path(os.path.join('data', 'dialogues'))
         if self.dialogue_manager.load_dialogue(dialogue_id, dialogues_dir):
             self.in_dialogue = True
         else:
@@ -792,13 +1031,48 @@ class Game:
         else:
             print(f"Cannot do that: {msg}")
 
+    def inspect_evidence(self, evidence_id: str):
+        """Display detailed information about a piece of evidence."""
+        evidence = self.inventory_system.evidence_collection.get(evidence_id)
+        
+        if not evidence:
+            print(f"\nEvidence '{evidence_id}' not found in collection.")
+            return
+        
+        print("\n" + "="*60)
+        print(f"EVIDENCE: {evidence.name}")
+        print("="*60)
+        print(f"ID: {evidence.id}")
+        print(f"Type: {evidence.type}")
+        print(f"Description: {evidence.description}")
+        print(f"Location Found: {evidence.location}")
+        
+        if evidence.collected_with:
+            print(f"Collected With: {evidence.collected_with}")
+        
+        if evidence.tags:
+            print(f"Tags: {', '.join(evidence.tags)}")
+        
+        if evidence.related_skills:
+            print(f"\nCan be analyzed with: {', '.join(evidence.related_skills)}")
+        
+        if evidence.analyzed:
+            print(f"\n[ANALYZED]")
+            for skill, result in evidence.analysis_results.items():
+                print(f"  [{skill}] {result}")
+        else:
+            print(f"\n[NOT YET ANALYZED]")
+        
+        if evidence.related_npcs:
+            print(f"\nRelated NPCs: {', '.join(evidence.related_npcs)}")
+        
+        print("="*60)
+
     def show_board(self):
-        print("\n=== THE BOARD ===")
-        print(f"Slots: {self.board.get_active_or_internalizing_count()}/{self.board.max_slots}")
-        for t in self.board.theories.values():
-            if t.status in ["active", "internalizing"]:
-                 print(f" * {t.name} [{t.status.upper()}]")
-        print("=================\n")
+        """Display The Board with visual ASCII art."""
+        print(self.board_ui.render())
+        print("\nCommands: 'evidence <theory_id> <evidence_id>' | 'contradict <theory_id> <evidence_id>'")
+        print("          'prove <theory_id>' | 'disprove <theory_id>'\n")
 
     def apply_effects(self, effects):
         for key, value in effects.items():

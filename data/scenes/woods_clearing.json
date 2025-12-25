@@ -59,12 +59,16 @@
         },
         {
             "text": "[Empathy (Hard)] Close your eyes and feel the atmosphere.",
-            "req_check": {
+            "skill_check": {
                 "skill": "Empathy",
-                "difficulty": 12
-            },
-            "on_success": "scene_clearing_peace",
-            "on_failure": "scene_clearing_dread"
+                "difficulty": 12,
+                "on_success": {
+                    "next_scene": "scene_clearing_peace"
+                },
+                "on_fail": {
+                    "next_scene": "scene_clearing_dread"
+                }
+            }
         }
     ]
 }

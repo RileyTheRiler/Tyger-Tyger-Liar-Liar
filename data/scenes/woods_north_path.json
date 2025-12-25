@@ -39,12 +39,16 @@
         },
         {
             "text": "[Survival] Check for tracks.",
-            "req_check": {
+            "skill_check": {
                 "skill": "Survival",
-                "difficulty": 10
-            },
-            "on_success": "woods_tracks_found",
-            "on_failure": "woods_tracks_lost"
+                "difficulty": 10,
+                "on_success": {
+                    "next_scene": "woods_tracks_found"
+                },
+                "on_fail": {
+                    "next_scene": "woods_tracks_lost"
+                }
+            }
         }
     ]
 }

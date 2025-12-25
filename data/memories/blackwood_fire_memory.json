@@ -1,0 +1,15 @@
+{
+    "id": "blackwood_fire_memory",
+    "type": "memory",
+    "text": "═══════════════════════════════════════════════════════════\n                    FLASHBACK: 10 YEARS AGO\n═══════════════════════════════════════════════════════════\n\nThe smoke is thick. Acrid. You're younger—so much younger.\n\nThe screams are real. They echo in your skull even now.\n\nYou see the faces in the windows. Pressed against the glass. Hands pounding. The flames climbing higher.\n\nYou could have—\n\nNo. You didn't. You couldn't have.\n\nThe fire chief pulls you back. \"Nothing we can do,\" he says.\n\nBut you weren't trying to go in.\n\nYou were just... watching.\n\n...Weren't you?\n\n═══════════════════════════════════════════════════════════",
+    "background_media": null,
+    "choices": [
+        {
+            "text": "[Return to present]",
+            "next_scene": null,
+            "effects": {
+                "unlock_thought": "i_was_there"
+            }
+        }
+    ]
+}

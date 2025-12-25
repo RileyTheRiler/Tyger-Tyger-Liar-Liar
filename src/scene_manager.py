@@ -13,9 +13,10 @@ class SceneManager:
         self.skill_system = skill_system
         self.player_state = player_state
 
-    def load_scenes_from_directory(self, directory: str):
+    def load_scenes_from_directory(self, directory: str, root_scenes: Optional[str] = None):
         # Fallback to finding existing scenes.json in root if directory doesn't look populated
-        root_scenes = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scenes.json")
+        if not root_scenes:
+            root_scenes = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scenes.json")
         
         # Try loading directory first
         if os.path.exists(directory) and os.listdir(directory):

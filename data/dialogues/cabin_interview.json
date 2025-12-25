@@ -1,0 +1,95 @@
+{
+    "scene_id": "cabin_interview",
+    "lines": [
+        {
+            "id": "start",
+            "speaker": "Dr. Keats",
+            "text": "I already told the police everything.",
+            "choices": [
+                {
+                    "id": "push",
+                    "text": "Push harder",
+                    "next": "push1"
+                },
+                {
+                    "id": "empathize",
+                    "text": "Say you understand",
+                    "next": "soft1"
+                },
+                {
+                    "id": "theory_push",
+                    "text": "[Theory] Bring up the Tyger",
+                    "next": "tyger_reveal",
+                    "require_theory": "The Tyger is Real"
+                }
+            ],
+            "passives": [
+                "Empathy",
+                "Perception"
+            ]
+        },
+        {
+            "id": "push1",
+            "speaker": "You",
+            "text": "You and I both know there's more than that.",
+            "check": {
+                "skill": "Interrogation",
+                "dc": 12,
+                "white_id": "cabin_push",
+                "success_next": "confess",
+                "fail_next": "resist"
+            }
+        },
+        {
+            "id": "confess",
+            "speaker": "Dr. Keats",
+            "text": "Fine. I saw... something in the woods. But I won't go back there.",
+            "choices": [
+                {
+                    "id": "exit",
+                    "text": "Thank him and leave",
+                    "next": "EXIT_DIALOGUE"
+                }
+            ]
+        },
+        {
+            "id": "resist",
+            "speaker": "Dr. Keats",
+            "text": "I have nothing more to say. Get out.",
+            "choices": [
+                {
+                    "id": "exit",
+                    "text": "Leave",
+                    "next": "EXIT_DIALOGUE"
+                }
+            ]
+        },
+        {
+            "id": "soft1",
+            "speaker": "You",
+            "text": "It's okay. We all have secrets.",
+            "choices": [
+                {
+                    "id": "next",
+                    "text": "Continue",
+                    "next": "start"
+                }
+            ]
+        },
+        {
+            "id": "tyger_reveal",
+            "speaker": "Dr. Keats",
+            "text": "So you know about the Tyger too? God help us.",
+            "choices": [
+                {
+                    "id": "exit",
+                    "text": "Leave in silence",
+                    "next": "EXIT_DIALOGUE"
+                }
+            ],
+            "effects": {
+                "sanity": -5
+            }
+        }
+    ]
+}

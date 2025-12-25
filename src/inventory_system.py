@@ -48,8 +48,11 @@ class Item:
 
 
 class Evidence:
-    def __init__(self, id: str, description: str, type: str, location: str = "unknown", collected_with: str = None, related_to: List[str] = None, timestamp: float = None):
+    def __init__(self, id: str, description: str, type: str, location: str = "unknown", collected_with: str = None, 
+                 related_to: List[str] = None, timestamp: float = None, name: str = None,
+                 related_skills: List[str] = None, analyzed: bool = False, related_npcs: List[str] = None):
         self.id = id
+        self.name = name or id
         self.description = description
         self.type = type # physical, digital, testimony, etc.
         self.location = location
@@ -57,35 +60,57 @@ class Evidence:
         self.related_to = related_to or []
         self.timestamp = timestamp
         self.tags: List[str] = [] # e.g. "blood", "victim_1"
+        
+        # Week 6 additions
+        self.related_skills = related_skills or []  # Skills that can analyze this
+        self.analyzed = analyzed  # Whether forensic analysis has been performed
+        self.analysis_results: Dict[str, str] = {}  # Skill -> result text
+        self.related_npcs = related_npcs or []  # NPCs connected to this evidence
 
     def add_tag(self, tag: str):
         if tag not in self.tags:
             self.tags.append(tag)
+    
+    def analyze_with_skill(self, skill_name: str, result_text: str):
+        """Mark evidence as analyzed with a specific skill and store results."""
+        self.analyzed = True
+        self.analysis_results[skill_name] = result_text
+        print(f"[Evidence] {self.name} analyzed with {skill_name}")
 
     def to_dict(self):
         return {
             "id": self.id,
+            "name": self.name,
             "description": self.description,
             "type": self.type,
             "location": self.location,
             "collected_with": self.collected_with,
             "related_to": self.related_to,
             "timestamp": self.timestamp,
-            "tags": self.tags
+            "tags": self.tags,
+            "related_skills": self.related_skills,
+            "analyzed": self.analyzed,
+            "analysis_results": self.analysis_results,
+            "related_npcs": self.related_npcs
         }
     
     @classmethod
     def from_dict(cls, data):
         obj = cls(
             id=data["id"],
+            name=data.get("name", data["id"]),
             description=data["description"],
             type=data["type"],
             location=data.get("location", "unknown"),
             collected_with=data.get("collected_with"),
             related_to=data.get("related_to", []),
-            timestamp=data.get("timestamp")
+            timestamp=data.get("timestamp"),
+            related_skills=data.get("related_skills", []),
+            analyzed=data.get("analyzed", False),
+            related_npcs=data.get("related_npcs", [])
         )
         obj.tags = data.get("tags", [])
+        obj.analysis_results = data.get("analysis_results", {})
         return obj
 
 
@@ -102,6 +127,19 @@ class EvidenceBoard:
             self.links.append({"from": id1, "to": id2, "reason": reason})
             return True
         return False
+    
+    def to_dict(self):
+        return {
+            "nodes": {k: v.to_dict() for k, v in self.nodes.items()},
+            "links": self.links
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        obj = cls()
+        obj.nodes = {k: Evidence.from_dict(v) for k, v in data.get("nodes", {}).items()}
+        obj.links = data.get("links", [])
+        return obj
     
     def get_display_string(self) -> str:
         s = "=== EVIDENCE BOARD ===\n"
@@ -161,3 +199,20 @@ class InventoryManager:
                  
     def view_board(self):
         print(self.board.get_display_string())
+
+    def to_dict(self):
+        return {
+            "carried_items": [i.to_dict() for i in self.carried_items],
+            "evidence_collection": {k: v.to_dict() for k, v in self.evidence_collection.items()},
+            "board": self.board.to_dict(),
+            "documents": self.documents
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        obj = cls()
+        obj.carried_items = [Item.from_dict(i) for i in data.get("carried_items", [])]
+        obj.evidence_collection = {k: Evidence.from_dict(v) for k, v in data.get("evidence_collection", {}).items()}
+        obj.board = EvidenceBoard.from_dict(data.get("board", {}))
+        obj.documents = data.get("documents", [])
+        return obj

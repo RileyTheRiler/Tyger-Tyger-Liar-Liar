@@ -41,8 +41,12 @@ def format_skill_result(result):
     inv_sign = "+" if inv > 0 else ""
     inv_str = f" {inv_sign}{inv} [Inv]" if inv != 0 else ""
     
+    desc = result.get("description", "")
+    
     print(f"\n[ CHECK: {skill} ]")
     print(f" Roll: {roll} (2d6) {mod_sign}{mod} [Skill]{inv_str} = {total} vs DC {dc}")
+    if desc:
+        print(f" {desc}")
     
     if success:
         print(" >> SUCCESS <<")

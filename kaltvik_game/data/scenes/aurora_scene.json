@@ -1,0 +1,13 @@
+{
+    "id": "aurora_scene",
+    "text": "The aurora shimmers in shades of violet and sickly green. It feels as if it's pulsing in time with your heartbeat. You feel a sudden, sharp headache.",
+    "objects": {
+        "aurora": "The colors are beautiful, yet deeply unsettling. They seem to whispered to you."
+    },
+    "options": [
+        {
+            "label": "Look away",
+            "next": "intro_scene"
+        }
+    ]
+}

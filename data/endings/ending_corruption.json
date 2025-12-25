@@ -1,0 +1,12 @@
+{
+    "id": "ending_corruption",
+    "type": "ending",
+    "text": "You solved it.\n\nThe missing are accounted for. The pattern is broken. The case is closed.\n\nYou won.\n\nBut when you look in the mirror, you don't recognize the eyes staring back.\n\nHow many lies did you tell? How many people did you sacrifice?\n\nHow much of yourself did you leave behind in Tyger Tyger?\n\n\"Necessary sacrifices,\" you tell yourself.\n\nThe ends justified the means.\n\nDidn't they?\n\nYou pack your bags. You leave town.\n\nBut the blood on your hands doesn't wash off.\n\nIt never does.",
+    "background_media": null,
+    "choices": [
+        {
+            "text": "[Credits]",
+            "next_scene": null
+        }
+    ]
+}

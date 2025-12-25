@@ -16,12 +16,16 @@
         },
         {
             "text": "[Logic (Medium)] Try to deduce where you are based on the smell.",
-            "req_check": {
+            "skill_check": {
                 "skill": "Logic",
-                "difficulty": 10
-            },
-            "on_success": "scene_deduction_success",
-            "on_failure": "scene_deduction_failure"
+                "difficulty": 10,
+                "on_success": {
+                    "next_scene": "scene_deduction_success"
+                },
+                "on_fail": {
+                    "next_scene": "scene_deduction_failure"
+                }
+            }
         }
     ],
     "events": []

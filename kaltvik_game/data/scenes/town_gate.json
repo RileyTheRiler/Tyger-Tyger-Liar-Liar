@@ -1,0 +1,18 @@
+{
+    "id": "town_gate",
+    "text": "The gate to Kaltvik is heavy timber, reinforced with rusted iron. A single guard in a thick wool coat leans against the post, breath fogging in the cold. He looks at you with weary eyes.",
+    "options": [
+        {
+            "label": "Talk to the guard",
+            "next": "guard_talk"
+        },
+        {
+            "label": "Walk past him",
+            "next": "town_square"
+        },
+        {
+            "label": "Go back",
+            "next": "intro_scene"
+        }
+    ]
+}

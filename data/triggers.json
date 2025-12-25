@@ -1,0 +1,39 @@
+[
+    {
+        "id": "ghost_appears",
+        "location": "cabin",
+        "conditions": {
+            "time_after": "22:00",
+            "location_flags": {
+                "fire_started": false
+            }
+        },
+        "effects": {
+            "scene": "woods_clearing",
+            "set_location_flags": {
+                "entity_present": true
+            },
+            "set_player_flags": [
+                "saw_ghost"
+            ],
+            "sanity": -10
+        },
+        "once_only": true,
+        "priority": 10
+    },
+    {
+        "id": "morning_lockout",
+        "location": "trailhead",
+        "conditions": {
+            "time_after": "08:00",
+            "time_before": "10:00"
+        },
+        "effects": {
+            "set_player_flags": [
+                "morning_visit"
+            ]
+        },
+        "once_only": false,
+        "priority": 5
+    }
+]

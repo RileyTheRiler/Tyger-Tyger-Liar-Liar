@@ -1,0 +1,23 @@
+{
+    "id": "your_role_memory",
+    "type": "memory",
+    "text": "═══════════════════════════════════════════════════════════\n                    THE TRUTH\n═══════════════════════════════════════════════════════════\n\nYou weren't sent here to investigate.\n\nYou were sent here to bury it.\n\nThe files. The evidence. The connections.\n\nThey knew. They always knew.\n\nAnd they sent you—the perfect tool. The perfect cover.\n\nBecause you're good at this. You're good at making things disappear.\n\nJust like you made the others disappear.\n\nWait.\n\nNo.\n\nThat's not—\n\nIs it?\n\n═══════════════════════════════════════════════════════════",
+    "background_media": null,
+    "choices": [
+        {
+            "text": "[This is a lie]",
+            "next_scene": null,
+            "effects": {
+                "reality": -10
+            }
+        },
+        {
+            "text": "[This is the truth]",
+            "next_scene": null,
+            "effects": {
+                "sanity": -10,
+                "unlock_thought": "complicit"
+            }
+        }
+    ]
+}

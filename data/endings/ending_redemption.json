@@ -1,0 +1,12 @@
+{
+    "id": "ending_redemption",
+    "type": "ending",
+    "text": "The horror is real.\n\nBut so is the healing.\n\nYou stand in the center of Tyger Tyger, and you do not run.\n\nYou faced the darkness. You looked into the void.\n\nAnd you chose to be human anyway.\n\nYou may not save everyone. The missing may never be found.\n\nBut you saved yourself.\n\nAnd that's a start.\n\nYou stay in town. Someone has to bear witness.\n\nSomeone has to remember.\n\nSomeone has to stand against the Tyger.\n\nAnd today, that someone is you.\n\nThe dawn breaks over Tyger Tyger.\n\nAnd you're still here.",
+    "background_media": null,
+    "choices": [
+        {
+            "text": "[Credits]",
+            "next_scene": null
+        }
+    ]
+}

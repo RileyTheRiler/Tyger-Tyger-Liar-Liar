@@ -1,0 +1,39 @@
+{
+    "REASON": {
+        "Logic": "The world is a machine of cause and effect. Analyze the variables, discard the noise, and the truth remains as cold and certain as a mathematical theorem.",
+        "Forensics": "The dead speak if you listen. Blood spatter, calluses, and decomposition are a language of their own.",
+        "Research": "Knowledge is hidden in the archives. You can dig through layers of bureaucracy and dusty volumes to find the truth.",
+        "Skepticism": "Trust nothing. Every statement is a hypothesis until proven otherwise. Especially your own senses.",
+        "Medicine": "The frailty of the flesh is a puzzle to be solved. You understand the mechanics of life and death.",
+        "Technology": "Ghosts in the machine. You speak the language of circuits and code.",
+        "Occult Knowledge": "Things that should not be. You've peered into the dark corners of forbidden lore."
+    },
+    "INTUITION": {
+        "Pattern Recognition": "Everything connects. A spilled drink, a missing button, and a change in the wind are all part of a larger design.",
+        "Paranormal Sensitivity": "The air feels... wrong. You can sense the ripples in reality that others ignore.",
+        "Profiling": "Everyone wears a mask, but the seams are always visible. You look for the micro-expressions, the tells, and the hidden agendas written in the way they breathe.",
+        "Instinct": "Gut feeling over facts. Sometimes your nerves know more than your brain.",
+        "Subconscious": "The boundary between sleep and waking is thinner than it seems. The truth often hides in the static of your own mind, whispering in symbols and dread.",
+        "Manipulation": "Strings attached. You know which buttons to press to make people move the way you want.",
+        "Perception": "The world is a tapestry of minute details. You don't just see; you notice the dust on the shelf, the flicker in the light, and the things that are conspicuously missing."
+    },
+    "CONSTITUTION": {
+        "Endurance": "Pain is just information. You can keep moving long after others have collapsed.",
+        "Fortitude": "Unbreakable. Your mind and body are a fortress against the encroaching dark.",
+        "Firearms": "Loud conflict resolution. You know how to make a gun an extension of your intent.",
+        "Athletics": "Motion is life. Your body is a finely tuned instrument of action.",
+        "Stealth": "Unseen, unheard. You can move through the world like a shadow.",
+        "Reflexes": "Faster than thought. You react before the world has a chance to catch up.",
+        "Survival": "Live another day. You know how to find what you need in a world that wants you dead.",
+        "Hand-to-Hand Combat": "Up close and personal. You know how to use your body to end a threat."
+    },
+    "PRESENCE": {
+        "Authority": "Obey. Your presence commands respect and demands compliance.",
+        "Charm": "A smile opens doors. You can wrap people around your finger with a few choice words.",
+        "Wits": "Sharp tongue. You can cut through an argument or a person with lightning-fast retorts.",
+        "Composure": "Never let them see you sweat. You are a calm lake in the middle of a storm.",
+        "Empathy": "You are a mirror of the world's pain. You feel the tremor in their voice and the weight on their shoulders as if they were your own, sometimes to your own detriment.",
+        "Interrogation": "Truth hurts. You know how to peel back the layers of a lie until the raw reality is exposed.",
+        "Deception": "A lie is a constructed truth. You can weave a narrative that others will believe, even if it's built on nothing."
+    }
+}

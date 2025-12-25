@@ -1,0 +1,75 @@
+{
+    "blackwood_fire": {
+        "title": "The Blackwood Fire",
+        "scene_file": "blackwood_fire_memory.json",
+        "unlock_conditions": {
+            "theory_active": "what_happened_in_town",
+            "skill_threshold": {
+                "Subconscious": 4
+            }
+        },
+        "revealed_truth": "You were there. You saw them burn.",
+        "effects": {
+            "sanity": -10,
+            "reality": -5
+        }
+    },
+    "first_disappearance": {
+        "title": "The First One",
+        "scene_file": "first_disappearance_memory.json",
+        "unlock_conditions": {
+            "scene_visited": "old_church",
+            "stat_threshold": {
+                "reality": 30
+            }
+        },
+        "revealed_truth": "You knew the first victim. Intimately.",
+        "effects": {
+            "sanity": -15
+        }
+    },
+    "your_role": {
+        "title": "What You Did",
+        "scene_file": "your_role_memory.json",
+        "unlock_conditions": {
+            "theory_active": "trust_no_one",
+            "stat_threshold": {
+                "sanity": 15
+            }
+        },
+        "revealed_truth": "You weren't investigating. You were covering up.",
+        "effects": {
+            "sanity": -20,
+            "reality": -15
+        }
+    },
+    "the_pattern": {
+        "title": "You've Seen This Before",
+        "scene_file": "the_pattern_memory.json",
+        "unlock_conditions": {
+            "theory_active": "the_missing_are_connected",
+            "skill_threshold": {
+                "Pattern Recognition": 5
+            }
+        },
+        "revealed_truth": "The pattern isn't new. You've been following it for years.",
+        "effects": {
+            "reality": -10
+        }
+    },
+    "childhood_trauma": {
+        "title": "The First Tyger",
+        "scene_file": "childhood_trauma_memory.json",
+        "unlock_conditions": {
+            "stat_threshold": {
+                "sanity": 20,
+                "reality": 25
+            }
+        },
+        "revealed_truth": "You saw the Tyger when you were a child. It never left.",
+        "effects": {
+            "sanity": -15,
+            "reality": -20
+        }
+    }
+}

@@ -1,0 +1,121 @@
+from engine.scene_manager import load_scene
+from utils.formatter import display_text, highlight_objects
+from engine.input_handler import get_player_input
+from engine.character_sheet import show_character_sheet
+from engine.skill_check import roll_skill_check
+from engine.board_system import show_board, internalize_theory, advance_theory_timers, abandon_theory
+import sys
+
+def run_game_loop(state):
+    """
+    Main runtime loop for the game.
+    """
+    while True:
+        try:
+            scene = load_scene(state.current_scene)
+            
+            # Highlight interactive objects in the scene text
+            objects = scene.get("objects", {})
+            highlighted_text = highlight_objects(scene["text"], objects)
+            display_text(highlighted_text)
+            
+            if not scene.get("options"):
+                print("The story ends here.")
+                break
+
+            for i, opt in enumerate(scene["options"]):
+                print(f"{i+1}. {opt['label']}")
+
+            action_type, payload = get_player_input(scene, objects)
+
+            if action_type == "choice":
+                state.current_scene = scene["options"][payload]["next"]
+
+            elif action_type == "examine":
+                target = payload
+                print(f"\n{objects[target]}")
+                
+                check = scene.get("check")
+                if check:
+                    skill_name = check["skill"]
+                    dc = check["dc"]
+                    skill_level = state.skills.get(skill_name, 0)
+                    
+                    result, roll = roll_skill_check(
+                        skill_name, 
+                        skill_level, 
+                        dc, 
+                        check.get("white_id"), 
+                        check.get("is_red", False), 
+                        state
+                    )
+                    
+                    print(f"\n[CHECK: {skill_name}] Roll: {roll} + {skill_level} vs DC {dc}")
+                    
+                    if result == "success":
+                        print(f"RESULT: SUCCESS")
+                        display_text(check["success_text"])
+                    elif result == "fail":
+                        print(f"RESULT: FAILURE")
+                        display_text(check["fail_text"])
+                    elif result == "locked":
+                        print("You’ve already tried this and failed (locked).")
+
+                input("\nPress Enter to continue...")
+
+            elif action_type == "character":
+                show_character_sheet(state)
+                input("\nPress Enter to continue...")
+
+            elif action_type == "theories":
+                show_board(state)
+                input("\nPress Enter to continue...")
+
+            elif action_type == "internalize":
+                msg = internalize_theory(payload, state)
+                print(f"\n{msg}")
+                input("\nPress Enter to continue...")
+            
+            elif action_type == "abandon":
+                msg = abandon_theory(payload, state)
+                print(f"\n{msg}")
+                input("\nPress Enter to continue...")
+
+            elif action_type == "advance":
+                hours = payload
+                print(f"\nAdvancing time by {hours} hours...")
+                advance_theory_timers(state, hours)
+                input("\nPress Enter to continue...")
+
+            elif action_type == "roll":
+                skill_name, dc = payload
+                skill_level = state.skills.get(skill_name, 0)
+                result, roll = roll_skill_check(skill_name, skill_level, dc)
+                print(f"\n[MANUAL ROLL: {skill_name}] Roll: {roll} + {skill_level} vs DC {dc}")
+                print(f"RESULT: {result.upper()}")
+                input("\nPress Enter to continue...")
+
+            elif action_type == "check":
+                skill_name = payload
+                val = state.skills.get(skill_name, "Unknown")
+                print(f"\n[DEBUG] {skill_name} level: {val}")
+                input("\nPress Enter to continue...")
+
+            elif action_type == "action":
+                verb, target = payload
+                print(f"\nYou try to {verb} {target}, but nothing happens yet.")
+                input("\nPress Enter to continue...")
+
+            elif action_type == "invalid":
+                continue
+
+
+        
+        except FileNotFoundError:
+            print(f"Error: Scene file '{state.current_scene}.json' not found.")
+            break
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            import traceback
+            traceback.print_exc()
+            break

@@ -1,0 +1,12 @@
+{
+    "id": "ending_conspiracy",
+    "type": "ending",
+    "text": "You know the truth now.\n\nThe missing aren't missing. They're taken.\n\nThe patterns aren't coincidence. They're design.\n\nThe town isn't haunted. It's hunting.\n\nYou gather your evidence. You prepare your report.\n\nBut when you try to leave, the roads all lead back to the center of town.\n\nYou see them watching from the windows. The ones who know.\n\nThey know that you know.\n\nAnd the Tyger sees all.\n\nYou run, but you cannot hide from what is ancient.\n\nWhat has always been here.\n\nWhat will always be here.",
+    "background_media": null,
+    "choices": [
+        {
+            "text": "[Credits]",
+            "next_scene": null
+        }
+    ]
+}

@@ -4,6 +4,14 @@ from typing import List, Dict, Optional
 from datetime import datetime
 
 @dataclass
+class JournalEntry:
+    """Narrative or discovery log entry."""
+    timestamp: str
+    title: str
+    body: str
+    tags: List[str] = field(default_factory=list)
+
+@dataclass
 class Suspect:
     id: str
     name: str
@@ -41,10 +49,20 @@ class Annotation:
 
 class JournalManager:
     def __init__(self):
+        self.entries: List[JournalEntry] = []  # Week 6: Narrative entries
         self.suspects: Dict[str, Suspect] = {}
         self.timeline: List[TimelineEvent] = []
         self.questions: Dict[str, OpenQuestion] = {}
         self.annotations: List[Annotation] = []
+        self.leads: List[str] = []  # Week 6: Open threads/mystery flags
+
+    def add_entry(self, title: str, body: str, tags: List[str] = None, timestamp: str = None):
+        """Add a narrative journal entry."""
+        if timestamp is None:
+            timestamp = datetime.now().isoformat()
+        entry = JournalEntry(timestamp=timestamp, title=title, body=body, tags=tags or [])
+        self.entries.append(entry)
+        print(f"[Journal] Entry added: {title}")
 
     def add_suspect(self, suspect_data: dict):
         """Adds or updates a suspect entry."""
@@ -117,17 +135,45 @@ class JournalManager:
             if evidence_id not in self.suspects[suspect_id].evidence_links:
                 self.suspects[suspect_id].evidence_links.append(evidence_id)
                 print(f"[Journal] Linked evidence {evidence_id} to {suspect_id}")
+    
+    def add_lead(self, lead: str):
+        """Add an open thread or mystery flag."""
+        if lead not in self.leads:
+            self.leads.append(lead)
+            print(f"[Journal] New lead: {lead}")
+    
+    def display_journal(self, limit: int = 10):
+        """Display recent journal entries."""
+        print("\n" + "="*60)
+        print("JOURNAL ENTRIES")
+        print("="*60)
+        
+        if not self.entries:
+            print(" (No entries)")
+            return
+        
+        recent = self.entries[-limit:]
+        for entry in reversed(recent):
+            print(f"\n[{entry.timestamp}] {entry.title}")
+            print(f"  {entry.body}")
+            if entry.tags:
+                print(f"  Tags: {', '.join(entry.tags)}")
+        print("="*60)
 
     def export_state(self) -> dict:
         return {
+            "entries": [asdict(e) for e in self.entries],
             "suspects": {k: asdict(v) for k, v in self.suspects.items()},
             "timeline": [asdict(e) for e in self.timeline],
             "questions": {k: asdict(v) for k, v in self.questions.items()},
-            "annotations": [asdict(a) for a in self.annotations]
+            "annotations": [asdict(a) for a in self.annotations],
+            "leads": self.leads
         }
 
     def load_state(self, data: dict):
+        self.entries = [JournalEntry(**v) for v in data.get("entries", [])]
         self.suspects = {k: Suspect(**v) for k, v in data.get("suspects", {}).items()}
         self.timeline = [TimelineEvent(**v) for v in data.get("timeline", [])]
         self.questions = {k: OpenQuestion(**v) for k, v in data.get("questions", {}).items()}
         self.annotations = [Annotation(**v) for v in data.get("annotations", [])]
+        self.leads = data.get("leads", [])

@@ -1,0 +1,31 @@
+{
+    "trust_no_one": {
+        "name": "Trust No One",
+        "category": "Conspiracy",
+        "description": "You believe every interaction is suspect.",
+        "time_to_internalize": 6,
+        "effects": {
+            "Perception": 1,
+            "Wits": 1,
+            "Empathy": -2,
+            "Composure": -1
+        },
+        "false_penalty": {
+            "Composure": -1
+        },
+        "active_case": true
+    },
+    "analytical_mind": {
+        "name": "Analytical Mind",
+        "category": "Cognitive",
+        "description": "You prioritize cold logic over emotional intuition.",
+        "time_to_internalize": 4,
+        "effects": {
+            "Logic": 1,
+            "Skepticism": 1,
+            "Perception": -1,
+            "Empathy": -1
+        },
+        "active_case": false
+    }
+}

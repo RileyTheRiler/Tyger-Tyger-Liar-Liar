@@ -1,4 +1,5 @@
 
+
 THEORY_DATA = {
     "i_want_to_believe": {
         "name": "I Want To Believe",
@@ -12,6 +13,8 @@ THEORY_DATA = {
             "Skepticism": -1
         },
         "conflicts_with": ["there_is_a_rational_explanation"],
+        "auto_locks": ["there_is_a_rational_explanation"],
+        "degradation_rate": 15,
         "internalize_time_hours": 6,
         "active_case": False
     },
@@ -27,6 +30,8 @@ THEORY_DATA = {
             "Instinct": -1
         },
         "conflicts_with": ["i_want_to_believe"],
+        "auto_locks": ["i_want_to_believe"],
+        "degradation_rate": 15,
         "internalize_time_hours": 6,
         "active_case": False
     },
@@ -41,7 +46,9 @@ THEORY_DATA = {
             "Charm": -2,
             "Authority": -1
         },
-        "conflicts_with": [],
+        "conflicts_with": ["conspiracy_of_kindness"],
+        "auto_locks": ["conspiracy_of_kindness"],
+        "degradation_rate": 10,
         "internalize_time_hours": 8,
         "active_case": False
     },
@@ -56,6 +63,8 @@ THEORY_DATA = {
             "Instinct": -1
         },
         "conflicts_with": ["trust_your_gut"],
+        "auto_locks": [],
+        "degradation_rate": 12,
         "internalize_time_hours": 4,
         "active_case": False
     },
@@ -70,6 +79,8 @@ THEORY_DATA = {
             "Logic": -1
         },
         "conflicts_with": ["follow_the_evidence"],
+        "auto_locks": [],
+        "degradation_rate": 12,
         "internalize_time_hours": 4,
         "active_case": False
     },
@@ -77,6 +88,7 @@ THEORY_DATA = {
         "name": "The Missing Are Connected",
         "category": "Active Case",
         "description": "It's not a coincidence. It's a pattern.",
+        "status": "locked",
         "hidden_effects": True,
         "effects": {
             "Pattern Recognition": 3,
@@ -84,8 +96,11 @@ THEORY_DATA = {
             "Composure": -1
         },
         "conflicts_with": [],
+        "auto_locks": [],
+        "degradation_rate": 8,
         "internalize_time_hours": 12,
-        "active_case": True
+        "active_case": True,
+        "critical_for_endgame": True
     },
     "what_happened_in_town": {
         "name": "What Happened In Blackwood",
@@ -98,7 +113,97 @@ THEORY_DATA = {
             "Empathy": 1
         },
         "conflicts_with": [],
+        "auto_locks": [],
+        "degradation_rate": 5,
         "internalize_time_hours": 10,
+        "active_case": False,
+        "critical_for_endgame": True
+    },
+    "conspiracy_of_kindness": {
+        "name": "Conspiracy of Kindness",
+        "category": "Trust",
+        "description": "Not everyone is out to get you. Some people genuinely want to help.",
+        "hidden_effects": False,
+        "effects": {
+            "Charm": 2,
+            "Empathy": 2,
+            "Perception": -2,
+            "Skepticism": -1
+        },
+        "conflicts_with": ["trust_no_one"],
+        "auto_locks": ["trust_no_one"],
+        "degradation_rate": 10,
+        "internalize_time_hours": 6,
         "active_case": False
+    },
+    "the_entity_is_hostile": {
+        "name": "The Entity Is Hostile",
+        "category": "Belief",
+        "description": "The aurora isn't just lights. It's hunting.",
+        "status": "locked",
+        "hidden_effects": True,
+        "effects": {
+            "Paranormal Sensitivity": 3,
+            "Survival": 2,
+            "Composure": -2
+        },
+        "conflicts_with": ["the_entity_is_neutral", "there_is_a_rational_explanation"],
+        "auto_locks": [],
+        "degradation_rate": 20,
+        "internalize_time_hours": 8,
+        "active_case": False,
+        "critical_for_endgame": True
+    },
+    "the_entity_is_neutral": {
+        "name": "The Entity Is Neutral",
+        "category": "Skepticism",
+        "description": "It's not malicious. It's just... different. Operating on rules we don't understand.",
+        "hidden_effects": True,
+        "effects": {
+            "Logic": 2,
+            "Paranormal Sensitivity": 1,
+            "Composure": 1
+        },
+        "conflicts_with": ["the_entity_is_hostile"],
+        "auto_locks": [],
+        "degradation_rate": 18,
+        "internalize_time_hours": 10,
+        "active_case": False,
+        "critical_for_endgame": True
+    },
+    "kaltvik_is_a_prison": {
+        "name": "Kaltvik Is A Prison",
+        "category": "Conspiracy",
+        "description": "347 people. Always 347. They can't leave. We can't leave.",
+        "status": "locked",
+        "hidden_effects": True,
+        "effects": {
+            "Pattern Recognition": 3,
+            "Perception": 2,
+            "Composure": -3
+        },
+        "conflicts_with": ["kaltvik_is_a_sanctuary"],
+        "auto_locks": [],
+        "degradation_rate": 15,
+        "internalize_time_hours": 12,
+        "active_case": True,
+        "critical_for_endgame": True
+    },
+    "kaltvik_is_a_sanctuary": {
+        "name": "Kaltvik Is A Sanctuary",
+        "category": "Belief",
+        "description": "They're not trapped. They're protected. The Entity keeps something worse OUT.",
+        "hidden_effects": True,
+        "effects": {
+            "Paranormal Sensitivity": 2,
+            "Empathy": 2,
+            "Logic": -2
+        },
+        "conflicts_with": ["kaltvik_is_a_prison"],
+        "auto_locks": [],
+        "degradation_rate": 18,
+        "internalize_time_hours": 14,
+        "active_case": False,
+        "critical_for_endgame": True
     }
 }

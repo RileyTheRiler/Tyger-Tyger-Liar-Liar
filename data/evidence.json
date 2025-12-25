@@ -1,0 +1,78 @@
+[
+    {
+        "id": "bloody_shard",
+        "name": "Bloody Glass Shard",
+        "description": "A jagged piece of glass with dried blood. Recovered from outside the broken window.",
+        "type": "physical",
+        "location": "porch",
+        "related_skills": [
+            "Forensics",
+            "Pattern Recognition"
+        ],
+        "analyzed": false,
+        "related_npcs": [
+            "Dr. Keats"
+        ],
+        "tags": [
+            "blood",
+            "glass",
+            "violence"
+        ]
+    },
+    {
+        "id": "torn_letter",
+        "name": "Torn Letter Fragment",
+        "description": "Half of a handwritten letter. The visible text reads: '...can't keep lying about what happened in the woods...'",
+        "type": "document",
+        "location": "cabin",
+        "related_skills": [
+            "Logic",
+            "Profiling"
+        ],
+        "analyzed": false,
+        "related_npcs": [
+            "Unknown"
+        ],
+        "tags": [
+            "document",
+            "mystery",
+            "woods"
+        ]
+    },
+    {
+        "id": "strange_photo",
+        "name": "Polaroid Photograph",
+        "description": "A blurry photo showing several figures standing in a clearing. The date stamp reads October 13, 1995.",
+        "type": "physical",
+        "location": "attic",
+        "related_skills": [
+            "Perception",
+            "Pattern Recognition"
+        ],
+        "analyzed": false,
+        "related_npcs": [],
+        "tags": [
+            "photo",
+            "woods",
+            "date_significant"
+        ]
+    },
+    {
+        "id": "audio_recording",
+        "name": "Cassette Tape Recording",
+        "description": "An unlabeled cassette tape. Contains what sounds like a distorted conversation and strange ambient noises.",
+        "type": "digital",
+        "location": "office",
+        "related_skills": [
+            "Technology",
+            "Paranormal Sensitivity"
+        ],
+        "analyzed": false,
+        "related_npcs": [],
+        "tags": [
+            "audio",
+            "paranormal",
+            "evidence"
+        ]
+    }
+]

@@ -1,5 +1,8 @@
 import random
+import json
+import os
 from typing import Dict, List, Optional, Tuple
+from dice import roll_2d6, get_roll_description
 
 class Attribute:
     def __init__(self, name: str, base_value: int = 1, cap: int = 6):
@@ -97,7 +100,7 @@ class SkillSystem:
     ATTR_PRESENCE = "PRESENCE"
 
     
-    def __init__(self):
+    def __init__(self, skills_file: Optional[str] = None):
         self.attributes: Dict[str, Attribute] = {
             self.ATTR_REASON: Attribute(self.ATTR_REASON, base_value=1),
             self.ATTR_INTUITION: Attribute(self.ATTR_INTUITION, base_value=1),
@@ -111,15 +114,52 @@ class SkillSystem:
         self.skill_points = 0
         self.check_history: Dict[str, dict] = {}
         self.failures_log: List[dict] = []
+        self.skills_file = skills_file
         
         self._initialize_skills()
 
     def _initialize_skills(self):
+        # Load from JSON if possible
+        if self.skills_file and os.path.exists(self.skills_file):
+            try:
+                with open(self.skills_file, "r") as f:
+                    metadata = json.load(f)
+                
+                for attr_name, skills in metadata.items():
+                    attr_obj = self.attributes.get(attr_name)
+                    if not attr_obj:
+                        attr_obj = Attribute(attr_name)
+                        self.attributes[attr_name] = attr_obj
+                    
+                    for skill_name, personality in skills.items():
+                        self._add_skill(skill_name, attr_obj, personality)
+                return
+            except Exception as e:
+                print(f"[WARNING] Could not load {self.skills_file}: {e}. Using fallback skills.")
+        
+        elif os.path.exists("data/skills.json"):
+            # Fallback to local data/skills.json if no file passed but it exists
+            try:
+                with open("data/skills.json", "r") as f:
+                    metadata = json.load(f)
+                
+                for attr_name, skills in metadata.items():
+                    attr_obj = self.attributes.get(attr_name)
+                    if not attr_obj:
+                        attr_obj = Attribute(attr_name)
+                        self.attributes[attr_name] = attr_obj
+                    
+                    for skill_name, personality in skills.items():
+                        self._add_skill(skill_name, attr_obj, personality)
+                return
+            except Exception as e:
+                print(f"[WARNING] Could not load data/skills.json: {e}. Using fallback skills.")
+
         # Helper to grab attr obj
         def get_attr(name): return self.attributes[name]
 
         # REASON (7)
-        self._add_skill("Logic", get_attr(self.ATTR_REASON), "Cold, deductible facts.")
+        self._add_skill("Logic", get_attr(self.ATTR_REASON), "The world is a machine of cause and effect.")
         self._add_skill("Forensics", get_attr(self.ATTR_REASON), "The dead speak if you listen.")
         self._add_skill("Research", get_attr(self.ATTR_REASON), "Knowledge is hidden in the archives.")
         self._add_skill("Skepticism", get_attr(self.ATTR_REASON), "Trust nothing.")
@@ -130,11 +170,11 @@ class SkillSystem:
         # INTUITION (7)
         self._add_skill("Pattern Recognition", get_attr(self.ATTR_INTUITION), "Everything connects.")
         self._add_skill("Paranormal Sensitivity", get_attr(self.ATTR_INTUITION), "The air feels... wrong.")
-        self._add_skill("Profiling", get_attr(self.ATTR_INTUITION), "People are open books.")
+        self._add_skill("Profiling", get_attr(self.ATTR_INTUITION), "Everyone wears a mask.")
         self._add_skill("Instinct", get_attr(self.ATTR_INTUITION), "Gut feeling over facts.")
-        self._add_skill("Subconscious", get_attr(self.ATTR_INTUITION), "Dreams are reality.")
+        self._add_skill("Subconscious", get_attr(self.ATTR_INTUITION), "The boundary between sleep and waking.")
         self._add_skill("Manipulation", get_attr(self.ATTR_INTUITION), "Strings attached.")
-        self._add_skill("Perception", get_attr(self.ATTR_INTUITION), "Eyes wide open.")
+        self._add_skill("Perception", get_attr(self.ATTR_INTUITION), "The world is a tapestry.")
 
         # CONSTITUTION (8)
         self._add_skill("Endurance", get_attr(self.ATTR_CONSTITUTION), "Pain is just information.")
@@ -151,7 +191,7 @@ class SkillSystem:
         self._add_skill("Charm", get_attr(self.ATTR_PRESENCE), "A smile opens doors.")
         self._add_skill("Wits", get_attr(self.ATTR_PRESENCE), "Sharp tongue.")
         self._add_skill("Composure", get_attr(self.ATTR_PRESENCE), "Never let them see you sweat.")
-        self._add_skill("Empathy", get_attr(self.ATTR_PRESENCE), "I feel your pain.")
+        self._add_skill("Empathy", get_attr(self.ATTR_PRESENCE), "You are a mirror of the world's pain.")
         self._add_skill("Interrogation", get_attr(self.ATTR_PRESENCE), "Truth hurts.")
         self._add_skill("Deception", get_attr(self.ATTR_PRESENCE), "A lie is a constructed truth.")
 
@@ -210,12 +250,8 @@ class SkillSystem:
                      }
 
         # --- PERFORM ROLL ---
-        if manual_roll is not None:
-            roll_val = manual_roll
-        else:
-            d1 = random.randint(1, 6)
-            d2 = random.randint(1, 6)
-            roll_val = d1 + d2
+        dice_result = roll_2d6(manual_roll)
+        roll_val = dice_result["total"]
 
         total = roll_val + effective_level
         success = total >= difficulty
@@ -230,7 +266,8 @@ class SkillSystem:
             "type": check_type,
             "blocked": False,
             "skill_level_at_attempt": effective_level,
-            "die_rolls": [manual_roll] if manual_roll else [d1, d2] # approximate for manual
+            "dice": dice_result,
+            "description": get_roll_description(dice_result)
         }
         
         # --- RECORD HISTORY ---

@@ -1,0 +1,32 @@
+
+            {
+              "scene_id": "test_dialogue",
+              "lines": [
+                {
+                  "id": "start",
+                  "speaker": "NPC",
+                  "text": "Hello.",
+                  "choices": [
+                    { "id": "check_choice", "text": "Run Check", "next": "check_node" },
+                    { "id": "theory_choice", "text": "Theory Choice", "next": "theory_node", "require_theory": "TheoryA" }
+                  ],
+                  "passives": ["Empathy"]
+                },
+                {
+                  "id": "check_node",
+                  "speaker": "System",
+                  "text": "Checking...",
+                  "check": {
+                    "skill": "Logic",
+                    "dc": 10,
+                    "white_id": "logic_check",
+                    "success_next": "success_node",
+                    "fail_next": "fail_node"
+                  }
+                },
+                { "id": "success_node", "speaker": "NPC", "text": "Success!" },
+                { "id": "fail_node", "speaker": "NPC", "text": "Fail!" },
+                { "id": "theory_node", "speaker": "NPC", "text": "Theory worked!" }
+              ]
+            }
+            

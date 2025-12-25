@@ -1,0 +1,10 @@
+{
+    "id": "notebook_scene",
+    "text": "You pull out your leather-bound notebook. The pages are filled with frantic scribbles and sketches of symbols you can't quite remember drawing. One entry stands out: 'Don't trust the lights.'",
+    "options": [
+        {
+            "label": "Close the notebook",
+            "next": "intro_scene"
+        }
+    ]
+}

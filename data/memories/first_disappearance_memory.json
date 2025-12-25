@@ -1,0 +1,22 @@
+{
+    "id": "first_disappearance_memory",
+    "type": "memory",
+    "text": "═══════════════════════════════════════════════════════════\n                    SUPPRESSED MEMORY\n═══════════════════════════════════════════════════════════\n\nHer name was Sarah.\n\nYou remember now. How could you have forgotten?\n\nThe coffee shop. The way she laughed. The way she looked at you.\n\nThe last time you saw her, she was walking toward the woods.\n\nYou called out. She turned. Smiled.\n\n\"I'll be right back,\" she said.\n\nShe never came back.\n\nAnd you never told anyone.\n\nWhy didn't you tell anyone?\n\n═══════════════════════════════════════════════════════════",
+    "background_media": null,
+    "choices": [
+        {
+            "text": "[You should have said something]",
+            "next_scene": null,
+            "effects": {
+                "sanity": -5
+            }
+        },
+        {
+            "text": "[It wouldn't have mattered]",
+            "next_scene": null,
+            "effects": {
+                "reality": -5
+            }
+        }
+    ]
+}

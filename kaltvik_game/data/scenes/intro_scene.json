@@ -1,0 +1,29 @@
+{
+    "id": "intro_scene",
+    "text": "You stand at the edge of Kaltvik. Snow crunches beneath your boots. A pale aurora stirs overhead. The wind carries the scent of pine and something metallic.",
+    "objects": {
+        "kaltvik": "A remote Alaskan settlement, buried in snow and secrets.",
+        "aurora": "It flickers in unnatural patterns. You feel watched."
+    },
+    "options": [
+        {
+            "label": "Enter the town",
+            "next": "town_gate"
+        },
+        {
+            "label": "Check your notebook",
+            "next": "notebook_scene"
+        },
+        {
+            "label": "Stare at the aurora",
+            "next": "aurora_scene"
+        }
+    ],
+    "check": {
+        "skill": "Perception",
+        "dc": 12,
+        "white_id": "intro_aurora",
+        "success_text": "You notice strange disturbances in the snow.",
+        "fail_text": "It just looks like normal windblown snow."
+    }
+}
