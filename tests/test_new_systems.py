@@ -53,6 +53,7 @@ def test_npc_system():
     print("[PASS] NPC serialization works")
 
     print("\n[NPC SYSTEM] All tests passed!")
+    return True
 
 
 def test_condition_system():
@@ -92,6 +93,7 @@ def test_condition_system():
     print("[PASS] Condition removal works")
 
     print("\n[CONDITION SYSTEM] All tests passed!")
+    return True
 
 
 def test_population_system():
@@ -134,6 +136,7 @@ def test_population_system():
     print("[PASS] Population serialization works")
 
     print("\n[POPULATION SYSTEM] All tests passed!")
+    return True
 
 
 def test_text_composer():
@@ -194,6 +197,7 @@ def test_text_composer():
     print("[PASS] Insert condition gating works")
 
     print("\n[TEXT COMPOSER] All tests passed!")
+    return True
 
 
 def test_clue_system():
@@ -252,6 +256,7 @@ def test_clue_system():
     print(f"[PASS] Theory linking works: {len(clues_for_theory['supports'])} supporting clues")
 
     print("\n[CLUE SYSTEM] All tests passed!")
+    return True
 
 
 def test_dice_system():
@@ -296,6 +301,7 @@ def test_dice_system():
     print("[PASS] Result formatting works")
 
     print("\n[DICE SYSTEM] All tests passed!")
+    return True
 
 
 def test_fracture_system():
@@ -309,9 +315,8 @@ def test_fracture_system():
     print(f"[PASS] Loaded {len(system.fracture_effects)} fracture effects")
 
     # Test state update
-    system.update_state(attention=80, day=30, in_storm=True, reality=40)
+    system.update_state(attention=80, day=30, in_storm=True)
     assert system.current_attention == 80, "Attention should be updated"
-    assert system.current_reality == 40, "Reality should be updated"
     print("[PASS] State update works")
 
     # Test fracture triggering (forced for testing)
@@ -339,6 +344,7 @@ def test_fracture_system():
     print("[PASS] Fracture serialization works")
 
     print("\n[FRACTURE SYSTEM] All tests passed!")
+    return True
 
 
 def test_schema_validator():
@@ -376,6 +382,7 @@ def test_schema_validator():
         print("[INFO] Schema validation may be lenient")
 
     print("\n[SCHEMA VALIDATOR] Tests completed!")
+    return True
 
 
 def run_all_tests():

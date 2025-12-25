@@ -26,6 +26,7 @@ body, html {
 
 /* Phase 2: Main Title Overlay */
 .main-title-glitch {
+    opacity: 0;
     position: absolute;
     top: 5%;
     left: 5%;
@@ -93,6 +94,7 @@ body, html {
 
 /* Phase 3: Main Menu Overlay */
 .main-menu {
+    opacity: 0;
     position: absolute;
     top: 40%;
     left: 5%;
@@ -116,6 +118,7 @@ body, html {
 
 /* Phase 4: CRT Monitor Container */
 .crt-screen-container {
+    opacity: 0;
     position: absolute;
     /* Approximate placement based on standard monitor position in a scene */
     top: 34%;
@@ -148,6 +151,20 @@ body, html {
     padding-top: 5%; /* Padding to match main screen top: 5% */
     padding-left: 5%;
     box-sizing: border-box;
+    overflow-y: auto; /* Allow scrolling */
+    font-family: 'VT323', monospace;
+    text-align: left;
+}
+
+#input-line {
+    color: var(--green-term);
+    font-size: 1.5rem;
+    margin-top: 10px;
+}
+
+.crt-inner-content span {
+    font-size: 1.5rem;
+    white-space: pre-wrap;
 }
 
 /* Reusing styles for CRT internal content but scoping them if needed */
