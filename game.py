@@ -162,6 +162,10 @@ class Game:
         self.endgame_manager = EndgameManager(self.board, self.player_state, self.skill_system)
         self.memory_system = MemorySystem(resource_path(os.path.join('data', 'memories', 'memories.json')))
         
+        # Initialize Parser Memory (Week 24)
+        from engine.parser_memory import ParserMemory
+        self.parser_memory = ParserMemory()
+
         # Initialize Week 13 Systems: Injury, Trauma, Chase, Environmental
         self.injury_system = InjurySystem()
         self.injury_system.load_injury_database(resource_path(os.path.join('data', 'injuries.json')))
@@ -551,6 +555,10 @@ class Game:
     def step(self, user_input):
         self.output.clear()
         
+        # Track input in Parser Memory (Week 24)
+        if user_input and user_input.strip():
+            self.parser_memory.add_command(user_input)
+
         # 1. Process Input
         if self.in_dialogue:
              self.process_dialogue_input(user_input)
@@ -1290,6 +1298,12 @@ class Game:
 
         # Parser Handling
         if self.input_mode == InputMode.INVESTIGATION:
+            # Week 24: Psychological Effects on Parser
+            if self.player_state["sanity"] < 25 and random.random() < 0.2:
+                # Disassociation or Hallucination
+                self.print(f"You try to speak, but nothing comes out.")
+                return "refresh"
+
             parsed_commands = self.parser.normalize(raw)
             if parsed_commands:
                 for verb, target in parsed_commands:
@@ -1320,7 +1334,27 @@ class Game:
         scene = self.scene_manager.current_scene_data
         objects = scene.get("objects", {})
         
+        # Week 24: Set scene-specific synonyms
+        if "synonyms" in scene:
+            self.parser.set_scene_synonyms(scene["synonyms"])
+
         self.print(f"\n[ACTION: {verb} {target or ''}]")
+
+        # --- WEEK 24: PSYCHOLOGICAL COMMANDS ---
+        if verb == "SCREAM":
+            if self.player_state["sanity"] < 50:
+                self.print("\nYou scream into the void. It feels good.")
+                self.player_state["sanity"] += 2
+            else:
+                self.print("You don't feel the need to scream right now.")
+            return
+
+        if verb == "BURN":
+             if self.player_state["sanity"] < 30:
+                 self.print("\nYou want to watch it burn... but you shouldn't.")
+             else:
+                 self.print("That seems dangerous and unnecessary.")
+             return
 
         # --- NAVIGATION ---
         if verb == "GO":
