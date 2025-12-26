@@ -162,6 +162,16 @@ body, html {
     margin-top: 10px;
 }
 
+#input-line::after {
+    content: '_';
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
 .crt-inner-content span {
     font-size: 1.5rem;
     white-space: pre-wrap;

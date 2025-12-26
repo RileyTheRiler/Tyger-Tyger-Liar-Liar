@@ -122,15 +122,27 @@ class TitleScreen {
         document.addEventListener('keydown', (e) => this.handleInput(e));
 
         this.menuItems.forEach((item, index) => {
-            item.addEventListener('mouseenter', () => {
+            const select = () => {
                 if (this.state === 'main_menu') {
                     this.selectedIndex = index;
                     this.updateSelection();
                     this.audio.playHover();
                 }
-            });
+            };
+
+            item.addEventListener('mouseenter', select);
+            item.addEventListener('focus', select);
+
             item.addEventListener('click', () => {
                 if (this.state === 'main_menu') {
+                    this.selectItem();
+                }
+            });
+
+            // Handle Enter key on focused item
+            item.addEventListener('keydown', (e) => {
+                if (this.state === 'main_menu' && e.key === 'Enter') {
+                    e.stopPropagation(); // Prevent duplicate trigger from document listener
                     this.selectItem();
                 }
             });
@@ -214,7 +226,7 @@ class TitleScreen {
              this.crtContent.appendChild(div);
              inputLine = div;
         }
-        inputLine.innerText = '> ' + this.inputBuffer + '_';
+        inputLine.innerText = '> ' + this.inputBuffer;
         this.scrollToBottom();
     }
 
@@ -363,10 +375,10 @@ class TitleScreen {
             '4': 'text-decoration:underline',
         };
 
-        const parts = text.split(/(\033\[[0-9;]+m)/);
+        const parts = text.split(/(\x1b\[[0-9;]+m)/);
 
         for (let part of parts) {
-            if (part.startsWith('\033[')) {
+            if (part.startsWith('\x1b[')) {
                 // Parse code
                 const codes = part.substring(2, part.length - 1).split(';');
                 for (let c of codes) {
@@ -389,15 +401,23 @@ class TitleScreen {
     }
 }
 
-// Start on click
-document.addEventListener('click', () => {
+// Start on click or key press
+const startGame = () => {
     if (!window.gameApp) {
         window.gameApp = new TitleScreen();
+        const p = document.getElementById('start-prompt');
+        if (p) p.remove();
+        // Remove listeners
+        document.removeEventListener('click', startGame);
+        document.removeEventListener('keydown', startGame);
     }
-}, { once: true });
+};
+
+document.addEventListener('click', startGame, { once: true });
+document.addEventListener('keydown', startGame, { once: true });
 
 const prompt = document.createElement('div');
-prompt.innerText = '[ CLICK TO START ]';
+prompt.innerText = '[ CLICK OR PRESS ANY KEY TO START ]';
 prompt.style.position = 'absolute';
 prompt.style.bottom = '20%';
 prompt.style.width = '100%';
@@ -408,7 +428,3 @@ prompt.style.fontSize = '2rem';
 prompt.id = 'start-prompt';
 document.body.appendChild(prompt);
 
-document.addEventListener('click', () => {
-    const p = document.getElementById('start-prompt');
-    if (p) p.remove();
-});
