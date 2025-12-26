@@ -12,6 +12,7 @@ Evaluates complex conditions based on:
 """
 
 import re
+import json
 from typing import Dict, List, Any, Optional, Set
 from collections import defaultdict
 
@@ -40,15 +41,17 @@ class BranchController:
             return True  # Empty condition = always true
             
         # Check cache
-        cache_key = self._get_cache_key(condition, game_state)
-        if self.cache_enabled and cache_key in self.condition_cache:
-            return self.condition_cache[cache_key]
+        cache_key = None
+        if self.cache_enabled:
+            cache_key = self._get_cache_key(condition, game_state)
+            if cache_key in self.condition_cache:
+                return self.condition_cache[cache_key]
         
         self.last_evaluation_log = []
         result = self._evaluate_condition_recursive(condition, game_state)
         
         # Cache result
-        if self.cache_enabled:
+        if self.cache_enabled and cache_key:
             self.condition_cache[cache_key] = result
             
         return result
@@ -536,7 +539,6 @@ class BranchController:
     def _get_cache_key(self, condition: Dict[str, Any], game_state: Dict[str, Any]) -> str:
         """Generate cache key for condition."""
         # Simple hash of condition + relevant game state
-        import json
         return json.dumps(condition, sort_keys=True)
     
     def _log(self, message: str):
