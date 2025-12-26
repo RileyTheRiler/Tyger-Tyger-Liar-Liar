@@ -5,6 +5,7 @@ import subprocess
 import threading
 import queue
 import time
+import secrets
 from flask import Flask, send_from_directory
 from flask_socketio import SocketIO, emit
 
@@ -14,8 +15,14 @@ ROOT_DIR = os.path.dirname(BASE_DIR)
 TITLE_SCREEN_DIR = os.path.join(BASE_DIR, 'title_screen')
 
 app = Flask(__name__, static_folder='title_screen')
-app.config['SECRET_KEY'] = 'tyger_tyger_secret'
-socketio = SocketIO(app, cors_allowed_origins='*')
+
+# SECURITY: Load secret key from environment or generate a secure random one
+app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
+
+# SECURITY: Restrict CORS to localhost by default
+# Allow overriding via environment variable for specific needs
+cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', "http://localhost:5000,http://127.0.0.1:5000").split(',')
+socketio = SocketIO(app, cors_allowed_origins=cors_origins)
 
 # Global process handle
 game_process = None
@@ -101,4 +108,11 @@ def handle_disconnect():
 if __name__ == '__main__':
     # Use eventlet if installed, otherwise standard
     port = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
+
+    # SECURITY: Bind to localhost only by default
+    host = os.environ.get("HOST", "127.0.0.1")
+
+    # SECURITY: Disable debug mode in production (default to False unless explicitly enabled)
+    debug_mode = os.environ.get("FLASK_DEBUG", "False").lower() == "true"
+
+    socketio.run(app, host=host, port=port, debug=debug_mode, allow_unsafe_werkzeug=debug_mode)
