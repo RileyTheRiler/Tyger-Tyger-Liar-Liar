@@ -47,10 +47,6 @@ def take_action(request: ActionRequest):
 def get_state():
     return game_instance.get_ui_state()
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
-
 @app.post("/api/shutdown")
 def shutdown_server():
     def kill_server():
@@ -63,3 +59,10 @@ def shutdown_server():
     import threading
     threading.Thread(target=kill_server).start()
     return {"status": "shutting_down"}
+
+if __name__ == "__main__":
+    import uvicorn
+    # SECURITY: Bind to localhost by default
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", 8001))
+    uvicorn.run(app, host=host, port=port)
