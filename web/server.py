@@ -5,6 +5,7 @@ import subprocess
 import threading
 import queue
 import time
+import secrets
 from flask import Flask, send_from_directory
 from flask_socketio import SocketIO, emit
 
@@ -14,7 +15,8 @@ ROOT_DIR = os.path.dirname(BASE_DIR)
 TITLE_SCREEN_DIR = os.path.join(BASE_DIR, 'title_screen')
 
 app = Flask(__name__, static_folder='title_screen')
-app.config['SECRET_KEY'] = 'tyger_tyger_secret'
+# Sentinel: Replaced hardcoded secret with secure generation
+app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 socketio = SocketIO(app, cors_allowed_origins='*')
 
 # Global process handle
