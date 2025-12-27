@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
+// eslint-disable-next-line no-unused-vars -- motion is used in JSX (<motion.div>) but not detected by linter
 import { motion } from 'framer-motion';
 import './Terminal.css';
 
@@ -21,7 +22,7 @@ const Terminal = ({ history }) => {
     );
 };
 
-const TerminalEntry = ({ entry }) => {
+const TerminalEntry = memo(({ entry }) => {
     const isInput = entry.type === 'input';
 
     // Split text by newlines to handle multi-line outputs (for staggered animation)
@@ -48,7 +49,7 @@ const TerminalEntry = ({ entry }) => {
             ))}
         </div>
     );
-};
+});
 
 // Simple formatter for bold/color (can be expanded)
 const formatLine = (text) => {
