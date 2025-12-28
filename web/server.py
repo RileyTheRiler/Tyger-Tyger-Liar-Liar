@@ -17,7 +17,10 @@ TITLE_SCREEN_DIR = os.path.join(BASE_DIR, 'title_screen')
 app = Flask(__name__, static_folder='title_screen')
 # Sentinel: Replaced hardcoded secret with secure generation
 app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
-socketio = SocketIO(app, cors_allowed_origins='*')
+
+# Sentinel: Restricted CORS to localhost by default. Allow override via env for remote play.
+allowed_origins = [origin.strip() for origin in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173').split(',')]
+socketio = SocketIO(app, cors_allowed_origins=allowed_origins)
 
 # Global process handle
 game_process = None
@@ -103,4 +106,9 @@ def handle_disconnect():
 if __name__ == '__main__':
     # Use eventlet if installed, otherwise standard
     port = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
+    # Sentinel: Default to localhost for security. Use 0.0.0.0 only if strictly necessary.
+    host = os.environ.get("HOST", "127.0.0.1")
+    # Sentinel: Disable debug mode in production context.
+    debug_mode = os.environ.get("FLASK_DEBUG", "False").lower() == "true"
+
+    socketio.run(app, host=host, port=port, debug=debug_mode)
