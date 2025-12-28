@@ -10,6 +10,7 @@ import BootSequence from './components/BootSequence'
 import MindMap from './components/MindMap'
 import TitleScreen from './components/TitleScreen'
 import AudioManager from './components/AudioManager'
+import VHSEffect from './components/VHSEffect'
 import './App.css'
 
 function App() {
