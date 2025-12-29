@@ -49,7 +49,8 @@ def get_state():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    # Sentinel: Bind to localhost to prevent network exposure
+    uvicorn.run(app, host="127.0.0.1", port=8001)
 
 @app.post("/api/shutdown")
 def shutdown_server():

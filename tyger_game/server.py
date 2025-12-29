@@ -100,4 +100,5 @@ def shutdown():
     os._exit(0)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    # Sentinel: Bind to localhost to prevent network exposure
+    uvicorn.run(app, host="127.0.0.1", port=8001)
