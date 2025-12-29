@@ -1,0 +1,3 @@
+## 2024-10-24 - Accessibility in Diegetic UI
+**Learning:** Highly stylized "diegetic" UI components (like analog gauges or CRT terminals) often get implemented as pure `div`s with CSS/Canvas, making them invisible to screen readers. In this app, `AnalogGauge` was visually rich but semantically empty.
+**Action:** Always map custom visual indicators to their closest semantic HTML equivalent (e.g., `role="progressbar"` for gauges/meters) and ensure `aria-valuenow` and `aria-label` are updated dynamically to match the visual state. The visual metaphor (needle position) must have a digital twin (ARIA value).
