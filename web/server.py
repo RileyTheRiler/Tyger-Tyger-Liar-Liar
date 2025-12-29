@@ -103,4 +103,6 @@ def handle_disconnect():
 if __name__ == '__main__':
     # Use eventlet if installed, otherwise standard
     port = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
+    # Sentinel: Bind to localhost and disable debug to prevent RCE/network exposure
+    debug_mode = os.environ.get("FLASK_DEBUG", "False").lower() == "true"
+    socketio.run(app, host='127.0.0.1', port=port, debug=debug_mode, allow_unsafe_werkzeug=debug_mode)
