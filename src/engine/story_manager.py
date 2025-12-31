@@ -119,3 +119,7 @@ class StoryManager:
         """Syncs local state with player state after load."""
         if "triggered_story_events" in self.player_state:
             self.triggered_events = set(self.player_state["triggered_story_events"])
+
+    def set_scene_manager(self, scene_manager):
+        """Inject SceneManager dependency."""
+        self.scene_manager = scene_manager
