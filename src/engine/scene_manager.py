@@ -7,9 +7,8 @@ from typing import Optional
 from engine.branch_controller import BranchController
 
 class SceneManager:
-    def __init__(self, time_system, board, skill_system, player_state, flashback_manager, clue_system=None):
     def __init__(self, time_system, board, skill_system, player_state, flashback_manager, 
-                 npc_system=None, attention_system=None, inventory_system=None):
+                 npc_system=None, attention_system=None, inventory_system=None, clue_system=None):
         self.scenes = {}
         self.current_scene_data = None
         self.current_scene_id = None
@@ -130,16 +129,7 @@ class SceneManager:
         if not conditions:
             return True
             
-            # Access datetime object
-            current_h = self.time_system.current_time.hour 
-            
-            if start_h <= end_h:
-                if not (start_h <= current_h < end_h):
-                    return False
-            else: # Overnight e.g. 22:00 to 06:00
-                if not (current_h >= start_h or current_h < end_h):
-                    return False
-
+        # Legacy checks if not using BranchController full logic, or pre-check
         # Weather Check
         if "weather" in conditions:
             allowed = conditions["weather"]
@@ -168,7 +158,6 @@ class SceneManager:
                 if required_lens and state.current_lens != required_lens:
                     return False
 
-        return True
         game_state = self._get_game_state()
         return self.branch_controller.evaluate_condition(conditions, game_state)
 
