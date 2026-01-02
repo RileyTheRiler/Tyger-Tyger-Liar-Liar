@@ -26,15 +26,21 @@ def test_cutoff():
         except:
             print("Server failed to start.")
             process.kill()
-            return
+            sys.exit(1)
 
-        # Send shutdown
-        print("Sending shutdown command...")
+        # Send shutdown - EXPECTING FAILURE (404)
+        print("Sending shutdown command (expecting 404)...")
         try:
-            requests.post(f"{url}/shutdown", timeout=1)
+            response = requests.post(f"{url}/shutdown", timeout=1)
+            if response.status_code == 404:
+                print("Got 404 Not Found as expected.")
+            else:
+                print(f"Unexpected status code: {response.status_code}")
+                process.kill()
+                sys.exit(1)
         except requests.exceptions.ReadTimeout:
-            # This is expected if server dies immediately
-            pass
+             print("Request timed out - server might have died!")
+
         except Exception as e:
             print(f"Error sending shutdown: {e}")
 
@@ -42,16 +48,18 @@ def test_cutoff():
         
         # Check if dead
         is_running = process.poll() is None
-        if not is_running:
-            print("Server terminated successfully.")
-        else:
-            print("Server is still running. Test FAILED.")
+        if is_running:
+            print("Server is still running. Test PASSED.")
             process.kill()
+        else:
+            print("Server terminated. Test FAILED.")
+            sys.exit(1)
 
     except Exception as e:
         print(f"Test Exception: {e}")
         if process.poll() is None:
             process.kill()
+        sys.exit(1)
 
 if __name__ == "__main__":
     test_cutoff()
