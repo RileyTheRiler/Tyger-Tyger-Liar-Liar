@@ -103,8 +103,16 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
     }, [value]);
 
     return (
-        <div className="stat-unit">
-            <div className="gauge-display">
+        <div
+            className="stat-unit"
+            role="progressbar"
+            aria-label={`${label} Level`}
+            aria-valuenow={value}
+            aria-valuemin="0"
+            aria-valuemax="100"
+            title={`${label}: ${value}%`}
+        >
+            <div className="gauge-display" aria-hidden="true">
                 <div className="gauge-ticks" />
                 <div
                     className="gauge-needle"
@@ -114,7 +122,7 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
                     }}
                 />
             </div>
-            <div className="stat-header">
+            <div className="stat-header" aria-hidden="true">
                 <span className="stat-label">{label}</span>
                 {/* Optional digital readout below */}
                 {/* <span className="stat-value">{value}%</span> */}
