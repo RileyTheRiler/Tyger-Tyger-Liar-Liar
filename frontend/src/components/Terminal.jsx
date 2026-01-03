@@ -21,7 +21,8 @@ const Terminal = ({ history }) => {
     );
 };
 
-const TerminalEntry = ({ entry }) => {
+// Memoized to prevent re-rendering of existing history entries when new lines are added
+const TerminalEntry = React.memo(({ entry }) => {
     const isInput = entry.type === 'input';
 
     // Split text by newlines to handle multi-line outputs (for staggered animation)
@@ -48,7 +49,7 @@ const TerminalEntry = ({ entry }) => {
             ))}
         </div>
     );
-};
+});
 
 // Simple formatter for bold/color (can be expanded)
 const formatLine = (text) => {
