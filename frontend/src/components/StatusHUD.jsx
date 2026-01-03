@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SubliminalText from './SubliminalText';
 import './StatusHUD.css';
@@ -64,6 +64,7 @@ const StatusHUD = ({ uiState }) => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
+                        role="alert"
                     >
                         {lowSanity && <div className="warning-text">CRITICAL STRESS</div>}
                         {breakReality && <div className="warning-text">REALITY FRACTURE</div>}
@@ -88,6 +89,7 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
 
     // Jitter the needle slightly based on value (lower = more jitter)
     const [jitter, setJitter] = useState(0);
+    const labelId = useId();
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -103,8 +105,16 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
     }, [value]);
 
     return (
-        <div className="stat-unit">
-            <div className="gauge-display">
+        <div
+            className="stat-unit"
+            role="progressbar"
+            aria-labelledby={labelId}
+            aria-valuenow={Math.round(value)}
+            aria-valuemin="0"
+            aria-valuemax="100"
+            title={`${label}: ${Math.round(value)}%`}
+        >
+            <div className="gauge-display" aria-hidden="true">
                 <div className="gauge-ticks" />
                 <div
                     className="gauge-needle"
@@ -115,7 +125,7 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
                 />
             </div>
             <div className="stat-header">
-                <span className="stat-label">{label}</span>
+                <span id={labelId} className="stat-label">{label}</span>
                 {/* Optional digital readout below */}
                 {/* <span className="stat-value">{value}%</span> */}
             </div>
