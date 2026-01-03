@@ -10,6 +10,7 @@ import BootSequence from './components/BootSequence'
 import MindMap from './components/MindMap'
 import TitleScreen from './components/TitleScreen'
 import AudioManager from './components/AudioManager'
+import VHSEffect from './components/VHSEffect' // Added missing import
 import './App.css'
 
 function App() {
@@ -20,6 +21,21 @@ function App() {
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [showBoard, setShowBoard] = useState(false)
+
+  // Moved initGame definition before usage in useEffect
+  const initGame = async () => {
+    setLoading(true)
+    try {
+      const data = await startGame()
+      if (data) {
+        setHistory([{ type: 'output', text: data.output }])
+        setUiState(data.state)
+      }
+    } catch (e) {
+      setHistory([{ type: 'output', text: "ERROR: CONNECTION_LOST_TO_MAINFRAME" }])
+    }
+    setLoading(false)
+  }
 
   const handleStartGame = () => {
     setShowTitle(false)
@@ -39,20 +55,6 @@ function App() {
       initGame()
     }
   }, [showTitle, booting])
-
-  const initGame = async () => {
-    setLoading(true)
-    try {
-      const data = await startGame()
-      if (data) {
-        setHistory([{ type: 'output', text: data.output }])
-        setUiState(data.state)
-      }
-    } catch (e) {
-      setHistory([{ type: 'output', text: "ERROR: CONNECTION_LOST_TO_MAINFRAME" }])
-    }
-    setLoading(false)
-  }
 
   const handleSend = async (txt) => {
     if (!txt) return
