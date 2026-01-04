@@ -23,10 +23,9 @@ export const sendAction = async (input) => {
 };
 
 export const shutdownGame = async () => {
-    try {
-        await axios.post(`${API_URL}/shutdown`);
-        return true;
-    } catch (err) {
-        return true;
-    }
+    // Sentinel: Removed insecure remote shutdown capability.
+    // This is now a client-side only operation (closing the window/clearing state)
+    // or requires manual server termination.
+    console.log("Remote shutdown disabled for security.");
+    return true;
 };
