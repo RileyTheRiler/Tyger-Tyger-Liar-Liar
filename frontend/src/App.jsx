@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { startGame, sendAction, shutdownGame } from './api'
 import Layout from './components/Layout'
 import Terminal from './components/Terminal'
@@ -10,6 +10,7 @@ import BootSequence from './components/BootSequence'
 import MindMap from './components/MindMap'
 import TitleScreen from './components/TitleScreen'
 import AudioManager from './components/AudioManager'
+import VHSEffect from './components/VHSEffect'
 import './App.css'
 
 function App() {
@@ -20,6 +21,20 @@ function App() {
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [showBoard, setShowBoard] = useState(false)
+
+  const initGame = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await startGame()
+      if (data) {
+        setHistory([{ type: 'output', text: data.output }])
+        setUiState(data.state)
+      }
+    } catch {
+      setHistory([{ type: 'output', text: "ERROR: CONNECTION_LOST_TO_MAINFRAME" }])
+    }
+    setLoading(false)
+  }, [])
 
   const handleStartGame = () => {
     setShowTitle(false)
@@ -38,21 +53,8 @@ function App() {
     if (!showTitle && !booting) {
       initGame()
     }
-  }, [showTitle, booting])
+  }, [showTitle, booting, initGame])
 
-  const initGame = async () => {
-    setLoading(true)
-    try {
-      const data = await startGame()
-      if (data) {
-        setHistory([{ type: 'output', text: data.output }])
-        setUiState(data.state)
-      }
-    } catch (e) {
-      setHistory([{ type: 'output', text: "ERROR: CONNECTION_LOST_TO_MAINFRAME" }])
-    }
-    setLoading(false)
-  }
 
   const handleSend = async (txt) => {
     if (!txt) return
@@ -66,7 +68,7 @@ function App() {
         setHistory(prev => [...prev, { type: 'output', text: data.output }])
         setUiState(data.state)
       }
-    } catch (e) {
+    } catch {
       setHistory(prev => [...prev, { type: 'output', text: "ERROR: SIGNAL_INTERRUPTED" }])
     }
     setLoading(false)

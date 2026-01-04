@@ -26,7 +26,7 @@ export const shutdownGame = async () => {
     try {
         await axios.post(`${API_URL}/shutdown`);
         return true;
-    } catch (err) {
+    } catch {
         return true;
     }
 };
