@@ -21,35 +21,31 @@ const Typewriter = ({ text, speed = 10, onComplete }) => {
         }
     }, [charIndex, fullPlainText, speed, onComplete]);
 
-    // 3. Render logic: reconstruction
-    // We iterate through tokens. If token fits fully inside charIndex, render it total.
-    // If token is partially inside charIndex, render partial.
-    // If token is outside, stop.
+    // 3. Render logic using reduce to track offset without side effects
+    const { elements } = tokens.reduce((acc, token, i) => {
+        if (acc.currentOffset >= charIndex) return acc;
 
-    let charsConsumed = 0;
+        const charsNeeded = token.text.length;
+        const charsAvailable = charIndex - acc.currentOffset;
+
+        let textToDisplay = token.text;
+        if (charsAvailable < charsNeeded) {
+            textToDisplay = token.text.slice(0, charsAvailable);
+        }
+
+        acc.elements.push(
+            <span key={i} className={`rt-${token.style}`}>
+                {textToDisplay}
+            </span>
+        );
+
+        acc.currentOffset += charsNeeded;
+        return acc;
+    }, { elements: [], currentOffset: 0 });
 
     return (
         <span className="typewriter-container">
-            {tokens.map((token, i) => {
-                if (charsConsumed >= charIndex) return null; // Not reached yet
-
-                const charsNeeded = token.text.length;
-                const charsAvailable = charIndex - charsConsumed;
-
-                let textToDisplay = token.text;
-                if (charsAvailable < charsNeeded) {
-                    textToDisplay = token.text.slice(0, charsAvailable);
-                }
-
-                charsConsumed += charsNeeded;
-
-                // Render span with style
-                return (
-                    <span key={i} className={`rt-${token.style}`}>
-                        {textToDisplay}
-                    </span>
-                );
-            })}
+            {elements}
             <span className="cursor-block"></span>
         </span>
     );

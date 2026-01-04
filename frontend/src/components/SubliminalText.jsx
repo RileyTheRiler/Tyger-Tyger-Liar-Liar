@@ -9,11 +9,13 @@ const SubliminalText = ({ text, sanity = 100, className = '' }) => {
     const panic = Math.max(0, 100 - sanity);
     const isUnstable = panic > 40; // Starts glitching below 60 sanity
 
+    // Update display when text changes, but respect instability later
     useEffect(() => {
-        if (!isUnstable) {
-            setDisplay(text);
-            return;
-        }
+        setDisplay(text);
+    }, [text]);
+
+    useEffect(() => {
+        if (!isUnstable) return;
 
         const CORRUPTIONS = [
             "WAKE UP", "LIAR", "THEY KNOW", "RUN", "FALSE",

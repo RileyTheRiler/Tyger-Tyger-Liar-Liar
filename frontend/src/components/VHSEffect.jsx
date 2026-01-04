@@ -4,8 +4,20 @@ import './VHSEffect.css';
 const VHSEffect = ({ active, mentalLoad = 0, attention = 0, disorientation = false, instability = false }) => {
     const [renderParams, setRenderParams] = useState({
         glitchOffset: 0,
-        noiseOpacity: 0.1
+        noiseOpacity: 0.1,
+        trackingPos: 0,
+        criticalScale: 1
     });
+
+    const [randomSeed, setRandomSeed] = useState(0);
+
+    // Update random seed occasionally to drive OS glitches
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setRandomSeed(Math.random());
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         let interval;
@@ -29,7 +41,8 @@ const VHSEffect = ({ active, mentalLoad = 0, attention = 0, disorientation = fal
             setRenderParams({
                 glitchOffset: (Math.random() * (5 + attentionGlitch + majorGlitch)) - (2.5 + attentionGlitch / 2),
                 noiseOpacity: 0.05 + stressNoise + (Math.random() * 0.1),
-                trackingPos: (Math.random() * attentionFactor * 10) // Vertical tracking jitter
+                trackingPos: (Math.random() * attentionFactor * 10), // Vertical tracking jitter
+                criticalScale: mentalLoad > 90 ? (1 + Math.random() * 0.05) : 1
             });
         }, baseInterval);
 
@@ -39,8 +52,11 @@ const VHSEffect = ({ active, mentalLoad = 0, attention = 0, disorientation = fal
     // Critical Failure State Style
     const criticalStyle = mentalLoad > 90 ? {
         filter: 'grayscale(1) contrast(1.5) brightness(0.8)',
-        transform: `scale(${1 + Math.random() * 0.05})`
+        transform: `scale(${renderParams.criticalScale})`
     } : {};
+
+    // Deterministic random for OS display based on seed
+    const spSeconds = Math.floor(randomSeed * 60).toString().padStart(2, '0');
 
     return (
         <div className={`vhs-container active ${instability ? 'instability-panic' : ''}`}>
@@ -58,7 +74,7 @@ const VHSEffect = ({ active, mentalLoad = 0, attention = 0, disorientation = fal
             {/* OSD (On Screen Display) - Reactive text */}
             <div className="vhs-osd">
                 <span className="play-text">{disorientation ? "ERR: LOSS" : "PLAY"}</span>
-                <span className="tape-counter">SP 0:00:{Math.floor(Math.random() * 60).toString().padStart(2, '0')}</span>
+                <span className="tape-counter">SP 0:00:{spSeconds}</span>
             </div>
         </div>
     );

@@ -3,17 +3,19 @@ import { motion } from 'framer-motion';
 import './MindMap.css';
 
 const MindMap = ({ boardData, onClose }) => {
-    if (!boardData || !boardData.nodes || boardData.nodes.length === 0) {
-        return (
-            <div className="mindmap-overlay empty" onClick={onClose}>
-                <div className="empty-message">NO ACTIVE THEORIES</div>
-            </div>
-        );
-    }
+    // Simple pseudo-random function for deterministic positioning
+    const pseudoRandom = (seed) => {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+    };
 
     // Simple force-directed-like positioning (pseudo-random but deterministic based on ID)
     // In a real app we'd use d3-force, but for 5-10 nodes, static + random jitter is fine
     const { nodes, links } = useMemo(() => {
+        if (!boardData || !boardData.nodes || boardData.nodes.length === 0) {
+            return { nodes: [], links: [] };
+        }
+
         const width = 800; // Virtual canvas width
         const height = 600;
 
@@ -27,15 +29,27 @@ const MindMap = ({ boardData, onClose }) => {
 
             // Simple deterministic position based on char codes of ID if we wanted, 
             // but index-based circle is cleaner for now.
+            // Using i + 1 to avoid sin(0) issues if relevant, though 0 is fine
+            const jitterX = (pseudoRandom(i * 123) * 50) - 25;
+            const jitterY = (pseudoRandom(i * 321) * 50) - 25;
+
             return {
                 ...node,
-                x: width / 2 + Math.cos(angle) * radius + (Math.random() * 50 - 25),
-                y: height / 2 + Math.sin(angle) * radius + (Math.random() * 50 - 25)
+                x: width / 2 + Math.cos(angle) * radius + jitterX,
+                y: height / 2 + Math.sin(angle) * radius + jitterY
             };
         });
 
         return { nodes: processedNodes, links: boardData.links };
     }, [boardData]);
+
+    if (!boardData || !boardData.nodes || boardData.nodes.length === 0) {
+        return (
+            <div className="mindmap-overlay empty" onClick={onClose}>
+                <div className="empty-message">NO ACTIVE THEORIES</div>
+            </div>
+        );
+    }
 
     return (
         <div className="mindmap-overlay">
