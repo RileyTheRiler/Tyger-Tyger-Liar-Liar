@@ -10,6 +10,7 @@ class StoryManager:
         self.population_system = population_system
         self.player_state = player_state
         self.output = output_buffer
+        self.scene_manager = None
         
         # Register listener
         self.time_system.add_listener(self.check_timeline_events)
@@ -114,6 +115,10 @@ class StoryManager:
             self.output.print("A crowd gathers in the Town Square. A ring of black feathers surrounds the statue.")
             self.output.print("Hundreds of starlings. Necks broken. Arranged perfectly.")
             self.output.print(f"{Colors.YELLOW}Journal Updated: 'The Circle'{Colors.RESET}\n")
+
+    def set_scene_manager(self, scene_manager):
+        """Sets the scene manager instance."""
+        self.scene_manager = scene_manager
 
     def restore_state(self):
         """Syncs local state with player state after load."""
