@@ -50,16 +50,3 @@ def get_state():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
-
-@app.post("/api/shutdown")
-def shutdown_server():
-    def kill_server():
-        import time
-        time.sleep(0.5)
-        # On Windows, SIGTERM is brutal. sys.exit might be cleaner if running directly, 
-        # but os.kill is sure to work for the external process.
-        os.kill(os.getpid(), signal.SIGTERM)
-    
-    import threading
-    threading.Thread(target=kill_server).start()
-    return {"status": "shutting_down"}
