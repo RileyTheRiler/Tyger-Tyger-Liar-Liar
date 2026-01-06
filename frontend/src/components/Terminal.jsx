@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import { motion } from 'framer-motion';
 import './Terminal.css';
 
@@ -21,7 +21,9 @@ const Terminal = ({ history }) => {
     );
 };
 
-const TerminalEntry = ({ entry }) => {
+// Optimization: Memoize TerminalEntry to prevent re-rendering the entire history
+// on every keystroke or new entry. This changes list rendering from O(N) to O(1).
+const TerminalEntry = memo(({ entry }) => {
     const isInput = entry.type === 'input';
 
     // Split text by newlines to handle multi-line outputs (for staggered animation)
@@ -48,7 +50,9 @@ const TerminalEntry = ({ entry }) => {
             ))}
         </div>
     );
-};
+});
+
+TerminalEntry.displayName = 'TerminalEntry';
 
 // Simple formatter for bold/color (can be expanded)
 const formatLine = (text) => {
