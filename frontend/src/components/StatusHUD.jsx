@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import SubliminalText from './SubliminalText';
 import './StatusHUD.css';
 
@@ -59,15 +59,16 @@ const StatusHUD = ({ uiState }) => {
 
             <AnimatePresence>
                 {(lowSanity || breakReality) && (
-                    <motion.div
+                    <Motion.div
                         className="hud-warning-box"
+                        role="alert"
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                     >
                         {lowSanity && <div className="warning-text">CRITICAL STRESS</div>}
                         {breakReality && <div className="warning-text">REALITY FRACTURE</div>}
-                    </motion.div>
+                    </Motion.div>
                 )}
             </AnimatePresence>
 
@@ -103,7 +104,14 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
     }, [value]);
 
     return (
-        <div className="stat-unit">
+        <div
+            className="stat-unit"
+            role="progressbar"
+            aria-valuenow={value}
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-label={`${label} Level`}
+        >
             <div className="gauge-display">
                 <div className="gauge-ticks" />
                 <div
@@ -115,7 +123,7 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
                 />
             </div>
             <div className="stat-header">
-                <span className="stat-label">{label}</span>
+                <span className="stat-label" aria-hidden="true">{label}</span>
                 {/* Optional digital readout below */}
                 {/* <span className="stat-value">{value}%</span> */}
             </div>
