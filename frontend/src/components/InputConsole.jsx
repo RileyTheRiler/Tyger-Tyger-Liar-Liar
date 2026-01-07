@@ -59,6 +59,8 @@ const InputConsole = ({ input, setInput, handleSend, loading }) => {
                 disabled={loading}
                 spellCheck="false"
                 autoComplete="off"
+                aria-label="Terminal Input"
+                aria-busy={loading}
             />
             <div className={`cursor-block ${loading ? 'busy' : ''}`}></div>
         </div>
