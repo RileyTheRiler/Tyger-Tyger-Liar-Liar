@@ -10,6 +10,7 @@ class StoryManager:
         self.population_system = population_system
         self.player_state = player_state
         self.output = output_buffer
+        self.scene_manager = None # Added for set_scene_manager
         
         # Register listener
         self.time_system.add_listener(self.check_timeline_events)
@@ -21,6 +22,10 @@ class StoryManager:
             self.triggered_events = set(self.player_state["triggered_story_events"])
         else:
             self.player_state["triggered_story_events"] = []
+
+    def set_scene_manager(self, scene_manager):
+        """Dependency injection for SceneManager."""
+        self.scene_manager = scene_manager
 
     def check_timeline_events(self, minutes_passed: int):
         """Called whenever time passes in the game."""
