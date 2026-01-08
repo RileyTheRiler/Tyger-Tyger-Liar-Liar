@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useRef, memo } from 'react';
+import { motion as Motion } from 'framer-motion';
 import './Terminal.css';
 
 const Terminal = ({ history }) => {
@@ -21,7 +21,9 @@ const Terminal = ({ history }) => {
     );
 };
 
-const TerminalEntry = ({ entry }) => {
+// Optimization: Memoize TerminalEntry to prevent re-rendering previous lines
+// when a new line is added to history.
+const TerminalEntry = memo(({ entry }) => {
     const isInput = entry.type === 'input';
 
     // Split text by newlines to handle multi-line outputs (for staggered animation)
@@ -30,7 +32,7 @@ const TerminalEntry = ({ entry }) => {
     return (
         <div className={`term-entry ${isInput ? 'term-input' : 'term-output'}`}>
             {lines.map((line, i) => (
-                <motion.div
+                <Motion.div
                     key={i}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -44,11 +46,13 @@ const TerminalEntry = ({ entry }) => {
                     {isInput && i === 0 && <span className="prompt-char">{">"}</span>}
                     {/* Basic markdown-like highlighting can go here if needed */}
                     <span dangerouslySetInnerHTML={{ __html: formatLine(line) }} />
-                </motion.div>
+                </Motion.div>
             ))}
         </div>
     );
-};
+});
+
+TerminalEntry.displayName = 'TerminalEntry';
 
 // Simple formatter for bold/color (can be expanded)
 const formatLine = (text) => {
