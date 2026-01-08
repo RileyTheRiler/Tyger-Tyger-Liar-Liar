@@ -23,10 +23,7 @@ export const sendAction = async (input) => {
 };
 
 export const shutdownGame = async () => {
-    try {
-        await axios.post(`${API_URL}/shutdown`);
-        return true;
-    } catch (err) {
-        return true;
-    }
+    // Sentinel: Removed insecure shutdown endpoint call.
+    // Client-side shutdown simulation only.
+    return Promise.resolve(true);
 };
