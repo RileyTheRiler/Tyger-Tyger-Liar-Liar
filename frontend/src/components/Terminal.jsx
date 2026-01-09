@@ -1,6 +1,12 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import './Terminal.css';
+
+// Regex patterns defined outside to avoid recreation
+const SKILL_CHECK_REGEX = /\[([A-Z\s]+)\]/g;
+const BOLD_REGEX = /\*\*(.*?)\*\*/g;
+const SYSTEM_TEXT_REGEX = /(EVIDENCE ADDED|ITEM GAINED)/g;
 
 const Terminal = ({ history }) => {
     const bottomRef = useRef(null);
@@ -21,7 +27,9 @@ const Terminal = ({ history }) => {
     );
 };
 
-const TerminalEntry = ({ entry }) => {
+// ⚡ Bolt: Wrapped in React.memo to prevent re-rendering of existing entries
+// when new history items are added. This changes rendering from O(N) to O(1).
+const TerminalEntry = memo(({ entry }) => {
     const isInput = entry.type === 'input';
 
     // Split text by newlines to handle multi-line outputs (for staggered animation)
@@ -48,25 +56,26 @@ const TerminalEntry = ({ entry }) => {
             ))}
         </div>
     );
-};
+});
+
+TerminalEntry.displayName = 'TerminalEntry';
 
 // Simple formatter for bold/color (can be expanded)
 const formatLine = (text) => {
     if (!text) return "";
 
     // 1. Handle Skill Checks: [PATTERN RECOGNITION] -> <span class="skill-check">...</span>
-    // Regex matching [WORDS] at the start or distinctively
     let formatted = text.replace(
-        /\[([A-Z\s]+)\]/g,
+        SKILL_CHECK_REGEX,
         '<span class="skill-check">[$1]</span>'
     );
 
     // 2. Handle Markdown bold **text**
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(BOLD_REGEX, '<strong>$1</strong>');
 
     // 3. Handle specific system text if needed (e.g. EVIDENCE ADDED)
     formatted = formatted.replace(
-        /(EVIDENCE ADDED|ITEM GAINED)/g,
+        SYSTEM_TEXT_REGEX,
         '<span class="system-text">$1</span>'
     );
 
