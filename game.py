@@ -199,7 +199,8 @@ class Game:
             self.skill_system, 
             self.player_state,
             self.flashback_manager,
-            clue_system=None # Injected later or we can move ClueSystem init up
+            # clue_system=None # Injected later or we can move ClueSystem init up
+            # FIXED: Removed clue_system from here, as per SceneManager.__init__ change
         )
         self.last_composed_text = ""
         

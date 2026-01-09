@@ -23,10 +23,7 @@ export const sendAction = async (input) => {
 };
 
 export const shutdownGame = async () => {
-    try {
-        await axios.post(`${API_URL}/shutdown`);
-        return true;
-    } catch (err) {
-        return true;
-    }
+    // Security: Shutdown endpoint removed to prevent unauthenticated access.
+    // Client-side shutdown behavior is preserved (closing tab/showing NO_SIGNAL).
+    return Promise.resolve(true);
 };
