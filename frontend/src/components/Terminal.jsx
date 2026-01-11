@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import { motion } from 'framer-motion';
 import './Terminal.css';
 
@@ -21,7 +21,10 @@ const Terminal = ({ history }) => {
     );
 };
 
-const TerminalEntry = ({ entry }) => {
+// ⚡ Bolt Optimization: Wrapped in React.memo to prevent re-rendering of existing
+// history items when new ones are added. Since history is append-only,
+// previous entries never change and shouldn't re-render.
+const TerminalEntry = memo(({ entry }) => {
     const isInput = entry.type === 'input';
 
     // Split text by newlines to handle multi-line outputs (for staggered animation)
@@ -48,7 +51,7 @@ const TerminalEntry = ({ entry }) => {
             ))}
         </div>
     );
-};
+});
 
 // Simple formatter for bold/color (can be expanded)
 const formatLine = (text) => {
