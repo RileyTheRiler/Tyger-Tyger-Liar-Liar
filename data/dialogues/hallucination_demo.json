@@ -1,0 +1,55 @@
+{
+  "id": "hallucination_demo",
+  "npc_id": "demo_shadow",
+  "nodes": [
+    {
+      "id": "start",
+      "text": "The shadows lengthen. A figure watches you.",
+      "choices": [
+        {
+          "text": "Ask who they are.",
+          "next": "response_who",
+          "reliability": "true"
+        },
+        {
+          "text": "Wave politely.",
+          "next": "response_wave",
+          "reliability": "true"
+        },
+        {
+          "text": "Scream until your throat bleeds.",
+          "next": "response_scream",
+          "reliability": "false"
+        },
+        {
+          "text": "Deny their existence.",
+          "next": "response_deny",
+          "visibility_conditions": {
+            "sanity_min": 50
+          },
+           "reliability": "true"
+        }
+      ]
+    },
+    {
+      "id": "response_who",
+      "text": "It's just a coat rack.",
+      "choices": [{"text": "End", "next": "EXIT_DIALOGUE"}]
+    },
+    {
+      "id": "response_wave",
+      "text": "You wave at the empty air.",
+      "choices": [{"text": "End", "next": "EXIT_DIALOGUE"}]
+    },
+    {
+      "id": "response_scream",
+      "text": "The sound creates cracks in the wall.",
+      "choices": [{"text": "Run", "next": "EXIT_DIALOGUE"}]
+    },
+    {
+      "id": "response_deny",
+      "text": "The figure fades away.",
+      "choices": [{"text": "End", "next": "EXIT_DIALOGUE"}]
+    }
+  ]
+}
