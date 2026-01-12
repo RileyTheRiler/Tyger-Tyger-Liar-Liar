@@ -230,6 +230,9 @@ class Game:
             attention_system=self.attention_system,
             inventory_system=self.inventory_system
         )
+
+        # Link Story Manager
+        self.story_manager.set_scene_manager(self.scene_manager)
         
         # Initialize Dialogue Manager
         self.dialogue_manager = DialogueManager(
