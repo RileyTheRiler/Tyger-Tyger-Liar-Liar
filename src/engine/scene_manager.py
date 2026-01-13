@@ -7,9 +7,8 @@ from typing import Optional
 from engine.branch_controller import BranchController
 
 class SceneManager:
-    def __init__(self, time_system, board, skill_system, player_state, flashback_manager, clue_system=None):
     def __init__(self, time_system, board, skill_system, player_state, flashback_manager, 
-                 npc_system=None, attention_system=None, inventory_system=None):
+                 clue_system=None, npc_system=None, attention_system=None, inventory_system=None):
         self.scenes = {}
         self.current_scene_data = None
         self.current_scene_id = None

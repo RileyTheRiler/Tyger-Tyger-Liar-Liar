@@ -23,10 +23,6 @@ export const sendAction = async (input) => {
 };
 
 export const shutdownGame = async () => {
-    try {
-        await axios.post(`${API_URL}/shutdown`);
-        return true;
-    } catch (err) {
-        return true;
-    }
+    // Client-side mock since server shutdown endpoint was removed for security
+    return Promise.resolve(true);
 };
