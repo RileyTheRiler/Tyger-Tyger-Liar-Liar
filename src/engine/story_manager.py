@@ -22,6 +22,11 @@ class StoryManager:
         else:
             self.player_state["triggered_story_events"] = []
 
+        self.scene_manager = None
+
+    def set_scene_manager(self, scene_manager):
+        self.scene_manager = scene_manager
+
     def check_timeline_events(self, minutes_passed: int):
         """Called whenever time passes in the game."""
         current_data = self.time_system.get_date_data()
