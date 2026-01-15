@@ -23,10 +23,7 @@ export const sendAction = async (input) => {
 };
 
 export const shutdownGame = async () => {
-    try {
-        await axios.post(`${API_URL}/shutdown`);
-        return true;
-    } catch (err) {
-        return true;
-    }
+    // Shutdown endpoint removed for security.
+    // We just return true to simulate success for the UI.
+    return Promise.resolve(true);
 };
