@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SubliminalText from './SubliminalText';
 import './StatusHUD.css';
 
+const Motion = motion;
+
 const StatusHUD = ({ uiState }) => {
     if (!uiState) return null;
 
@@ -59,15 +61,16 @@ const StatusHUD = ({ uiState }) => {
 
             <AnimatePresence>
                 {(lowSanity || breakReality) && (
-                    <motion.div
+                    <Motion.div
                         className="hud-warning-box"
+                        role="alert"
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                     >
                         {lowSanity && <div className="warning-text">CRITICAL STRESS</div>}
                         {breakReality && <div className="warning-text">REALITY FRACTURE</div>}
-                    </motion.div>
+                    </Motion.div>
                 )}
             </AnimatePresence>
 
@@ -103,8 +106,15 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
     }, [value]);
 
     return (
-        <div className="stat-unit">
-            <div className="gauge-display">
+        <div
+            className="stat-unit"
+            role="progressbar"
+            aria-valuenow={Math.round(value)}
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-label={label}
+        >
+            <div className="gauge-display" aria-hidden="true">
                 <div className="gauge-ticks" />
                 <div
                     className="gauge-needle"
@@ -114,7 +124,7 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
                     }}
                 />
             </div>
-            <div className="stat-header">
+            <div className="stat-header" aria-hidden="true">
                 <span className="stat-label">{label}</span>
                 {/* Optional digital readout below */}
                 {/* <span className="stat-value">{value}%</span> */}
