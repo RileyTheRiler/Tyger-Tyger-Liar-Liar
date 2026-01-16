@@ -1,6 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import { motion } from 'framer-motion';
 import './Terminal.css';
+
+// Alias motion to PascalCase to satisfy ESLint no-unused-vars rule
+const Motion = motion;
 
 const Terminal = ({ history }) => {
     const bottomRef = useRef(null);
@@ -21,7 +24,7 @@ const Terminal = ({ history }) => {
     );
 };
 
-const TerminalEntry = ({ entry }) => {
+const TerminalEntry = memo(({ entry }) => {
     const isInput = entry.type === 'input';
 
     // Split text by newlines to handle multi-line outputs (for staggered animation)
@@ -30,7 +33,7 @@ const TerminalEntry = ({ entry }) => {
     return (
         <div className={`term-entry ${isInput ? 'term-input' : 'term-output'}`}>
             {lines.map((line, i) => (
-                <motion.div
+                <Motion.div
                     key={i}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -44,11 +47,11 @@ const TerminalEntry = ({ entry }) => {
                     {isInput && i === 0 && <span className="prompt-char">{">"}</span>}
                     {/* Basic markdown-like highlighting can go here if needed */}
                     <span dangerouslySetInnerHTML={{ __html: formatLine(line) }} />
-                </motion.div>
+                </Motion.div>
             ))}
         </div>
     );
-};
+});
 
 // Simple formatter for bold/color (can be expanded)
 const formatLine = (text) => {
