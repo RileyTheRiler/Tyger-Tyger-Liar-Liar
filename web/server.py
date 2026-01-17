@@ -103,4 +103,14 @@ def handle_disconnect():
 if __name__ == '__main__':
     # Use eventlet if installed, otherwise standard
     port = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
+
+    # 🛡️ Sentinel: Security Fix
+    # Disable debug mode by default to prevent RCE via Werkzeug debugger on public interfaces.
+    # To enable debug, set FLASK_DEBUG=true environment variable AND run on localhost only ideally,
+    # but at least we remove allow_unsafe_werkzeug=True so it fails safe if bound to 0.0.0.0.
+    debug_mode = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+
+    if debug_mode:
+        print("WARNING: Debug mode enabled. Do not run this in production!")
+
+    socketio.run(app, host='0.0.0.0', port=port, debug=debug_mode)
