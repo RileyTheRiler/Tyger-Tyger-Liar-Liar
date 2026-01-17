@@ -1,0 +1,85 @@
+from playwright.sync_api import sync_playwright, expect
+import time
+import os
+
+def run():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(viewport={'width': 1280, 'height': 720})
+        page = context.new_page()
+
+        # Mock the API calls
+        page.route("**/api/start", lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body='{"output": "SYSTEM ONLINE.", "state": {"sanity": 80, "reality": 60, "location": "HQ", "time": "08:00", "day": "14"}}'
+        ))
+
+        try:
+            print("Navigating to http://localhost:5173")
+            page.goto("http://localhost:5173", timeout=60000)
+        except Exception as e:
+            print(f"Navigation failed: {e}")
+            return
+
+        print("Page loaded")
+
+        # Wait for Title Screen and Start
+        start_btn = page.get_by_role("button", name="[START_INVESTIGATION]")
+
+        try:
+            start_btn.wait_for(timeout=10000)
+        except:
+             print("Start button not found.")
+             page.screenshot(path="verification/debug_a11y_fail_start.png")
+             browser.close()
+             return
+
+        print("Clicking start button...")
+        start_btn.click()
+
+        # Wait for StatusHUD to appear.
+        # We can look for the text "BIO_MONITOR_v9" or "SANITY"
+        try:
+            page.get_by_text("BIO_MONITOR_v9").wait_for(timeout=10000)
+        except:
+             print("HUD not found.")
+             page.screenshot(path="verification/debug_a11y_fail_hud.png")
+             browser.close()
+             return
+
+        print("Checking Accessibility Attributes...")
+
+        # Locate the SANITY gauge
+        sanity_gauge = page.locator("div[role='progressbar'][aria-label='SANITY']")
+
+        if sanity_gauge.count() == 0:
+            print("FAIL: SANITY gauge not found or missing ARIA attributes")
+            # debug print html
+            print(page.locator(".stats-grid").inner_html())
+        else:
+            print("PASS: SANITY gauge found with correct role and label")
+            expect(sanity_gauge).to_have_attribute("aria-valuenow", "80")
+            expect(sanity_gauge).to_have_attribute("aria-valuemin", "0")
+            expect(sanity_gauge).to_have_attribute("aria-valuemax", "100")
+            print("PASS: SANITY gauge values correct")
+
+        # Locate the REALITY gauge
+        reality_gauge = page.locator("div[role='progressbar'][aria-label='REALITY']")
+
+        if reality_gauge.count() == 0:
+            print("FAIL: REALITY gauge not found or missing ARIA attributes")
+        else:
+            print("PASS: REALITY gauge found with correct role and label")
+            expect(reality_gauge).to_have_attribute("aria-valuenow", "60")
+            print("PASS: REALITY gauge values correct")
+
+        # Take screenshot
+        os.makedirs("verification", exist_ok=True)
+        page.screenshot(path="verification/accessibility_check.png")
+
+        print("Verification complete.")
+        browser.close()
+
+if __name__ == "__main__":
+    run()
