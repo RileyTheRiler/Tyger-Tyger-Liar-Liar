@@ -77,18 +77,39 @@
     border-top: 2px dotted var(--ui-phosphor-dim);
 }
 
-/* The Needle */
-.gauge-needle {
+/* The Needle Wrapper - Handles Base Rotation */
+.needle-wrapper {
     position: absolute;
     bottom: -2px;
     left: 50%;
+    width: 0;
+    height: 0;
+    z-index: 2;
+    transition: transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* The Needle - Handles Visuals & Jitter */
+.gauge-needle {
+    position: absolute;
+    bottom: 0;
+    left: -1px; /* Center the 2px width */
     width: 2px;
     height: 50px;
     background: var(--ui-phosphor);
     transform-origin: bottom center;
-    transition: transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
     box-shadow: 0 0 4px var(--ui-phosphor);
-    z-index: 2;
+}
+
+.gauge-needle.shaking {
+    animation: gauge-shake 0.1s infinite linear;
+}
+
+@keyframes gauge-shake {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(calc(1deg * var(--shake-intensity, 1))); }
+    50% { transform: rotate(calc(-1deg * var(--shake-intensity, 1))); }
+    75% { transform: rotate(calc(0.5deg * var(--shake-intensity, 1))); }
+    100% { transform: rotate(0deg); }
 }
 
 /* Pivot point */

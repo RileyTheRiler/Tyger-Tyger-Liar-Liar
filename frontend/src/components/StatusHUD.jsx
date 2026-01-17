@@ -1,7 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SubliminalText from './SubliminalText';
 import './StatusHUD.css';
+
+// Alias motion to PascalCase to satisfy ESLint no-unused-vars rule
+const Motion = motion;
 
 const StatusHUD = ({ uiState }) => {
     if (!uiState) return null;
@@ -59,7 +62,7 @@ const StatusHUD = ({ uiState }) => {
 
             <AnimatePresence>
                 {(lowSanity || breakReality) && (
-                    <motion.div
+                    <Motion.div
                         className="hud-warning-box"
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
@@ -67,7 +70,7 @@ const StatusHUD = ({ uiState }) => {
                     >
                         {lowSanity && <div className="warning-text">CRITICAL STRESS</div>}
                         {breakReality && <div className="warning-text">REALITY FRACTURE</div>}
-                    </motion.div>
+                    </Motion.div>
                 )}
             </AnimatePresence>
 
@@ -80,44 +83,34 @@ const StatusHUD = ({ uiState }) => {
     );
 };
 
-// The new Analog Gauge Component
+// The new Analog Gauge Component - Optimized with CSS animation
 const AnalogGauge = ({ label, value, color, criticalColor }) => {
     // Map 0-100 to rotation degrees. 
     // Say -45deg is 0, +45deg is 100. Range = 90deg.
     const rotation = -45 + (value / 100) * 90;
 
-    // Jitter the needle slightly based on value (lower = more jitter)
-    const [jitter, setJitter] = useState(0);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            // More jitter if value is low (stress/instability)
-            const stressFactor = Math.max(0, (50 - value) / 50);
-            if (stressFactor > 0) {
-                setJitter((Math.random() - 0.5) * (stressFactor * 5));
-            } else {
-                setJitter(0);
-            }
-        }, 100);
-        return () => clearInterval(interval);
-    }, [value]);
+    // Calculate stress for jitter intensity (0 to 1)
+    const stressFactor = Math.max(0, (50 - value) / 50);
 
     return (
         <div className="stat-unit">
             <div className="gauge-display">
                 <div className="gauge-ticks" />
                 <div
-                    className="gauge-needle"
-                    style={{
-                        transform: `rotate(${rotation + jitter}deg)`,
-                        backgroundColor: value < 30 ? criticalColor : color
-                    }}
-                />
+                    className="needle-wrapper"
+                    style={{ transform: `rotate(${rotation}deg)` }}
+                >
+                    <div
+                        className={`gauge-needle ${stressFactor > 0 ? 'shaking' : ''}`}
+                        style={{
+                            '--shake-intensity': stressFactor * 3,
+                            backgroundColor: value < 30 ? criticalColor : color
+                        }}
+                    />
+                </div>
             </div>
             <div className="stat-header">
                 <span className="stat-label">{label}</span>
-                {/* Optional digital readout below */}
-                {/* <span className="stat-value">{value}%</span> */}
             </div>
         </div>
     );
