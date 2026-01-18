@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SubliminalText from './SubliminalText';
 import './StatusHUD.css';
 
+const Motion = motion;
+
 const StatusHUD = ({ uiState }) => {
     if (!uiState) return null;
 
@@ -59,7 +61,7 @@ const StatusHUD = ({ uiState }) => {
 
             <AnimatePresence>
                 {(lowSanity || breakReality) && (
-                    <motion.div
+                    <Motion.div
                         className="hud-warning-box"
                         role="alert"
                         initial={{ opacity: 0, height: 0 }}
@@ -68,7 +70,7 @@ const StatusHUD = ({ uiState }) => {
                     >
                         {lowSanity && <div className="warning-text">CRITICAL STRESS</div>}
                         {breakReality && <div className="warning-text">REALITY FRACTURE</div>}
-                    </motion.div>
+                    </Motion.div>
                 )}
             </AnimatePresence>
 
@@ -107,6 +109,7 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
         <div
             className="stat-unit"
             role="progressbar"
+            aria-label={label}
             aria-label={`${label} Level`}
             aria-valuenow={Math.round(value)}
             aria-valuemin="0"
