@@ -53,13 +53,27 @@ const TerminalEntry = memo(({ entry }) => {
     );
 });
 
+// Helper to escape HTML characters to prevent XSS
+const escapeHtml = (unsafe) => {
+    if (!unsafe) return "";
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
+
 // Simple formatter for bold/color (can be expanded)
 const formatLine = (text) => {
     if (!text) return "";
 
+    // Security: Escape HTML first!
+    let formatted = escapeHtml(text);
+
     // 1. Handle Skill Checks: [PATTERN RECOGNITION] -> <span class="skill-check">...</span>
     // Regex matching [WORDS] at the start or distinctively
-    let formatted = text.replace(
+    formatted = formatted.replace(
         /\[([A-Z\s]+)\]/g,
         '<span class="skill-check">[$1]</span>'
     );
