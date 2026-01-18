@@ -24,6 +24,7 @@ const Terminal = ({ history }) => {
     );
 };
 
+// Memoized to prevent re-rendering previous entries when history updates
 const TerminalEntry = memo(({ entry }) => {
     const isInput = entry.type === 'input';
 
