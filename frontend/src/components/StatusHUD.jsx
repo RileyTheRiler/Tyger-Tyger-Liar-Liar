@@ -61,6 +61,7 @@ const StatusHUD = ({ uiState }) => {
                 {(lowSanity || breakReality) && (
                     <motion.div
                         className="hud-warning-box"
+                        role="alert"
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
@@ -103,7 +104,14 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
     }, [value]);
 
     return (
-        <div className="stat-unit">
+        <div
+            className="stat-unit"
+            role="progressbar"
+            aria-label={`${label} Level`}
+            aria-valuenow={Math.round(value)}
+            aria-valuemin="0"
+            aria-valuemax="100"
+        >
             <div className="gauge-display">
                 <div className="gauge-ticks" />
                 <div
