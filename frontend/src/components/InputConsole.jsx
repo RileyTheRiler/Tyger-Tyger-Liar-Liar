@@ -56,6 +56,7 @@ const InputConsole = ({ input, setInput, handleSend, loading }) => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={loading ? "SYSTEM_BUSY..." : "AWAITING_INPUT..."}
+                aria-label={loading ? "System busy, please wait" : "Command input"}
                 disabled={loading}
                 spellCheck="false"
                 autoComplete="off"
