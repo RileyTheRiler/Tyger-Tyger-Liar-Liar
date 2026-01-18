@@ -23,10 +23,9 @@ export const sendAction = async (input) => {
 };
 
 export const shutdownGame = async () => {
-    try {
-        await axios.post(`${API_URL}/shutdown`);
-        return true;
-    } catch (err) {
-        return true;
-    }
+    // Endpoint removed for security.
+    // Shutdown endpoint removed for security.
+    // We just return true to simulate success for the UI.
+    // Sentinel: Mocked client-side to prevent network call to removed endpoint
+    return Promise.resolve(true);
 };
