@@ -66,8 +66,17 @@ class SaveSystem:
         if not os.path.exists(save_directory):
             os.makedirs(save_directory)
     
+    def _validate_slot_id(self, slot_id: str) -> None:
+        """Validate that the slot_id is safe to use as a filename."""
+        # Allow alphanumeric, underscore, hyphen, and space
+        # This prevents path traversal characters like / \ ..
+        import re
+        if not re.match(r'^[a-zA-Z0-9 _-]+$', slot_id):
+            raise ValueError(f"Invalid save slot ID: '{slot_id}'. Only alphanumeric characters, spaces, underscores, and hyphens are allowed.")
+
     def _get_save_path(self, slot_id: str) -> str:
         """Get the full path for a save file."""
+        self._validate_slot_id(slot_id)
         return os.path.join(self.save_directory, f"{slot_id}.json")
     
     def _calculate_hash(self, data: Dict[str, Any]) -> str:
