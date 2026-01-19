@@ -3,8 +3,6 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import sys
 import os
-import signal
-
 # Add src to path just in case, though game.py handles it
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
@@ -50,3 +48,4 @@ def get_state():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
+
