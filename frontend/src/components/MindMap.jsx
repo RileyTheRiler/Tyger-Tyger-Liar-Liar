@@ -1,19 +1,26 @@
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import './MindMap.css';
 
-const MindMap = ({ boardData, onClose }) => {
-    if (!boardData || !boardData.nodes || boardData.nodes.length === 0) {
-        return (
-            <div className="mindmap-overlay empty" onClick={onClose}>
-                <div className="empty-message">NO ACTIVE THEORIES</div>
-            </div>
-        );
+// Simple hash function to generate a stable number between 0 and 1 based on a string seed
+// This replaces Math.random() to ensure node positions are deterministic and stable across renders
+const stableRandom = (seed) => {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+        const char = seed.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash; // Convert to 32bit integer
     }
+    // Normalize to 0-1
+    return (Math.abs(hash) % 10000) / 10000;
+};
 
-    // Simple force-directed-like positioning (pseudo-random but deterministic based on ID)
-    // In a real app we'd use d3-force, but for 5-10 nodes, static + random jitter is fine
+const MindMap = ({ boardData, onClose }) => {
     const { nodes, links } = useMemo(() => {
+        if (!boardData || !boardData.nodes || boardData.nodes.length === 0) {
+            return { nodes: [], links: [] };
+        }
+
         const width = 800; // Virtual canvas width
         const height = 600;
 
@@ -25,17 +32,27 @@ const MindMap = ({ boardData, onClose }) => {
             const angle = (i / boardData.nodes.length) * Math.PI * 2;
             const radius = isTheory ? 100 : 250;
 
-            // Simple deterministic position based on char codes of ID if we wanted, 
-            // but index-based circle is cleaner for now.
+            // Deterministic jitter based on node ID
+            const r1 = stableRandom(node.id + '_x');
+            const r2 = stableRandom(node.id + '_y');
+
             return {
                 ...node,
-                x: width / 2 + Math.cos(angle) * radius + (Math.random() * 50 - 25),
-                y: height / 2 + Math.sin(angle) * radius + (Math.random() * 50 - 25)
+                x: width / 2 + Math.cos(angle) * radius + (r1 * 50 - 25),
+                y: height / 2 + Math.sin(angle) * radius + (r2 * 50 - 25)
             };
         });
 
         return { nodes: processedNodes, links: boardData.links };
     }, [boardData]);
+
+    if (!boardData || !boardData.nodes || boardData.nodes.length === 0) {
+        return (
+            <div className="mindmap-overlay empty" onClick={onClose}>
+                <div className="empty-message">NO ACTIVE THEORIES</div>
+            </div>
+        );
+    }
 
     return (
         <div className="mindmap-overlay">
@@ -58,7 +75,7 @@ const MindMap = ({ boardData, onClose }) => {
                         if (!source || !target) return null;
 
                         return (
-                            <motion.line
+                            <Motion.line
                                 key={i}
                                 x1={source.x} y1={source.y}
                                 x2={target.x} y2={target.y}
@@ -76,7 +93,7 @@ const MindMap = ({ boardData, onClose }) => {
                     {/* Nodes */}
                     {nodes.map((node, i) => (
                         <g key={node.id} transform={`translate(${node.x}, ${node.y})`}>
-                            <motion.circle
+                            <Motion.circle
                                 r={node.type === 'theory' ? 20 : 10}
                                 fill={node.type === 'theory' ? "var(--bg-void)" : "var(--text-ghost)"}
                                 stroke={node.type === 'theory' ? "var(--tyger-orange)" : "var(--text-dim)"}
@@ -95,7 +112,7 @@ const MindMap = ({ boardData, onClose }) => {
                             />
 
                             {/* Label */}
-                            <motion.text
+                            <Motion.text
                                 y={node.type === 'theory' ? 35 : 25}
                                 textAnchor="middle"
                                 fill="var(--text-primary)"
@@ -107,7 +124,7 @@ const MindMap = ({ boardData, onClose }) => {
                                 className={node.is_glitched ? 'node-glitch' : ''}
                             >
                                 {node.label}
-                            </motion.text>
+                            </Motion.text>
 
                             {/* Status Indicator for theories */}
                             {node.type === 'theory' && (
