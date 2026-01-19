@@ -23,6 +23,7 @@ export const sendAction = async (input) => {
 };
 
 export const shutdownGame = async () => {
+    // Client-side mock since server shutdown endpoint was removed for security
     // Endpoint removed for security.
     // Shutdown endpoint removed for security.
     // We just return true to simulate success for the UI.
