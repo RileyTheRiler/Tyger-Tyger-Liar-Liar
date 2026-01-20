@@ -14,15 +14,21 @@ class TestSaveSecurity:
     def save_system(self):
         # Create a temporary directory for saves
         save_dir = os.path.join(os.path.dirname(__file__), "temp_saves_security")
+        export_dir = os.path.join(os.path.dirname(__file__), "temp_exports_security")
+
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
+        if os.path.exists(export_dir):
+            shutil.rmtree(export_dir)
 
-        system = SaveSystem(save_directory=save_dir)
+        system = SaveSystem(save_directory=save_dir, export_directory=export_dir)
         yield system
 
         # Cleanup
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
+        if os.path.exists(export_dir):
+            shutil.rmtree(export_dir)
 
     def test_path_traversal_prevention(self, save_system):
         """Test that path traversal characters and invalid filenames are rejected."""
@@ -71,3 +77,31 @@ class TestSaveSecurity:
         """Test that delete with traversal path fails safely."""
         result = save_system.delete_save("../outside")
         assert result is False
+
+    def test_export_traversal_prevention(self, save_system):
+        """Test that export with traversal path or invalid filename fails."""
+        # Setup a valid save to export
+        save_system.save_game("valid_slot", {"data": "test"})
+
+        payloads = [
+            "../outside.json",
+            "../../etc/passwd",
+            "/absolute/path.json",
+            "invalid/char.json",
+            "hack..json"
+        ]
+
+        for payload in payloads:
+            result = save_system.export_save("valid_slot", payload)
+            assert result is False, f"Should reject invalid export filename: {payload}"
+
+    def test_valid_export(self, save_system):
+        """Test that valid export works and goes to export directory."""
+        save_system.save_game("valid_slot", {"data": "test"})
+
+        filename = "my_export.json"
+        result = save_system.export_save("valid_slot", filename)
+        assert result is True
+
+        expected_path = os.path.join(save_system.export_directory, filename)
+        assert os.path.exists(expected_path)
