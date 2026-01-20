@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 // A component that occasionally swaps its text to a "corrupted" version
 // based on the current Sanity level.
 const SubliminalText = ({ text, sanity = 100, className = '' }) => {
-    const [display, setDisplay] = useState(text);
+    const [glitchedText, setGlitchedText] = useState(null);
 
     // Derived state for glitch probability
     const panic = Math.max(0, 100 - sanity);
@@ -11,8 +11,10 @@ const SubliminalText = ({ text, sanity = 100, className = '' }) => {
 
     useEffect(() => {
         if (!isUnstable) {
-            setDisplay(text);
-            return;
+            // Reset state if we become stable.
+            // Using setTimeout to avoid synchronous setState warning.
+            const t = setTimeout(() => setGlitchedText(null), 0);
+            return () => clearTimeout(t);
         }
 
         const CORRUPTIONS = [
@@ -24,11 +26,11 @@ const SubliminalText = ({ text, sanity = 100, className = '' }) => {
             // Probability check: higher panic = higher chance
             if (Math.random() < (panic / 200)) { // 0.2 to 0.5 chance roughly
                 const word = CORRUPTIONS[Math.floor(Math.random() * CORRUPTIONS.length)];
-                setDisplay(word);
+                setGlitchedText(word);
 
                 // Revert back quickly
                 setTimeout(() => {
-                    setDisplay(text);
+                    setGlitchedText(null);
                 }, 100 + Math.random() * 200);
             }
         };
@@ -36,11 +38,19 @@ const SubliminalText = ({ text, sanity = 100, className = '' }) => {
         const intervalId = setInterval(triggerGlitch, 2000); // Check every 2s
 
         return () => clearInterval(intervalId);
-    }, [text, sanity, isUnstable, panic]);
+    }, [sanity, isUnstable, panic]);
+
+    // If unstable, show glitch text if present, else show normal text.
+    // If stable, always show normal text (even if glitch text is lingering before reset)
+    const display = (isUnstable && glitchedText) || text;
 
     return (
-        <span className={className} style={{ position: 'relative', display: 'inline-block' }}>
-            {display}
+        <span
+            className={className}
+            style={{ position: 'relative', display: 'inline-block' }}
+            aria-label={text}
+        >
+            <span aria-hidden="true">{display}</span>
         </span>
     );
 };
