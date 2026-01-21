@@ -38,14 +38,14 @@
     width: 100%;
     height: 100%;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.15;
+    opacity: var(--noise-opacity, 0.15);
     animation: grain 0.2s steps(4) infinite;
 }
 
 /* Tracking Error Bar */
 .tracking-bar {
     position: absolute;
-    top: 0;
+    top: calc(10% + var(--tracking-pos, 0%));
     left: 0;
     width: 100%;
     height: 100px;
@@ -65,6 +65,9 @@
     background: transparent;
     box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
     animation: chromatic 2s infinite;
+    transform: translateX(var(--glitch-offset, 0px)) scale(var(--critical-scale, 1));
+    opacity: var(--overlay-opacity, 0.2);
+    filter: var(--critical-filter, none);
 }
 
 @keyframes scrollLines {
