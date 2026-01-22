@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { motion as Motion } from 'framer-motion';
 import './MindMap.css';
 
@@ -16,6 +16,15 @@ const stableRandom = (seed) => {
 };
 
 const MindMap = ({ boardData, onClose }) => {
+    // Escape key to close
+    useEffect(() => {
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [onClose]);
+
     const { nodes, links } = useMemo(() => {
         if (!boardData || !boardData.nodes || boardData.nodes.length === 0) {
             return { nodes: [], links: [] };
@@ -48,17 +57,35 @@ const MindMap = ({ boardData, onClose }) => {
 
     if (!boardData || !boardData.nodes || boardData.nodes.length === 0) {
         return (
-            <div className="mindmap-overlay empty" onClick={onClose}>
+            <div
+                className="mindmap-overlay empty"
+                onClick={onClose}
+                role="dialog"
+                aria-modal="true"
+                aria-label="No active theories"
+            >
                 <div className="empty-message">NO ACTIVE THEORIES</div>
             </div>
         );
     }
 
     return (
-        <div className="mindmap-overlay">
-            <div className="mindmap-container">
+        <div
+            className="mindmap-overlay"
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Case Logic Graph"
+        >
+            <div className="mindmap-container" onClick={(e) => e.stopPropagation()}>
                 <h2 className="board-title">CASE_LOGIC_GRAPH</h2>
-                <button className="close-btn" onClick={onClose}>[CLOSE]</button>
+                <button
+                    className="close-btn"
+                    onClick={onClose}
+                    aria-label="Close Case Graph"
+                >
+                    [CLOSE]
+                </button>
 
                 <svg viewBox="0 0 800 600" className="mindmap-svg">
                     {/* Defs for markers */}

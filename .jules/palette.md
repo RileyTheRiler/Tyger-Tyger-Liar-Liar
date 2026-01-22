@@ -25,3 +25,7 @@ Format: `## YYYY-MM-DD - [Title]
 ## 2024-05-22 - Input Console Labels
 **Learning:** Terminal-style inputs often omit labels for immersion, which fails WCAG criteria.
 **Action:** Use `aria-label` to provide context without breaking the visual aesthetic. Dynamic labels (e.g., "System busy") provide excellent feedback for non-sighted users.
+
+## 2024-05-23 - MindMap Accessibility
+**Learning:** Modal interfaces (like MindMap) that lack Escape key support and backdrop click-to-close create a frustration trap for keyboard users and break standard UI expectations.
+**Action:** Always implement a `useEscapeKey` hook (or useEffect) and `onClick` handlers on the backdrop for any overlay/modal component to ensure fluid navigation.
