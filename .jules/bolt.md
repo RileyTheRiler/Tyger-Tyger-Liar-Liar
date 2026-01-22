@@ -26,3 +26,7 @@
 ## 2024-10-25 - [Verification Dependencies]
 **Learning:** A syntax error in a seemingly unrelated component (`StatusHUD.jsx`) can break the entire build process, preventing verification of the target component (`MindMap.jsx`).
 **Action:** When verification scripts fail with timeouts or white screens, check the browser console logs (via Playwright) for global runtime errors before assuming the issue lies in the component being tested.
+
+## 2024-10-25 - [Animation Verification]
+**Learning:** When verifying random/chaotic animations driven by JS loops (like glitch effects), asserting purely deterministic states is impossible.
+**Action:** Use sampling of style attributes (e.g. collecting 5 unique values over 500ms) in Playwright to verify that the animation loop is active and updating the DOM, rather than checking for specific values.
