@@ -12,17 +12,23 @@ class TestSaveSecurity:
 
     @pytest.fixture
     def save_system(self):
-        # Create a temporary directory for saves
+        # Create a temporary directory for saves and exports
         save_dir = os.path.join(os.path.dirname(__file__), "temp_saves_security")
+        export_dir = os.path.join(os.path.dirname(__file__), "temp_exports_security")
+
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
+        if os.path.exists(export_dir):
+            shutil.rmtree(export_dir)
 
-        system = SaveSystem(save_directory=save_dir)
+        system = SaveSystem(save_directory=save_dir, export_directory=export_dir)
         yield system
 
         # Cleanup
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
+        if os.path.exists(export_dir):
+            shutil.rmtree(export_dir)
 
     def test_path_traversal_prevention(self, save_system):
         """Test that path traversal characters and invalid filenames are rejected."""
@@ -71,3 +77,29 @@ class TestSaveSecurity:
         """Test that delete with traversal path fails safely."""
         result = save_system.delete_save("../outside")
         assert result is False
+
+    def test_export_traversal_prevention(self, save_system):
+        """Test that export_save prevents path traversal."""
+        # Create a dummy save to export
+        save_system.save_game("test_slot", {"data": "test"})
+
+        # Payload trying to write outside exports dir
+        payloads = [
+            "../evil.txt",
+            "/tmp/evil.txt",
+            "foo/bar.json"
+        ]
+
+        for payload in payloads:
+            success = save_system.export_save("test_slot", payload)
+            assert success is False, f"Should reject export payload: {payload}"
+
+    def test_valid_export(self, save_system):
+        """Test that valid export works and writes to export directory."""
+        save_system.save_game("test_slot", {"data": "test"})
+
+        success = save_system.export_save("test_slot", "safe_export.json")
+        assert success is True
+
+        expected_path = os.path.join(save_system.export_directory, "safe_export.json")
+        assert os.path.exists(expected_path)
