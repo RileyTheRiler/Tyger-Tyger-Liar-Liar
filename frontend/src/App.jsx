@@ -18,6 +18,7 @@ function App() {
   const [booting, setBooting] = useState(false)
   const [history, setHistory] = useState([])
   const [uiState, setUiState] = useState(null)
+  const [lastTurnId, setLastTurnId] = useState(-1)
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [showBoard, setShowBoard] = useState(false)
@@ -46,8 +47,7 @@ function App() {
     try {
       const data = await startGame()
       if (data) {
-        setHistory([{ type: 'output', text: data.output }])
-        setUiState(data.state)
+        processTurn(data)
       }
     } catch (e) {
       setHistory([{ type: 'output', text: "ERROR: CONNECTION_LOST_TO_MAINFRAME" }])
@@ -64,14 +64,31 @@ function App() {
     try {
       const data = await sendAction(txt)
       if (data) {
-        setHistory(prev => [...prev, { type: 'output', text: data.output }])
-        setUiState(data.state)
+        processTurn(data)
       }
     } catch (e) {
       setHistory(prev => [...prev, { type: 'output', text: "ERROR: SIGNAL_INTERRUPTED" }])
     }
     setLoading(false)
     setInput("")
+  }
+
+  const processTurn = (data) => {
+      const newTurnId = data.state.turn_id;
+
+      // Strict Turn Boundary Check
+      // Only update UI state if we have a valid new turn
+      if (newTurnId !== undefined && newTurnId > lastTurnId) {
+          setLastTurnId(newTurnId);
+          setUiState(data.state);
+
+          // Append output to history (this is accumulative, but synced with turn)
+          setHistory(prev => [...prev, { type: 'output', text: data.output }]);
+      } else if (newTurnId === undefined) {
+          // Fallback for legacy/initial states without turn_id
+          setUiState(data.state);
+          setHistory(prev => [...prev, { type: 'output', text: data.output }]);
+      }
   }
 
   const handleShutdown = async () => {
