@@ -6,7 +6,8 @@ CLI for authoring, validating, and previewing scenes.
 
 Usage:
   python tools/scene_tool.py build <output_file>
-  python tools/scene_tool.py preview <scene_file> [--lens <type>] [--skills <skill:lvl,...>]
+  python tools/scene_tool.py preview <scene_file> [--id <scene_id>] [--lens <type>] [--skills <skill:lvl,...>]
+  python tools/scene_tool.py compare <scene_file> [--id <scene_id>]
   python tools/scene_tool.py validate <scene_file>
   python tools/scene_tool.py template <type> <output_file>
 """
@@ -31,7 +32,7 @@ except ImportError as e:
     print("Ensure you are running this from the repo root or tools/ directory.")
     sys.exit(1)
 
-# Templates
+# Templates (same as before)
 TEMPLATES = {
     "witness": {
         "id": "scene_witness_template",
@@ -142,35 +143,101 @@ def parse_skills(skill_str):
             skills[name.strip()] = int(lvl)
     return skills
 
+def load_scenes(filepath):
+    """
+    Loads scenes from a file. Handles both single dict and list of dicts.
+    Returns a list of scene dictionaries.
+    """
+    if not os.path.exists(filepath):
+        print(f"File not found: {filepath}")
+        return []
+
+    try:
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON: {e}")
+        return []
+
+    if isinstance(data, list):
+        return data
+    elif isinstance(data, dict):
+        # Determine if it's a scene or a container
+        if "id" in data and "text" in data:
+            return [data]
+        else:
+            # Maybe check if it has keys that are scenes?
+            # For now assume if it's not a scene structure, it might be invalid or empty
+            return []
+    return []
+
 def check_style(scene_data):
     warnings = []
     text_data = scene_data.get("text", {})
     lens_data = text_data.get("lens", {})
+    inserts = text_data.get("inserts", [])
+    choices = scene_data.get("choices", [])
+
+    scene_id = scene_data.get("id", "unknown")
+
+    # Word count
+    base_text = text_data.get("base", "")
+    word_count = len(base_text.split())
+    if lens_data:
+        for text in lens_data.values():
+            word_count += len(text.split())
 
     # Check for missing lens variants
     for lens in ["believer", "skeptic", "haunted"]:
-        if lens not in lens_data or not lens_data[lens]:
-            warnings.append(f"Missing lens variant: '{lens}'. Consider adding specific text for this archetype.")
+        if not lens_data or lens not in lens_data or not lens_data[lens]:
+            warnings.append(f"[{scene_id}] Missing lens variant: '{lens}'.")
 
-    # Check for sensory details (rudimentary check)
-    base_text = text_data.get("base", "").lower()
+    # Check for sensory details
+    base_text_lower = base_text.lower()
     sensory_keywords = ["smell", "sound", "hear", "see", "taste", "feel", "cold", "hot", "dark", "light", "metallic", "blood", "shadow"]
-    if not any(w in base_text for w in sensory_keywords):
-        warnings.append("Base text may lack sensory details. Consider adding smell, sound, or tactile descriptions.")
+    if not any(w in base_text_lower for w in sensory_keywords):
+        warnings.append(f"[{scene_id}] Base text lacks sensory keywords.")
 
-    return warnings
+    # Check for impossible or contradictory conditions
+    for i, insert in enumerate(inserts):
+        condition = insert.get("condition", {})
+        if "skill_gte" in condition:
+            for skill, lvl in condition["skill_gte"].items():
+                if lvl > 10:
+                    warnings.append(f"[{scene_id}] Insert #{i+1} requires {skill} > {lvl}, which may be unreachable.")
 
-def preview_scene(filepath, lens_str="neutral", skills=None):
-    if not os.path.exists(filepath):
-        print(f"File not found: {filepath}")
+        # Check for empty condition (always true) if explicitly empty dict, though None means always true too usually.
+        # Just a note.
+
+    # Check choices for high DC
+    for i, choice in enumerate(choices):
+        check = choice.get("check")
+        if check:
+            dc = check.get("dc", 0)
+            if dc > 15: # 15 is very high difficulty
+                 warnings.append(f"[{scene_id}] Choice #{i+1} has very high DC ({dc}).")
+            if dc > 20:
+                 warnings.append(f"[{scene_id}] Choice #{i+1} has DC {dc}, likely impossible.")
+
+    return warnings, word_count
+
+def preview_scene(filepath, target_id=None, lens_str="neutral", skills=None):
+    scenes = load_scenes(filepath)
+    if not scenes:
         return
 
-    try:
-        with open(filepath, 'r') as f:
-            scene_data = json.load(f)
-    except json.JSONDecodeError as e:
-        print(f"Invalid JSON: {e}")
-        return
+    target_scene = None
+    if target_id:
+        target_scene = next((s for s in scenes if s.get("id") == target_id), None)
+        if not target_scene:
+            print(f"Scene ID '{target_id}' not found in {filepath}")
+            return
+    else:
+        if len(scenes) > 1:
+            print(f"File contains {len(scenes)} scenes. Showing first scene '{scenes[0].get('id')}'. Use --id to specify.")
+        target_scene = scenes[0]
+
+    scene_data = target_scene
 
     # Mock player state
     player_state = {
@@ -194,6 +261,7 @@ def preview_scene(filepath, lens_str="neutral", skills=None):
 
     print_separator(color=Colors.CYAN)
     print_boxed_title(scene_data.get("title", "Untitled Scene"), color=Colors.CYAN)
+    print(f"ID: {scene_data.get('id')}")
 
     # Print content with colors
     print(f"\n{Colors.WHITE}{result.full_text}{Colors.RESET}\n")
@@ -217,6 +285,56 @@ def preview_scene(filepath, lens_str="neutral", skills=None):
     print(f" Inserts: {result.inserts_applied}")
     print(f" Fracture: {result.fracture_applied}")
 
+def compare_scene(filepath, target_id=None):
+    """
+    Renders the scene for all archetypes side-by-side (or sequentially).
+    """
+    scenes = load_scenes(filepath)
+    if not scenes:
+        return
+
+    scenes_to_process = []
+    if target_id:
+        target_scene = next((s for s in scenes if s.get("id") == target_id), None)
+        if not target_scene:
+            print(f"Scene ID '{target_id}' not found.")
+            return
+        scenes_to_process = [target_scene]
+    else:
+        scenes_to_process = scenes
+
+    composer = TextComposer()
+    # Mock state
+    player_state = {
+        "skills": {"Logic": 3, "Perception": 3, "Psychology": 3, "Forensics": 3, "Occult": 1},
+        "flags": {},
+        "inventory": [],
+        "active_theories": []
+    }
+    archetypes = [Archetype.NEUTRAL, Archetype.BELIEVER, Archetype.SKEPTIC, Archetype.HAUNTED]
+
+    for scene_data in scenes_to_process:
+        print("\n" + "="*60)
+        print(f"SCENE: {scene_data.get('title', 'Untitled')} (ID: {scene_data.get('id')})")
+        print("="*60)
+
+        # Calculate Base Word Count (without inserts)
+        base_text = scene_data.get("text", {}).get("base", "")
+        print(f"Base Text Length: {len(base_text.split())} words")
+
+        for arc in archetypes:
+            result = composer.compose(scene_data, arc, player_state)
+            text = result.full_text
+            word_count = len(text.split())
+
+            color = Colors.WHITE
+            if arc == Archetype.BELIEVER: color = Colors.CYAN
+            elif arc == Archetype.SKEPTIC: color = Colors.YELLOW
+            elif arc == Archetype.HAUNTED: color = Colors.RED
+
+            print(f"\n{color}--- {arc.name} ({word_count} words) ---{Colors.RESET}")
+            print(f"{text}")
+
 def validate_file(filepath):
     validator = SchemaValidator()
     if not os.path.exists(filepath):
@@ -227,25 +345,44 @@ def validate_file(filepath):
         with open(filepath, 'r') as f:
             data = json.load(f)
 
-        # Determine type based on fields or assume scene
-        valid, errors = validator.validate_scene(data)
+        # Validate schema
+        # The validator handles lists if we pass individual scenes?
+        # SchemaValidator.validate_scene expects a single scene.
 
-        if valid:
-            print(f"{Colors.GREEN}Validation Passed{Colors.RESET}")
-
-            # Run style check
-            warnings = check_style(data)
-            if warnings:
-                print(f"\n{Colors.YELLOW}Style Suggestions:{Colors.RESET}")
-                for w in warnings:
-                    print(f" - {w}")
-            else:
-                print(f"{Colors.GREEN}Style Check Passed{Colors.RESET}")
-
+        scenes = []
+        if isinstance(data, list):
+            scenes = data
         else:
-            print(f"{Colors.RED}Validation Failed:{Colors.RESET}")
-            for err in errors:
-                print(f" - {err}")
+            scenes = [data]
+
+        all_valid = True
+
+        for i, scene in enumerate(scenes):
+            valid, errors = validator.validate_scene(scene)
+            sid = scene.get('id', f'Index {i}')
+
+            if not valid:
+                all_valid = False
+                print(f"{Colors.RED}[FAIL] Schema Validation for {sid}:{Colors.RESET}")
+                for err in errors:
+                    print(f" - {err}")
+            else:
+                # print(f"{Colors.GREEN}[PASS] Schema Validation for {sid}{Colors.RESET}")
+                pass
+
+            # Style check
+            warnings, word_count = check_style(scene)
+            if warnings:
+                 print(f"{Colors.YELLOW}[WARN] Style for {sid} ({word_count} words):{Colors.RESET}")
+                 for w in warnings:
+                     print(f" - {w}")
+            else:
+                 print(f"{Colors.GREEN}[PASS] {sid} ({word_count} words){Colors.RESET}")
+
+        if all_valid:
+            print(f"\n{Colors.GREEN}All scenes passed schema validation.{Colors.RESET}")
+        else:
+            print(f"\n{Colors.RED}Some scenes failed validation.{Colors.RESET}")
 
     except json.JSONDecodeError as e:
         print(f"{Colors.RED}Invalid JSON: {e}{Colors.RESET}")
@@ -284,25 +421,62 @@ def build_interactive(output_path):
         "choices": []
     }
 
-    print("\nLens Text (Press Enter to skip)")
+    print("\n--- Archetype Variants (Leave empty to skip) ---")
     for lens in ["believer", "skeptic", "haunted"]:
         text = input(f"{lens.capitalize()}: ")
         if text:
             scene_data["text"]["lens"][lens] = text
 
-    print("\nAdd an Insert? (y/n)")
-    if input().lower().startswith('y'):
+    print("\n--- Inserts ---")
+    while True:
+        print("Add an Insert? (y/n)")
+        if not input().lower().startswith('y'):
+            break
+
         insert_text = input("Insert Text: ")
-        skill = input("Required Skill (e.g. Logic): ")
-        level = input("Skill Level (e.g. 4): ")
-        position = input("Position (AFTER_BASE, AFTER_LENS, BEFORE_CHOICES): ")
+        skill_req = input("Required Skill (e.g. Logic) [Enter to skip]: ")
+        level = 0
+        if skill_req:
+             level = input("Skill Level (e.g. 4): ")
+
+        position = input("Position (AFTER_BASE, AFTER_LENS, BEFORE_CHOICES) [Default: AFTER_LENS]: ")
 
         insert = {
             "text": insert_text,
-            "condition": {"skill_gte": {skill: int(level)}},
             "insert_at": position or "AFTER_LENS"
         }
+
+        if skill_req and level:
+            insert["condition"] = {"skill_gte": {skill_req: int(level)}}
+
         scene_data["text"]["inserts"].append(insert)
+
+    print("\n--- Choices ---")
+    while True:
+        print("Add a Choice? (y/n)")
+        if not input().lower().startswith('y'):
+            break
+
+        label = input("Label: ")
+        next_scene = input("Next Scene ID: ")
+
+        choice = {"label": label, "next_scene": next_scene}
+
+        skill_check = input("Is this a skill check? (y/n): ")
+        if skill_check.lower().startswith('y'):
+            skill = input("Skill: ")
+            dc = input("DC: ")
+            fail_scene = input("Failure Scene ID: ")
+            choice["check"] = {
+                "skill": skill,
+                "dc": int(dc),
+                "success_scene": next_scene,
+                "failure_scene": fail_scene
+            }
+            if "next_scene" in choice:
+                del choice["next_scene"]
+
+        scene_data["choices"].append(choice)
 
     # Save
     with open(output_path, 'w') as f:
@@ -316,8 +490,14 @@ def main():
     # Preview
     p_preview = subparsers.add_parser("preview", help="Preview a scene")
     p_preview.add_argument("file", help="Path to scene JSON file")
+    p_preview.add_argument("--id", help="Scene ID (if file contains multiple)")
     p_preview.add_argument("--lens", default="neutral", choices=["neutral", "believer", "skeptic", "haunted"])
     p_preview.add_argument("--skills", help="Comma-separated skills (e.g. Logic:5,Perception:2)")
+
+    # Compare
+    p_compare = subparsers.add_parser("compare", help="Compare scene variants side-by-side")
+    p_compare.add_argument("file", help="Path to scene JSON file")
+    p_compare.add_argument("--id", help="Scene ID (if file contains multiple)")
 
     # Validate
     p_validate = subparsers.add_parser("validate", help="Validate a scene file")
@@ -336,7 +516,9 @@ def main():
 
     if args.command == "preview":
         skills = parse_skills(args.skills)
-        preview_scene(args.file, args.lens, skills)
+        preview_scene(args.file, args.id, args.lens, skills)
+    elif args.command == "compare":
+        compare_scene(args.file, args.id)
     elif args.command == "validate":
         validate_file(args.file)
     elif args.command == "template":
