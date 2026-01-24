@@ -26,3 +26,7 @@
 ## 2024-10-25 - [Verification Dependencies]
 **Learning:** A syntax error in a seemingly unrelated component (`StatusHUD.jsx`) can break the entire build process, preventing verification of the target component (`MindMap.jsx`).
 **Action:** When verification scripts fail with timeouts or white screens, check the browser console logs (via Playwright) for global runtime errors before assuming the issue lies in the component being tested.
+
+## 2024-10-25 - [Verifying High-Frequency Animations]
+**Learning:** High-frequency animations implemented via `requestAnimationFrame` and refs bypass React's render cycle, making them invisible to standard component testing.
+**Action:** Verify these optimizations by using Playwright to sample DOM node styles (e.g. `transform`, `opacity`) over a short interval to confirm values are changing, rather than relying on snapshot tests.
