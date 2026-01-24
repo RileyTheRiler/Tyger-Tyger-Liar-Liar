@@ -25,3 +25,6 @@ Format: `## YYYY-MM-DD - [Title]
 ## 2024-05-22 - Input Console Labels
 **Learning:** Terminal-style inputs often omit labels for immersion, which fails WCAG criteria.
 **Action:** Use `aria-label` to provide context without breaking the visual aesthetic. Dynamic labels (e.g., "System busy") provide excellent feedback for non-sighted users.
+## 2026-01-24 - [Title Screen Accessibility]
+**Learning:** Decorative text like `[START_INVESTIGATION]` is noisy for screen readers. Also, custom buttons often lack visible focus states for keyboard users.
+**Action:** Use `aria-label` for the clean action name, hide the decorative text with `aria-hidden="true"`, and ensure `:focus-visible` styles match `:hover` styles for consistency.
