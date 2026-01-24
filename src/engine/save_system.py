@@ -59,13 +59,24 @@ class EventLog:
 class SaveSystem:
     """Manages game save/load functionality with hash verification."""
     
-    def __init__(self, save_directory: str = "saves"):
+    def __init__(self, save_directory: str = "saves", export_directory: str = "exports"):
         self.save_directory = save_directory
+        self.export_directory = export_directory
         
-        # Create saves directory if it doesn't exist
+        # Create directories if they don't exist
         if not os.path.exists(save_directory):
             os.makedirs(save_directory)
+        if not os.path.exists(export_directory):
+            os.makedirs(export_directory)
     
+    def _validate_filename(self, filename: str) -> None:
+        """Validate that a filename is safe and contains no path traversal characters."""
+        import re
+        if not re.match(r'^[a-zA-Z0-9 _.-]+$', filename):
+             raise ValueError(f"Invalid filename: '{filename}'. Only alphanumeric characters, dots, spaces, underscores, and hyphens are allowed.")
+        if ".." in filename:
+             raise ValueError("Path traversal detected.")
+
     def _validate_slot_id(self, slot_id: str) -> None:
         """Validate that the slot_id is safe to use as a filename."""
         # Allow alphanumeric, underscore, hyphen, and space
@@ -129,7 +140,6 @@ class SaveSystem:
 
             with open(save_path, 'w', encoding='utf-8') as f:
                 json.dump(save_data, f, indent=2, ensure_ascii=False, default=default_serializer)
-                json.dump(save_data, f, indent=2, ensure_ascii=False, default=list)
             
             print(f"[SAVE] Game saved to slot '{slot_id}'")
             return True
@@ -240,18 +250,21 @@ class SaveSystem:
             print(f"[ERROR] Failed to delete save: {e}")
             return False
     
-    def export_save(self, slot_id: str, output_path: str) -> bool:
+    def export_save(self, slot_id: str, filename: str) -> bool:
         """
-        Export a save file to a different location (for backup/sharing).
+        Export a save file to the exports directory.
         
         Args:
             slot_id: Save slot to export
-            output_path: Destination file path
+            filename: Name of the file to save to (must be in export directory)
         
         Returns:
             True if export was successful, False otherwise
         """
         try:
+            self._validate_filename(filename)
+            output_path = os.path.join(self.export_directory, filename)
+
             save_data = self.load_game(slot_id)
             if not save_data:
                 return False
