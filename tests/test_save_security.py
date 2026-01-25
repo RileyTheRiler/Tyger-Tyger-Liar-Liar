@@ -14,15 +14,21 @@ class TestSaveSecurity:
     def save_system(self):
         # Create a temporary directory for saves
         save_dir = os.path.join(os.path.dirname(__file__), "temp_saves_security")
+        export_dir = os.path.join(os.path.dirname(__file__), "temp_exports_security")
+
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
+        if os.path.exists(export_dir):
+            shutil.rmtree(export_dir)
 
-        system = SaveSystem(save_directory=save_dir)
+        system = SaveSystem(save_directory=save_dir, export_directory=export_dir)
         yield system
 
         # Cleanup
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
+        if os.path.exists(export_dir):
+            shutil.rmtree(export_dir)
 
     def test_path_traversal_prevention(self, save_system):
         """Test that path traversal characters and invalid filenames are rejected."""
@@ -71,3 +77,25 @@ class TestSaveSecurity:
         """Test that delete with traversal path fails safely."""
         result = save_system.delete_save("../outside")
         assert result is False
+
+    def test_export_path_traversal(self, save_system):
+        """Test that export_save sanitizes filenames and prevents path traversal."""
+        # Create a dummy save to export
+        save_system.save_game("test_slot", {"data": "test"})
+
+        # Payload trying to write to parent directory
+        payload = "../pwned.txt"
+
+        # Expected behavior: stripped to "pwned.txt" and saved in export_dir
+        success = save_system.export_save("test_slot", payload)
+
+        assert success is True
+
+        # Verify file exists in export directory
+        expected_path = os.path.join(save_system.export_directory, "pwned.txt")
+        assert os.path.exists(expected_path)
+
+        # Verify it does NOT exist in parent (which would be the test dir)
+        # We check relative to the export dir
+        unintended_path = os.path.abspath(os.path.join(save_system.export_directory, "..", "pwned.txt"))
+        assert not os.path.exists(unintended_path), f"File written to unintended location: {unintended_path}"
