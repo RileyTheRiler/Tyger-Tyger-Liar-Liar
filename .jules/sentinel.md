@@ -7,3 +7,8 @@
 **Vulnerability:** The `/api/shutdown` endpoint in `server.py` allowed unauthenticated termination of the server process via a simple POST request.
 **Learning:** Convenience features for local development (like a remote shutdown button) can become critical DoS vulnerabilities if the application is deployed or exposed on a network interface (0.0.0.0).
 **Prevention:** Removed the endpoint entirely. Server lifecycle should be managed by the infrastructure (systemd, Docker, user), not the application itself.
+
+## 2024-05-25 - Path Traversal in Save Export
+**Vulnerability:** The `export_save` function in `src/engine/save_system.py` allowed writing files to arbitrary paths via the `output_path` argument (e.g., `../pwned.txt`). This was exposed via the `debugexport` command in `game.py`.
+**Learning:** Functions that accept file paths as arguments from user input (even indirectly via debug commands) must explicitly validate or sanitize them, as they can bypass intended directory restrictions.
+**Prevention:** Used `os.path.basename` to strip directory components and enforced writing to a strictly defined `export_directory`.
