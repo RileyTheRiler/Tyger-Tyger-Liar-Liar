@@ -26,3 +26,7 @@
 ## 2024-10-25 - [Verification Dependencies]
 **Learning:** A syntax error in a seemingly unrelated component (`StatusHUD.jsx`) can break the entire build process, preventing verification of the target component (`MindMap.jsx`).
 **Action:** When verification scripts fail with timeouts or white screens, check the browser console logs (via Playwright) for global runtime errors before assuming the issue lies in the component being tested.
+
+## 2024-10-25 - [React Context & Prop Drilling]
+**Learning:** Components receiving stable objects (like `uiState`) from a parent that re-renders frequently (due to other state changes like typing) will also re-render unless memoized.
+**Action:** Use `React.memo` for complex visualization components (like `StatusHUD`) that sit alongside high-frequency input components.

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SubliminalText from './SubliminalText';
 import './StatusHUD.css';
@@ -6,7 +6,8 @@ import './StatusHUD.css';
 // Alias motion to PascalCase to satisfy ESLint no-unused-vars rule
 const Motion = motion;
 
-const StatusHUD = ({ uiState }) => {
+// Memoized to prevent re-renders on high-freq parent updates (e.g. typing)
+const StatusHUD = memo(({ uiState }) => {
     if (!uiState) return null;
 
     const { sanity, reality, location, time, day } = uiState;
@@ -82,10 +83,10 @@ const StatusHUD = ({ uiState }) => {
             </div>
         </div>
     );
-};
+});
 
 // The new Analog Gauge Component - Optimized with CSS animation
-const AnalogGauge = ({ label, value, color, criticalColor }) => {
+const AnalogGauge = memo(({ label, value, color, criticalColor }) => {
     // Map 0-100 to rotation degrees. 
     // Say -45deg is 0, +45deg is 100. Range = 90deg.
     const rotation = -45 + (value / 100) * 90;
@@ -97,7 +98,6 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
         <div
             className="stat-unit"
             role="progressbar"
-            aria-label={`${label} Level`}
             aria-label={label}
             aria-valuenow={Math.round(value)}
             aria-valuemin="0"
@@ -123,6 +123,6 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
             </div>
         </div>
     );
-};
+});
 
 export default StatusHUD;
