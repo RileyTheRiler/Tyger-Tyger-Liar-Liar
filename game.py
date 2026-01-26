@@ -137,7 +137,7 @@ class Game:
         self.board = Board()
         self.board_ui = BoardUI(self.board)
         self.skill_system = SkillSystem(resource_path(os.path.join(self.content_root, 'skills.json')))
-        self.clue_system = ClueSystem()
+        self.lens_system = LensSystem(self.skill_system, self.board)
         self.attention_system = AttentionSystem()
         
         # Initialize Psychological Systems (Week 15) - Early for ManifestationManager
@@ -218,6 +218,7 @@ class Game:
         # Initialize NPC System (Week 11)
         npcs_dir = resource_path(os.path.join(self.content_root, 'npcs'))
         self.npc_system = NPCSystem(npcs_dir if os.path.exists(npcs_dir) else None)
+        self.npc_manager = NPCManager(npcs_dir)
         
         # Initialize Scene Manager (Now requires NPC, Attention, Inventory)
         self.scene_manager = SceneManager(
@@ -756,7 +757,7 @@ class Game:
                      self.scene_manager.load_scene("arrival_bus")
 
              choices = self.scene_manager.current_scene_data.get("choices", []) if self.scene_manager.current_scene_data else []
-             action_result = self.process_command(user_input)
+             action_result = self.process_command(user_input, choices)
              
              if action_result == "quit":
                  return "QUIT"
@@ -955,6 +956,9 @@ class Game:
             
         return False
 
+    def apply_reality_distortion(self, text):
+        return text
+
     def display_state(self):
         if self.in_dialogue:
             self.display_dialogue()
@@ -1050,8 +1054,16 @@ class Game:
         archetype = archetype_map.get(current_lens, Archetype.NEUTRAL)
         
         # Override if manually set in player_state
-        if self.player_state.get("archetype", Archetype.NEUTRAL) != Archetype.NEUTRAL:
-             archetype = self.player_state["archetype"]
+        stored_archetype = self.player_state.get("archetype", Archetype.NEUTRAL)
+        # Handle string serialization
+        if isinstance(stored_archetype, str):
+            try:
+                stored_archetype = Archetype(stored_archetype)
+            except ValueError:
+                stored_archetype = Archetype.NEUTRAL
+
+        if stored_archetype != Archetype.NEUTRAL:
+             archetype = stored_archetype
 
         # 2. Prepare Data for Composer (Adapter Layer)
         text_obj = scene.get("text", {"base": "..."})
@@ -1517,7 +1529,7 @@ class Game:
                     path = parts[2]
                     self.save_system.export_save(slot, path)
                 else:
-                    self.print("Usage: debugexport <slot_id> <output_path>")
+                    self.print("Usage: debugexport <slot_id> <filename>")
                 return "refresh"
             
             # Debug: Set Sanity/Reality

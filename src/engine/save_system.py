@@ -59,12 +59,15 @@ class EventLog:
 class SaveSystem:
     """Manages game save/load functionality with hash verification."""
     
-    def __init__(self, save_directory: str = "saves"):
+    def __init__(self, save_directory: str = "saves", export_directory: str = "exports"):
         self.save_directory = save_directory
+        self.export_directory = export_directory
         
-        # Create saves directory if it doesn't exist
+        # Create directories if they don't exist
         if not os.path.exists(save_directory):
             os.makedirs(save_directory)
+        if not os.path.exists(export_directory):
+            os.makedirs(export_directory)
     
     def _validate_slot_id(self, slot_id: str) -> None:
         """Validate that the slot_id is safe to use as a filename."""
@@ -79,6 +82,17 @@ class SaveSystem:
         self._validate_slot_id(slot_id)
         return os.path.join(self.save_directory, f"{slot_id}.json")
     
+    @staticmethod
+    def _json_serializer(obj):
+        """Helper to handle non-serializable objects (like Enum, Set)."""
+        if hasattr(obj, 'value'): # Enum
+            return obj.value
+        if hasattr(obj, 'to_dict'):
+            return obj.to_dict()
+        if isinstance(obj, set):
+            return list(obj)
+        raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
     def _calculate_hash(self, data: Dict[str, Any]) -> str:
         """Calculate SHA-256 hash of the save data (excluding the hash field itself)."""
         # Create a copy to avoid modifying the original
@@ -87,8 +101,8 @@ class SaveSystem:
             del data_to_hash["hash"]
 
         # Sort keys to ensure consistent JSON serialization
-        # Use default=str to handle non-serializable objects like sets in hash calculation
-        json_str = json.dumps(data_to_hash, sort_keys=True, ensure_ascii=False, default=str)
+        # Use _json_serializer to match save format (e.g. sets to lists)
+        json_str = json.dumps(data_to_hash, sort_keys=True, ensure_ascii=False, default=self._json_serializer)
         return hashlib.sha256(json_str.encode('utf-8')).hexdigest()
 
     def save_game(self, slot_id: str, state_data: Dict[str, Any]) -> bool:
@@ -116,20 +130,8 @@ class SaveSystem:
             # Calculate and append hash
             save_data["hash"] = self._calculate_hash(save_data)
 
-            # Write to file with pretty formatting
-            # Helper to handle non-serializable objects (like Enum)
-            def default_serializer(obj):
-                if hasattr(obj, 'value'): # Enum
-                    return obj.value
-                if hasattr(obj, 'to_dict'):
-                    return obj.to_dict()
-                if isinstance(obj, set):
-                    return list(obj)
-                raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
-
             with open(save_path, 'w', encoding='utf-8') as f:
-                json.dump(save_data, f, indent=2, ensure_ascii=False, default=default_serializer)
-                json.dump(save_data, f, indent=2, ensure_ascii=False, default=list)
+                json.dump(save_data, f, indent=2, ensure_ascii=False, default=self._json_serializer)
             
             print(f"[SAVE] Game saved to slot '{slot_id}'")
             return True
@@ -240,13 +242,13 @@ class SaveSystem:
             print(f"[ERROR] Failed to delete save: {e}")
             return False
     
-    def export_save(self, slot_id: str, output_path: str) -> bool:
+    def export_save(self, slot_id: str, filename: str) -> bool:
         """
-        Export a save file to a different location (for backup/sharing).
+        Export a save file to the 'exports' directory.
         
         Args:
             slot_id: Save slot to export
-            output_path: Destination file path
+            filename: Desired filename (sanitized)
         
         Returns:
             True if export was successful, False otherwise
@@ -256,6 +258,10 @@ class SaveSystem:
             if not save_data:
                 return False
             
+            # Security: Prevent path traversal by using basename
+            safe_filename = os.path.basename(filename)
+            output_path = os.path.join(self.export_directory, safe_filename)
+
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(save_data, f, indent=2, ensure_ascii=False)
             
