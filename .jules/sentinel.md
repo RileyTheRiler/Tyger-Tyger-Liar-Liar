@@ -7,3 +7,8 @@
 **Vulnerability:** The `/api/shutdown` endpoint in `server.py` allowed unauthenticated termination of the server process via a simple POST request.
 **Learning:** Convenience features for local development (like a remote shutdown button) can become critical DoS vulnerabilities if the application is deployed or exposed on a network interface (0.0.0.0).
 **Prevention:** Removed the endpoint entirely. Server lifecycle should be managed by the infrastructure (systemd, Docker, user), not the application itself.
+
+## 2025-01-26 - Arbitrary File Write via Debug Export
+**Vulnerability:** The `debugexport` command in `game.py` allowed path traversal in the filename argument, enabling arbitrary file writes on the server via the `/api/action` endpoint.
+**Learning:** Debug features exposed in production/networked environments are high-risk entry points. Input validation must occur at the sink (`SaveSystem`), not just the source (CLI/API).
+**Prevention:** Restricted file writes to a dedicated `exports/` directory using `os.path.basename` and enforced output path sanitization.
