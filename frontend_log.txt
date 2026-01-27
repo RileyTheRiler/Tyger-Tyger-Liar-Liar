@@ -1,0 +1,20 @@
+
+> frontend@0.0.0 dev /app/frontend
+> vite --port 5173
+
+
+  VITE v7.3.1  ready in 243 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+2:42:40 AM [vite] (client) warning: Duplicate "aria-label" attribute in JSX element
+99  |        role="progressbar"
+100 |        aria-label={`${label} Level`}
+101 |        aria-label={label}
+    |        ^
+102 |        aria-valuenow={Math.round(value)}
+103 |        aria-valuemin="0"
+
+  Plugin: vite:esbuild
+  File: /app/frontend/src/components/StatusHUD.jsx
+ ELIFECYCLE  Command failed.
