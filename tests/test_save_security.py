@@ -12,17 +12,48 @@ class TestSaveSecurity:
 
     @pytest.fixture
     def save_system(self):
-        # Create a temporary directory for saves
-        save_dir = os.path.join(os.path.dirname(__file__), "temp_saves_security")
-        if os.path.exists(save_dir):
-            shutil.rmtree(save_dir)
+        # Create a temporary directory for saves and exports
+        base_dir = os.path.dirname(__file__)
+        save_dir = os.path.join(base_dir, "temp_saves_security")
+        export_dir = os.path.join(base_dir, "temp_exports_security")
 
-        system = SaveSystem(save_directory=save_dir)
+        for d in [save_dir, export_dir]:
+            if os.path.exists(d):
+                shutil.rmtree(d)
+
+        system = SaveSystem(save_directory=save_dir, export_directory=export_dir)
         yield system
 
         # Cleanup
-        if os.path.exists(save_dir):
-            shutil.rmtree(save_dir)
+        for d in [save_dir, export_dir]:
+            if os.path.exists(d):
+                shutil.rmtree(d)
+
+    def test_export_security(self, save_system):
+        """Test that export_save sanitizes filenames and uses export directory."""
+        data = {"test": "export"}
+        save_system.save_game("export_test", data)
+
+        # 1. Test normal export
+        filename = "my_export.json"
+        assert save_system.export_save("export_test", filename)
+        assert os.path.exists(os.path.join(save_system.export_directory, filename))
+
+        # 2. Test path traversal attempt
+        # attempts to write to the parent of export_dir (which is tests/)
+        traversal = "../hacked.json"
+        target_outside = os.path.join(os.path.dirname(save_system.export_directory), "hacked.json")
+
+        # Clean up if it exists from previous run
+        if os.path.exists(target_outside):
+            os.remove(target_outside)
+
+        assert save_system.export_save("export_test", traversal)
+
+        # Should NOT exist outside
+        assert not os.path.exists(target_outside)
+        # Should exist inside as sanitized name
+        assert os.path.exists(os.path.join(save_system.export_directory, "hacked.json"))
 
     def test_path_traversal_prevention(self, save_system):
         """Test that path traversal characters and invalid filenames are rejected."""
