@@ -17,7 +17,20 @@ TITLE_SCREEN_DIR = os.path.join(BASE_DIR, 'title_screen')
 app = Flask(__name__, static_folder='title_screen')
 # Sentinel: Replaced hardcoded secret with secure generation
 app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
-socketio = SocketIO(app, cors_allowed_origins='*')
+
+# Sentinel: Restrict CORS to specific origins to prevent CSRF/WebSocket hijacking
+# Default to common development ports if not specified
+allowed_origins_env = os.environ.get("CORS_ALLOWED_ORIGINS")
+if allowed_origins_env:
+    allowed_origins = [o.strip() for o in allowed_origins_env.split(",")]
+else:
+    allowed_origins = [
+        "http://localhost:5173", "http://127.0.0.1:5173",  # Vite Dev Server
+        "http://localhost:5000", "http://127.0.0.1:5000",  # Flask Server
+        "http://localhost:3000", "http://127.0.0.1:3000"   # React Std
+    ]
+
+socketio = SocketIO(app, cors_allowed_origins=allowed_origins)
 
 # Global process handle
 game_process = None
