@@ -37,7 +37,11 @@ def verify_hud_a11y():
 
             print("Waiting for StatusHUD...")
             # Wait for StatusHUD to appear
-            page.get_by_text("BIO_MONITOR_v9").wait_for()
+            # Due to a11y improvements, we target the visible element (aria-hidden=true)
+            page.locator("span[aria-hidden='true']").filter(has_text="BIO_MONITOR_v9").wait_for()
+
+            # Verify hidden SR-only element exists
+            expect(page.locator(".sr-only").filter(has_text="BIO_MONITOR_v9")).to_be_attached()
 
             # Verify ARIA attributes on AnalogGauge (SANITY)
             sanity_gauge = page.locator("div[role='progressbar'][aria-label='SANITY']")

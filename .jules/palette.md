@@ -25,3 +25,7 @@ Format: `## YYYY-MM-DD - [Title]
 ## 2024-05-22 - Input Console Labels
 **Learning:** Terminal-style inputs often omit labels for immersion, which fails WCAG criteria.
 **Action:** Use `aria-label` to provide context without breaking the visual aesthetic. Dynamic labels (e.g., "System busy") provide excellent feedback for non-sighted users.
+
+## 2024-05-24 - [Glitch Text Accessibility]
+**Learning:** Components that rapidly update text for visual effect (like glitching text) create a chaotic experience for screen readers, announcing every random character swap.
+**Action:** Separate the content into two layers: a stable, visually hidden element (`.sr-only`) for screen readers, and a visual-only element (`aria-hidden="true"`) for the glitch effect.
