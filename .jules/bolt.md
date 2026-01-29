@@ -26,3 +26,7 @@
 ## 2024-10-25 - [Verification Dependencies]
 **Learning:** A syntax error in a seemingly unrelated component (`StatusHUD.jsx`) can break the entire build process, preventing verification of the target component (`MindMap.jsx`).
 **Action:** When verification scripts fail with timeouts or white screens, check the browser console logs (via Playwright) for global runtime errors before assuming the issue lies in the component being tested.
+
+## 2024-05-25 - [ChoiceGrid Re-renders]
+**Learning:** `ChoiceGrid` was re-rendering on every keystroke in `InputConsole` because the parent `App` component recreated the `handleSend` callback on every render, and `ChoiceGrid` was not memoized.
+**Action:** Wrapped `ChoiceGrid` in `React.memo` and wrapped `handleSend` in `useCallback` in `App.jsx`. When optimizing, always check if callbacks passed to child components are stable.

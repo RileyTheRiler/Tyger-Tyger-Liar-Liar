@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import './ChoiceGrid.css';
 
 const ChoiceGrid = ({ choices, handleChoice, loading }) => {
@@ -22,7 +22,7 @@ const ChoiceGrid = ({ choices, handleChoice, loading }) => {
 
 const ChoiceButton = ({ choice, index, onClick, disabled }) => {
     return (
-        <motion.button
+        <Motion.button
             className="choice-btn"
             onClick={onClick}
             disabled={disabled}
@@ -46,8 +46,8 @@ const ChoiceButton = ({ choice, index, onClick, disabled }) => {
             <span className="choice-text">{choice.text}</span>
             {/* Optional decorative corner */}
             <div className="corner-decor" />
-        </motion.button>
+        </Motion.button>
     );
 };
 
-export default ChoiceGrid;
+export default React.memo(ChoiceGrid);

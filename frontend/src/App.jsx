@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { startGame, sendAction, shutdownGame } from './api'
 import Layout from './components/Layout'
 import Terminal from './components/Terminal'
@@ -35,12 +35,6 @@ function App() {
     }, 500)
   }
 
-  useEffect(() => {
-    if (!showTitle && !booting) {
-      initGame()
-    }
-  }, [showTitle, booting])
-
   const initGame = async () => {
     setLoading(true)
     try {
@@ -49,13 +43,19 @@ function App() {
         setHistory([{ type: 'output', text: data.output }])
         setUiState(data.state)
       }
-    } catch (e) {
+    } catch {
       setHistory([{ type: 'output', text: "ERROR: CONNECTION_LOST_TO_MAINFRAME" }])
     }
     setLoading(false)
   }
 
-  const handleSend = async (txt) => {
+  useEffect(() => {
+    if (!showTitle && !booting) {
+      initGame()
+    }
+  }, [showTitle, booting])
+
+  const handleSend = useCallback(async (txt) => {
     if (!txt) return
 
     setHistory(prev => [...prev, { type: 'input', text: `> ${txt}` }])
@@ -67,12 +67,12 @@ function App() {
         setHistory(prev => [...prev, { type: 'output', text: data.output }])
         setUiState(data.state)
       }
-    } catch (e) {
+    } catch {
       setHistory(prev => [...prev, { type: 'output', text: "ERROR: SIGNAL_INTERRUPTED" }])
     }
     setLoading(false)
     setInput("")
-  }
+  }, [])
 
   const handleShutdown = async () => {
     setHistory(prev => [...prev, { type: 'output', text: "INITIATING_SHUTDOWN_SEQUENCE..." }])
