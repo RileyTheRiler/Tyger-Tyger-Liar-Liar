@@ -7,3 +7,8 @@
 **Vulnerability:** The `/api/shutdown` endpoint in `server.py` allowed unauthenticated termination of the server process via a simple POST request.
 **Learning:** Convenience features for local development (like a remote shutdown button) can become critical DoS vulnerabilities if the application is deployed or exposed on a network interface (0.0.0.0).
 **Prevention:** Removed the endpoint entirely. Server lifecycle should be managed by the infrastructure (systemd, Docker, user), not the application itself.
+
+## 2024-05-25 - Path Traversal in Export Function
+**Vulnerability:** `SaveSystem.export_save` accepted an arbitrary file path, allowing writing to any location the process had access to (Arbitrary File Write).
+**Learning:** Functions intended for "exporting" data must not trust user-provided paths. Even if the feature is behind a debug flag, it can be chained with other exploits or enabled by attackers if authentication is weak.
+**Prevention:** Enforce a dedicated export directory. Treat user input as a filename only (sanitize with `os.path.basename`) and construct the path serverside.

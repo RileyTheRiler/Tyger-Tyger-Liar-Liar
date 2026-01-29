@@ -12,17 +12,23 @@ class TestSaveSecurity:
 
     @pytest.fixture
     def save_system(self):
-        # Create a temporary directory for saves
+        # Create a temporary directory for saves and exports
         save_dir = os.path.join(os.path.dirname(__file__), "temp_saves_security")
+        export_dir = os.path.join(os.path.dirname(__file__), "temp_exports_security")
+
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
+        if os.path.exists(export_dir):
+            shutil.rmtree(export_dir)
 
-        system = SaveSystem(save_directory=save_dir)
+        system = SaveSystem(save_directory=save_dir, export_directory=export_dir)
         yield system
 
         # Cleanup
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
+        if os.path.exists(export_dir):
+            shutil.rmtree(export_dir)
 
     def test_path_traversal_prevention(self, save_system):
         """Test that path traversal characters and invalid filenames are rejected."""
@@ -71,3 +77,19 @@ class TestSaveSecurity:
         """Test that delete with traversal path fails safely."""
         result = save_system.delete_save("../outside")
         assert result is False
+
+    def test_export_traversal_prevention(self, save_system):
+        """Test that export_save sanitizes the output filename."""
+        # 1. Create a valid save
+        data = {"test": "data"}
+        save_system.save_game("test_slot", data)
+
+        # 2. Attempt traversal
+        traversal_filename = "../pwned.txt"
+        success = save_system.export_save("test_slot", traversal_filename)
+
+        assert success is True
+
+        # 3. Check it landed in export directory
+        expected_path = os.path.join(save_system.export_directory, "pwned.txt")
+        assert os.path.exists(expected_path), f"Export should be in {expected_path}"
