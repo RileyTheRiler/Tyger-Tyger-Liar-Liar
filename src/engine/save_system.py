@@ -59,12 +59,15 @@ class EventLog:
 class SaveSystem:
     """Manages game save/load functionality with hash verification."""
     
-    def __init__(self, save_directory: str = "saves"):
+    def __init__(self, save_directory: str = "saves", export_directory: str = "exports"):
         self.save_directory = save_directory
+        self.export_directory = export_directory
         
-        # Create saves directory if it doesn't exist
+        # Create directories if they don't exist
         if not os.path.exists(save_directory):
             os.makedirs(save_directory)
+        if not os.path.exists(export_directory):
+            os.makedirs(export_directory)
     
     def _validate_slot_id(self, slot_id: str) -> None:
         """Validate that the slot_id is safe to use as a filename."""
@@ -129,7 +132,7 @@ class SaveSystem:
 
             with open(save_path, 'w', encoding='utf-8') as f:
                 json.dump(save_data, f, indent=2, ensure_ascii=False, default=default_serializer)
-                json.dump(save_data, f, indent=2, ensure_ascii=False, default=list)
+                # Sentinel: Removed duplicate json.dump here
             
             print(f"[SAVE] Game saved to slot '{slot_id}'")
             return True
@@ -240,13 +243,14 @@ class SaveSystem:
             print(f"[ERROR] Failed to delete save: {e}")
             return False
     
-    def export_save(self, slot_id: str, output_path: str) -> bool:
+    def export_save(self, slot_id: str, output_filename: str) -> bool:
         """
-        Export a save file to a different location (for backup/sharing).
+        Export a save file to the configured export directory.
+        Forces the file to be within the export directory to prevent path traversal.
         
         Args:
             slot_id: Save slot to export
-            output_path: Destination file path
+            output_filename: Filename for the export (directories stripped)
         
         Returns:
             True if export was successful, False otherwise
@@ -256,10 +260,19 @@ class SaveSystem:
             if not save_data:
                 return False
             
-            with open(output_path, 'w', encoding='utf-8') as f:
+            # Sentinel Fix: Prevent Path Traversal
+            # Ensure we only use the filename, stripping any directory components
+            safe_filename = os.path.basename(output_filename)
+            if not safe_filename:
+                print(f"[ERROR] Invalid export filename.")
+                return False
+
+            export_path = os.path.join(self.export_directory, safe_filename)
+
+            with open(export_path, 'w', encoding='utf-8') as f:
                 json.dump(save_data, f, indent=2, ensure_ascii=False)
             
-            print(f"[EXPORT] Save exported to '{output_path}'")
+            print(f"[EXPORT] Save exported to '{export_path}'")
             return True
             
         except Exception as e:
