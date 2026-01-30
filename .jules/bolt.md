@@ -26,3 +26,7 @@
 ## 2024-10-25 - [Verification Dependencies]
 **Learning:** A syntax error in a seemingly unrelated component (`StatusHUD.jsx`) can break the entire build process, preventing verification of the target component (`MindMap.jsx`).
 **Action:** When verification scripts fail with timeouts or white screens, check the browser console logs (via Playwright) for global runtime errors before assuming the issue lies in the component being tested.
+
+## 2025-01-26 - [Animation Loop Dependencies]
+**Learning:** High-frequency animation loops in `useEffect` often suffer from stale closures if they depend on props. Adding props to the dependency array causes the effect (and loop) to restart, creating jank.
+**Action:** Use a `propsRef` pattern (`const propsRef = useRef(props)`) to keep track of the latest values. Update the ref in a separate `useEffect`, and read from `propsRef.current` inside the animation loop. This allows the loop to persist smoothly while reacting to prop changes immediately.
