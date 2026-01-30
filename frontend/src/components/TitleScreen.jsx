@@ -31,10 +31,10 @@ const TitleScreen = ({ onStart, onExit }) => {
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.5, delay: 2 }}
                 >
-                    <button className="title-btn start-btn" onClick={onStart}>
+                    <button className="title-btn start-btn" onClick={onStart} aria-label="Start Investigation">
                         [START_INVESTIGATION]
                     </button>
-                    <button className="title-btn exit-btn" onClick={onExit}>
+                    <button className="title-btn exit-btn" onClick={onExit} aria-label="Exit System">
                         [EXIT_SYSTEM]
                     </button>
                 </motion.div>
