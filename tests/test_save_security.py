@@ -13,16 +13,23 @@ class TestSaveSecurity:
     @pytest.fixture
     def save_system(self):
         # Create a temporary directory for saves
-        save_dir = os.path.join(os.path.dirname(__file__), "temp_saves_security")
+        base_dir = os.path.dirname(__file__)
+        save_dir = os.path.join(base_dir, "temp_saves_security")
+        export_dir = os.path.join(base_dir, "temp_exports_security")
+
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
+        if os.path.exists(export_dir):
+            shutil.rmtree(export_dir)
 
-        system = SaveSystem(save_directory=save_dir)
+        system = SaveSystem(save_directory=save_dir, export_directory=export_dir)
         yield system
 
         # Cleanup
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
+        if os.path.exists(export_dir):
+            shutil.rmtree(export_dir)
 
     def test_path_traversal_prevention(self, save_system):
         """Test that path traversal characters and invalid filenames are rejected."""
@@ -71,3 +78,27 @@ class TestSaveSecurity:
         """Test that delete with traversal path fails safely."""
         result = save_system.delete_save("../outside")
         assert result is False
+
+    def test_export_path_traversal(self, save_system):
+        """Test that export_save sanitizes paths and prevents traversal."""
+        # 1. Create a valid save to export
+        slot = "valid_save"
+        save_system.save_game(slot, {"secret": "data"})
+
+        # 2. Attempt to export with traversal
+        # We try to write to a file "pwned.txt" in the parent of export dir (which is test dir)
+        traversal_path = "../pwned.txt"
+
+        success = save_system.export_save(slot, traversal_path)
+        assert success is True, "Export should succeed but be sanitized"
+
+        # 3. Verify file exists in EXPORT dir, not parent
+        safe_path = os.path.join(save_system.export_directory, "pwned.txt")
+        unsafe_path = os.path.join(os.path.dirname(save_system.export_directory), "pwned.txt")
+
+        assert os.path.exists(safe_path), f"File should be created in export dir: {safe_path}"
+        assert not os.path.exists(unsafe_path), f"File should NOT be created at unsafe path: {unsafe_path}"
+
+        # Cleanup unsafe file if it somehow was created
+        if os.path.exists(unsafe_path):
+            os.remove(unsafe_path)
