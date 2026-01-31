@@ -14,7 +14,7 @@ const Terminal = ({ history }) => {
 
     return (
         <div className="terminal-window">
-            <div className="terminal-content">
+            <div className="terminal-content" aria-live="polite" aria-atomic="false">
                 {history.map((entry, index) => (
                     <TerminalEntry key={index} entry={entry} />
                 ))}

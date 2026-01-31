@@ -126,12 +126,12 @@ function App() {
                 <div className="system-status">
                   SYS.ONLINE
                   <span className="ctrl-divider">|</span>
-                  <button className="ctrl-btn" onClick={() => setShowBoard(true)}>
-                    [VIEW_MINDMAP]
+                  <button className="ctrl-btn" onClick={() => setShowBoard(true)} aria-label="View Mindmap">
+                    <span aria-hidden="true">[VIEW_MINDMAP]</span>
                   </button>
                   <span className="ctrl-divider">|</span>
-                  <button className="ctrl-btn" onClick={handleShutdown}>
-                    [EXIT_SYSTEM]
+                  <button className="ctrl-btn" onClick={handleShutdown} aria-label="Exit System">
+                    <span aria-hidden="true">[EXIT_SYSTEM]</span>
                   </button>
                 </div>
               </div>

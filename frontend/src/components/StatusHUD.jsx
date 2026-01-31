@@ -98,7 +98,6 @@ const AnalogGauge = ({ label, value, color, criticalColor }) => {
             className="stat-unit"
             role="progressbar"
             aria-label={`${label} Level`}
-            aria-label={label}
             aria-valuenow={Math.round(value)}
             aria-valuemin="0"
             aria-valuemax="100"
