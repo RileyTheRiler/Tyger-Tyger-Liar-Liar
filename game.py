@@ -1514,10 +1514,10 @@ class Game:
                 parts = clean.split()
                 if len(parts) >= 3:
                     slot = parts[1]
-                    path = parts[2]
-                    self.save_system.export_save(slot, path)
+                    filename = parts[2]
+                    self.save_system.export_save(slot, filename)
                 else:
-                    self.print("Usage: debugexport <slot_id> <output_path>")
+                    self.print("Usage: debugexport <slot_id> <filename>")
                 return "refresh"
             
             # Debug: Set Sanity/Reality
