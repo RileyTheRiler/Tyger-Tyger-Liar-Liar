@@ -25,3 +25,7 @@ Format: `## YYYY-MM-DD - [Title]
 ## 2024-05-22 - Input Console Labels
 **Learning:** Terminal-style inputs often omit labels for immersion, which fails WCAG criteria.
 **Action:** Use `aria-label` to provide context without breaking the visual aesthetic. Dynamic labels (e.g., "System busy") provide excellent feedback for non-sighted users.
+
+## 2024-05-23 - Decorative Text Accessibility
+**Learning:** Buttons with decorative text like `[START_INVESTIGATION]` create a noisy experience for screen reader users ("Left bracket start underscore...").
+**Action:** Use `aria-label` for the clean action name (e.g., "Start Investigation") and wrap the visual text in a span with `aria-hidden="true"` to preserve the aesthetic while improving accessibility.
