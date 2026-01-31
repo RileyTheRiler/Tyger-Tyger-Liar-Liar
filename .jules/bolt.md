@@ -26,3 +26,7 @@
 ## 2024-10-25 - [Verification Dependencies]
 **Learning:** A syntax error in a seemingly unrelated component (`StatusHUD.jsx`) can break the entire build process, preventing verification of the target component (`MindMap.jsx`).
 **Action:** When verification scripts fail with timeouts or white screens, check the browser console logs (via Playwright) for global runtime errors before assuming the issue lies in the component being tested.
+
+## 2024-10-26 - [Animation Loop Optimization]
+**Learning:** React state updates driven by `setInterval` (e.g., 30ms) cause massive re-render overhead.
+**Action:** Move high-frequency visual updates to `requestAnimationFrame` and update DOM nodes directly via `useRef`, bypassing React's render cycle.
